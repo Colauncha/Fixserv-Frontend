@@ -51,6 +51,7 @@ const ArtisanSignUp = () => {
       }
     }
     const handleArtisanSignUp = async () => {
+      console.log("Form Data before submission:", formData);
       try {
         if (formData.password !== formData.confirmPassword) {
           console.error("Passwords do not match");
@@ -69,7 +70,7 @@ const ArtisanSignUp = () => {
         delete formData.skillSet;
         delete formData.rating;
         delete formData.location;
-        delete formData.confirmPassword;
+        // delete formData.confirmPassword;
 
         const submitData = {...formData , artisanData};
         console.log("Submitting data:", submitData);
@@ -99,7 +100,7 @@ const ArtisanSignUp = () => {
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">Full Name</label>
           <input
             type="text"
-            input={formData.fullName || ""}
+            value={formData.fullName || ""}
             onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
             className="w-full flex p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
@@ -117,7 +118,7 @@ const ArtisanSignUp = () => {
           <div className="relative mb-2">
             <input
               type={showPassword ? "text" : "password"}
-              input={formData.password || ""}
+              value={formData.password || ""}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full p-2 border border-[#94B0F8] rounded pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300"
             />         
@@ -134,7 +135,7 @@ const ArtisanSignUp = () => {
           <div className="relative mb-2">
             <input
               type={showConfirmPassword ? "text" : "Confirmpassword"}
-              input={formData.confirmPassword || ""}
+              value={formData.confirmPassword || ""}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               className="w-full p-2 border border-[#94B0F8] rounded pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300"
             />          
@@ -150,7 +151,7 @@ const ArtisanSignUp = () => {
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">SkillSet</label>
           <input
             type="text"
-            input={formData.skillSet || ""}
+            value={formData.skillSet || ""}
             onChange={(e) => setFormData({ ...formData, skillSet: e.target.value.split(',') })}
             placeholder='Enter your skills separated by commas'
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -159,14 +160,14 @@ const ArtisanSignUp = () => {
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">Business Name</label>
           <input
             type="text"
-            input={formData.businessName || ""}
+            value={formData.businessName || ""}
             onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">Location</label>
           <input
             type="text"
-            input={formData.location || ""}
+            value={formData.location || ""}
             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             className="w-full p-2 mb-15 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
