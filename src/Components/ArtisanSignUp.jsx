@@ -17,10 +17,10 @@ const ArtisanSignUp = () => {
       tuesday: { open: "09:00", close: "17:00" }
     })
 
-    useEffect(() => {
-      console.log("Form Data:", formData);
+    // useEffect(() => {
+    //   console.log("Form Data:", formData);
 
-    }, [formData]);
+    // }, [formData]);
 
     const runFetch = async (submitData) => {
       try {
@@ -36,6 +36,7 @@ const ArtisanSignUp = () => {
         });
 
         if (!response.ok) {
+          console.log("Response not ok:", response);
           throw new Error('Network response was not ok');
         }
 
@@ -56,7 +57,22 @@ const ArtisanSignUp = () => {
           return; // Handle password mismatch, e.g., show an error message
         }
 
-        const submitData = {...formData , businessHours};
+        const artisanData = {
+          businessName : formData.businessName,
+          businessHours: businessHours,
+          skillSet : formData.skillSet,
+          location : formData.location,
+          rating : formData.rating,
+        }
+
+        delete formData.businessName;
+        delete formData.skillSet;
+        delete formData.rating;
+        delete formData.location;
+        delete formData.confirmPassword;
+
+        const submitData = {...formData , artisanData};
+        console.log("Submitting data:", submitData);
         const data = await runFetch(submitData);
         console.log("Data received:", data);
         // Handle successful registration, e.g., navigate to another page or show a success message
