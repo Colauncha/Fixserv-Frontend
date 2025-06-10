@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import BackgroundImage from '../assets/uploads/Welcome_bg.png' 
 import ArtisanImage from '../assets/uploads/Artisan_Image.png' 
 
@@ -14,13 +15,25 @@ const ArtisanSignUp = () => {
 
     const [businessHours, setBusinessHours] = useState({
       monday: { open: "09:00", close: "17:00" },
-      tuesday: { open: "09:00", close: "17:00" }
+      tuesday: { open: "09:00", close: "17:00" },
+      wednesday: { open: "09:00", close: "17:00" },
+      thursday: { open: "09:00", close: "17:00" },
+      friday: { open: "09:00", close: "17:00" },
+      saturday: { open: "09:00", close: "17:00" }
     })
 
-    // useEffect(() => {
-    //   console.log("Form Data:", formData);
+    useEffect(() => {
+      setBusinessHours({
+        monday: { open: "09:00", close: "17:00" },
+        tuesday: { open: "09:00", close: "17:00" },
+        wednesday: { open: "09:00", close: "17:00" },
+        thursday: { open: "09:00", close: "17:00" },
+        friday: { open: "09:00", close: "17:00" },
+        saturday: { open: "09:00", close: "17:00" }
+      })
+    }, [businessHours]);
 
-    // }, [formData]);
+    const navigate = useNavigate();
 
     const runFetch = async (submitData) => {
       try {
@@ -70,12 +83,12 @@ const ArtisanSignUp = () => {
         delete formData.skillSet;
         delete formData.rating;
         delete formData.location;
-        // delete formData.confirmPassword;
 
         const submitData = {...formData , artisanData};
         console.log("Submitting data:", submitData);
         const data = await runFetch(submitData);
         console.log("Data received:", data);
+        navigate("/login")
         // Handle successful registration, e.g., navigate to another page or show a success message
       } catch (error) {
         console.error("Error during registration:", error);
