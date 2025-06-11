@@ -122,7 +122,7 @@ const ArtisanSignUp = () => {
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">Email</label>
           <input
             type="email"
-            input={formData.email || ""}
+            value={formData.email || ""}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
