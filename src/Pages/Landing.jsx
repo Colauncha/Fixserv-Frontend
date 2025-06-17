@@ -29,7 +29,7 @@ const Landing = () => {
       <Testimonials />
 
       {/* Arrow image - above Footer */}
-            <div className="w-full flex justify-end -mb-10">
+            <div className="w-full flex justify-end -mb-10 px-8">
               <img
                 src={ArrowUp}
                 alt="Back to Top"

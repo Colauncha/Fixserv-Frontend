@@ -1,50 +1,66 @@
-import React from "react";
-import moreIcon from '../../assets/icons/more icon.png';
-import searchIcon from '../../assets/icons/search.png'; 
+import SearchLogo from '../../assets/icons/search.png'; // Adjust the path as necessary
 
 const ClientNavbar = () => {
   return (
-    <> 
-    <nav className="bg-white shadow- px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center justify-between w-full">
-      {/* Left: Logo and Brand */}
-      <img src={moreIcon} alt="export" className="h-16 mt-2" />
-      <div className="text-xl font-bold text-[#110000C2] mb-4 sm:mb-0">
-        Welcome to Fixserv
+    <section className ="flex flex-col items-center justify-between w-full">
+    <div className="flex items-center justify-between px-10 py-6 shadow-md bg-white w-full">
+      
+      <div className="flex items-center space-x-4">
+        {/* Hamburger/more Icon */}
+        <div className="flex flex-col justify-between w-18 h-10 cursor-pointer">
+          <span className="h-2 bg-[#7A9DF7] rounded"></span>
+          <span className="h-2 bg-[#7A9DF7] rounded"></span>
+          <span className="h-2 bg-[#7A9DF7] rounded"></span>
+        </div>
+
+        {/* Welcome Text */}
+        <h1 className="text-4xl font-light text-[#000000] pl-15">
+          Welcome <br />
+          <span className="text-4xl font-light">to Fixserv</span>
+        </h1>
       </div>
 
-      {/* Center: Search Input */}
-      <div className="w-full h-10 sm:w-1/2 mb-2 sm:mb-0 flex justify-center">
+      {/* Center: Search Bar */}
+      <div className="flex items-center bg-[#94B0F8] rounded-full overflow-hidden h-13 w-[900px] max-w-[90%]">
         <input
           type="text"
           placeholder="Service, Artisans or Location"
-          className="w-full px-4 py-2  bg-[#94B0F8] rounded-full focus:outline-none"
+          className="px-4 py-1 w-full outline-none text-[#110000C2]"
         />
-        <img src={searchIcon} alt="search" className="w-16 h-10 rounded-full" />
-      </div>
-      </div>
-      </nav>
 
-      {/*  Categories dropdowns bar */}
+       <button>
+        <img src={SearchLogo} alt='search' className="bg-[#7A9DF7] p-3 px-10 rounded-full text-white" />
+         </button>
+      </div>
+
+    </div>
+
+    {/*  Categories dropdowns bar */}
       <div className="flex items-center justify-center w-full gap-10 py-4 ">
       <div className="flex-wrap gap-8 bg-[#ECF1FC]">
-        <select className="px-3 py-2 border border-gray-300 rounded-md text-sm">
+        <select className="px-8 py-5 border border-gray-300 rounded-md text-sm">
           <option>Television</option>
         </select>
-        <select className="px-3 py-2 border border-gray-300 rounded-md text-sm">
+        <select className="px-8 py-5  border border-gray-300 rounded-md text-sm">
           <option>Refrigerator</option>
         </select>
-        <select className="px-3 py-2 border border-gray-300 rounded-md text-sm">
+        <select className="px-8 py-5  border border-gray-300 rounded-md text-sm">
           <option>Gadgets</option>
         </select>
-        <select className="px-3 py-2 border border-gray-300 rounded-md text-sm">
+        <select className="px-8 py-5  border border-gray-300 rounded-md text-sm">
           <option>Game Gadgets</option>
         </select>
       </div>
       </div>
 
-      </>   
+    </section>
+
   );
 };
 
 export default ClientNavbar;
+
+
+  
+     
+

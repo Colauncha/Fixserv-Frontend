@@ -15,7 +15,7 @@ const GuestSignUp = () => {
     const navigate = useNavigate();
 
   const handleGuestSignUp = () => {
-    navigate("/client-home");
+    navigate("/login");
   }
 
     useEffect(() => {
@@ -74,7 +74,7 @@ const GuestSignUp = () => {
 
       {/* Right Panel */}
       <div className="w-1/2 flex flex-col justify-center items-center ">
-        <h2 className="text-2xl text-[#110000C2] font-semibold mb-6">Guest Registration</h2>
+        <h2 className="text-2xl text-[#110000C2] font-semibold mb-6">Client Registration</h2>
 
         <form className="w-full max-w-sm">
 
