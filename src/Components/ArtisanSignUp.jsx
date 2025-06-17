@@ -13,6 +13,7 @@ const ArtisanSignUp = () => {
       businessName: "", role:"ARTISAN", location: "", rating: 0
     });
 
+
     const [businessHours, setBusinessHours] = useState({
       monday: { open: "09:00", close: "17:00" },
       tuesday: { open: "09:00", close: "17:00" },
@@ -20,18 +21,20 @@ const ArtisanSignUp = () => {
       thursday: { open: "09:00", close: "17:00" },
       friday: { open: "09:00", close: "17:00" },
       saturday: { open: "09:00", close: "17:00" }
-    })
+    });
 
-    useEffect(() => {
-      setBusinessHours({
-        monday: { open: "09:00", close: "17:00" },
-        tuesday: { open: "09:00", close: "17:00" },
-        wednesday: { open: "09:00", close: "17:00" },
-        thursday: { open: "09:00", close: "17:00" },
-        friday: { open: "09:00", close: "17:00" },
-        saturday: { open: "09:00", close: "17:00" }
-      })
-    }, [businessHours]);
+    // useEffect(() => {
+    //   setBusinessHours({
+    //     monday: { open: "09:00", close: "17:00" },
+    //     tuesday: { open: "09:00", close: "17:00" },
+    //     wednesday: { open: "09:00", close: "17:00" },
+    //     thursday: { open: "09:00", close: "17:00" },
+    //     friday: { open: "09:00", close: "17:00" },
+    //     saturday: { open: "09:00", close: "17:00" }
+    //   })
+    // }, [businessHours]);
+
+    
 
     const navigate = useNavigate();
 
@@ -79,18 +82,23 @@ const ArtisanSignUp = () => {
           rating : formData.rating,
         }
 
-        delete formData.businessName;
-        delete formData.skillSet;
-        delete formData.rating;
-        delete formData.location;
+        const formCopy = { ...formData };
+        delete formCopy.businessName;
+        // delete formData.businessName;
+        delete formCopy.skillSet;
+        delete formCopy.rating;
+        delete formCopy.location;
 
-        const submitData = {...formData , artisanData};
+        const submitData = {...formCopy , artisanData};
         console.log("Submitting data:", submitData);
         const data = await runFetch(submitData);
         console.log("Data received:", data);
-        navigate("/login")
+
+
+        navigate("/login");
         // Handle successful registration, e.g., navigate to another page or show a success message
       } catch (error) {
+        
         console.error("Error during registration:", error);
         // Handle error, e.g., show an error message to the user
       }
@@ -207,7 +215,10 @@ const ArtisanSignUp = () => {
           </div>
           <p className="text-sm px-20 ">
             Already have an account?{" "}
-            <button className="text-[#000000] font-semibold">
+            <button 
+            type="button"
+            onClick={() => navigate('/login')}
+            className="text-[#000000] font-semibold">
                 Log in
             </button>
           </p>

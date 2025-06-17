@@ -1,5 +1,4 @@
 import React from 'react';
-import ArrowImage from '../assets/uploads/ArrowUp.png';
 import PhoneImage from '../assets/uploads/Phone_call.png';  
 import EmailImage from '../assets/uploads/Email.png';
 import Facebook from '../assets/icons/FB.png'; 

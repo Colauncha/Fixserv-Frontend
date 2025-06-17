@@ -12,11 +12,11 @@ const LogIn = () => {
   const navigate = useNavigate();
 
   const handleArtisan = () => {
-    navigate("/artisan-signup");
+    navigate("/artisan-home");
   };
 
   const handleGuest = () => {
-    navigate("/guest-signup");
+    navigate("/client-home");
   }
 
   const handleLogin = async () => {
@@ -43,7 +43,7 @@ const LogIn = () => {
       console.log('Login successful:', data);
       // Handle successful login, e.g., store token, redirect user
       localStorage.setItem('token', data?.data?.sessionToken); // Store token if needed
-      navigate("/client-home"); // Redirect to client home page on successful login
+      navigate("/client-home"); 
 
     } catch (error) {
       console.error('Error during login:', error);
