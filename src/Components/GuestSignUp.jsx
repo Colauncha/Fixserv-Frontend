@@ -94,7 +94,7 @@ const GuestSignUp = () => {
           </label>
           <input
             type="text"
-            input={formData.fullName || ""}
+            value={formData.fullName || ""}
             onChange={(e) =>
               setFormData({ ...formData, fullName: e.target.value })
             }
@@ -106,7 +106,7 @@ const GuestSignUp = () => {
           </label>
           <input
             type="email"
-            input={formData.email || ""}
+            value={formData.email || ""}
             onChange={(e) =>
               setFormData({ ...formData, email: e.target.value })
             }
@@ -119,7 +119,7 @@ const GuestSignUp = () => {
           <div className="relative mb-2">
             <input
               type={showPassword ? "text" : "password"}
-              input={formData.password || ""}
+             value={formData.password || ""}
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
@@ -139,8 +139,8 @@ const GuestSignUp = () => {
           </label>
           <div className="relative mb-2">
             <input
-              type={showConfirmPassword ? "text" : "Confirmpassword"}
-              input={formData.confirmPassword || ""}
+              type={showConfirmPassword ? "text" : "password"}
+              value={formData.confirmPassword || ""}
               onChange={(e) =>
                 setFormData({ ...formData, confirmPassword: e.target.value })
               }
