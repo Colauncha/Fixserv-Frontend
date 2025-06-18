@@ -37,7 +37,7 @@ const ArtisanSignUp = () => {
       friday: { open: "09:00", close: "17:00" },
       saturday: { open: "09:00", close: "17:00" },
     });
-  }, [businessHours]);
+  }, []);
 
   const navigate = useNavigate();
 
