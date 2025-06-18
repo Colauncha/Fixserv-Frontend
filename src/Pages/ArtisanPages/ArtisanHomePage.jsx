@@ -1,24 +1,22 @@
 import React from 'react'
-import ClientSelection from '../../Components/Guest/ClientSelection'
+import ArtisanHome from '../../Components/Artisan/ArtisanHome'
 import Footer from '../../Components/Footer'
 import ArrowUp from '../../assets/uploads/ArrowUp.png'
-import SelectionNavbar from '../../Components/Guest/SelectionNavbar'
+import ArtisanNavbar from '../../Components/Artisan/ArtisanNavbar'
 
-const TechSelection = () => {
+const ArtisanHomePage = () => {
 
-    // Scroll to top function
+  // Scroll to top function
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth',
     });
   };
-
   return (
     <div>
-     <SelectionNavbar />
-      <ClientSelection />
-
+      <ArtisanNavbar />
+      <ArtisanHome />
       {/* Arrow image - above Footer */}
               <div className="w-full flex justify-end -mb-10 px-8">
                 <img
@@ -34,4 +32,4 @@ const TechSelection = () => {
   )
 }
 
-export default TechSelection
+export default ArtisanHomePage

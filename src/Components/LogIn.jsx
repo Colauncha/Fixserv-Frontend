@@ -5,24 +5,49 @@ import { useNavigate } from 'react-router-dom';
 
 const LogIn = () => {
   const [showPassword, setShowPassword] = useState(false);
-  // const [role, setRole] = useState("Artisan");
-  // const handleArtisan = () => {
-    // setRole("Artisan");
-    // console.log("Artisan role selected");
-  // };
-  // const handleGuest = () => {
-    // setRole("Guest");
-    // console.log("Guest role selected");
-  // };
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+
 
   const navigate = useNavigate();
 
   const handleArtisan = () => {
-    navigate("/artisan-signup");
+    navigate("/artisan-home");
   };
 
   const handleGuest = () => {
-    navigate("/guest-signup");
+    navigate("/client-home");
+  }
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      console.error("Email and password are required");
+      return; // Handle empty fields, e.g., show an error message
+    }
+
+    try {
+      const response = await fetch(import.meta.env.VITE_API_URL + "/api/admin/login", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        console.error("Login failed:", response);
+        return; // Handle login failure, e.g., show an error message
+      }
+
+      const data = await response.json();
+      console.log('Login successful:', data);
+      // Handle successful login, e.g., store token, redirect user
+      localStorage.setItem('token', data?.data?.sessionToken); // Store token if needed
+      navigate("/client-home"); 
+
+    } catch (error) {
+      console.error('Error during login:', error);
+    }
   }
 
   return (
@@ -42,6 +67,8 @@ const LogIn = () => {
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">Email</label>
           <input
             type="email"
+            value={email || ""}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
 
@@ -49,6 +76,8 @@ const LogIn = () => {
           <div className="relative mb-2">
             <input
               type={showPassword ? "text" : "password"}
+              value={password || ""}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 border border-[#94B0F8] rounded pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
             
@@ -74,7 +103,6 @@ const LogIn = () => {
          <button
             type="button"
             onClick={handleArtisan}
-            // onClick={() => setRole("Artisan")}
             className='w-full h-10 py-2 rounded-full font-medium text-xl transition-all flex
             justify-end bg-[#A1B7F2] text-white '>
             Artisan
@@ -84,7 +112,6 @@ const LogIn = () => {
          <button
             type="button"
             onClick={handleGuest}
-            // onClick={() => setRole("Guest")}
             className='absolute text-xl h-10 w-24 rounded-full transition-all flex
             items-center justify-center bg-[#ECF1FC] text-[#A1B7F2]'>
            Client
@@ -94,6 +121,14 @@ const LogIn = () => {
         <div className="flex relative w-48 h-12 mb-28"> 
           <button
             type="button"
+            onClick={handleLogin}
+            className="flex items-center justify-center w-16 h-10 rounded px-4 py-2 shadow-md hover:bg-red-200 transition"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            onClick={handleLogin}
             className="flex items-center justify-center w-16 h-10 rounded px-4 py-2 shadow-md hover:bg-red-200 transition"
           >                     
             <img

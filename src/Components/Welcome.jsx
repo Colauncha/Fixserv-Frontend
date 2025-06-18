@@ -5,11 +5,11 @@ const Welcome = () => {
    const navigate = useNavigate();
 
   const handleArtisan = () => {
-    navigate("/login");
+    navigate("/artisan-signup");
   };
 
   const handleGuest = () => {
-    navigate("/login");
+    navigate("/client-signup");
   }
 
 
@@ -45,19 +45,28 @@ const Welcome = () => {
               type="button"
               onClick={handleArtisan}
               className="bg-[#A1B7F2]  text-white px-4 py-2 w-44 h-10 rounded-md">
-              Artisan
+              Artisan SignUp
             </button> 
 
             <button 
               type="button"
               onClick={handleGuest}
               className="bg-[#A1B7F2] text-white px-4 py-2 w-44 h-10 rounded-md">
-              Guest
+              Client SignUp
             </button>
             </div>
 
           <p className="text-sm text-[#110000C2] mt-6">
-            Welcome to Fixserv – Let's create your account
+            Welcome to Fixserv – 👋 New here?
+            Create an account(Sign Up) to join us
+          </p>
+          <p className="text-sm text-[#110000C2] mt-6">
+            🔑 Already a member?
+            Welcome back!
+             <a href='/logIn' className='text-[#A1B7F2] underline px-2' >
+            Log in 
+            </a> 
+            to continue
           </p>
         </div>
       </div>
