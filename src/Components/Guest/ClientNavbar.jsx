@@ -35,22 +35,20 @@ const ClientNavbar = () => {
 
     </div>
 
-    {/*  Categories dropdowns bar */}
-      <div className="flex items-center justify-center w-full gap-10 py-4 ">
-      <div className="flex-wrap gap-8 bg-[#ECF1FC]">
-        <select className="px-8 py-5 border border-gray-300 rounded-md text-sm">
+     {/* Categories dropdowns bar */}
+      <div className="flex items-center justify-center w-full gap-15 py-4 bg-[#ECF1FC] ">
+        <select className="px-15 py-5 border border-gray-300 rounded-md text-md">
           <option>Television</option>
         </select>
-        <select className="px-8 py-5  border border-gray-300 rounded-md text-sm">
+        <select className="px-15 py-5 border border-gray-300 rounded-md text-md">
           <option>Refrigerator</option>
         </select>
-        <select className="px-8 py-5  border border-gray-300 rounded-md text-sm">
+        <select className="px-15 py-5 border border-gray-300 rounded-md text-md">
           <option>Gadgets</option>
         </select>
-        <select className="px-8 py-5  border border-gray-300 rounded-md text-sm">
+        <select className="px-15 py-5 border border-gray-300 rounded-md text-md">
           <option>Game Gadgets</option>
         </select>
-      </div>
       </div>
 
     </section>

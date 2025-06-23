@@ -229,8 +229,7 @@ const ArtisanSignUp = () => {
               type="button"
               onClick={handleArtisanSignUp}
               className="w-75 h-10 py-2 rounded-md font-medium text-xl transition-all flex
-                justify-center bg-[#A1B7F2] text-white "
-            >
+                justify-center bg-[#A1B7F2] text-white cursor-pointer">
               Sign Up
             </button>
 
@@ -241,13 +240,18 @@ const ArtisanSignUp = () => {
               <img
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
                 alt="Google"
-                className="w-15 h-6 gap-6"
+                className="w-15 h-6 gap-6 cursor-pointer"
               />
             </button>
           </div>
-          <p className="text-sm px-20 ">
+          
+          <p className="text-sm mt-4 text-center">
             Already have an account?{" "}
-            <button className="text-[#000000] font-semibold">Log in</button>
+            <button
+              onClick={() => navigate("/login")}
+              className="text-blue-600 font-semibold cursor-pointer">
+              Log in
+            </button>
           </p>
         </form>
       </div>

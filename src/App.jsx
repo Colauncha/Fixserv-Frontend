@@ -11,7 +11,6 @@ import ArtisanHomePage from "./Pages/ArtisanPages/ArtisanHomePage";
 
 
 
-
 function App() {
   return (
     <div> 

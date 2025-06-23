@@ -20,13 +20,13 @@ const HomeNavbar = () => {
         </div>
         <ul className="flex items-center space-x-6 text-md gap-20 text-[#7A9DF7]">
             <li className="hover:text-blue-600 cursor-pointer"
-            onClick={() => navigate('/landing')}>Home</li>
+            onClick={() => navigate('/')}>Home</li>
           <li className="hover:text-blue-600 cursor-pointer">About Us</li>
           <li className="hover:text-blue-600 cursor-pointer">Contact Us</li>
         </ul>
         <button 
         onClick={handleLogIn}
-        className="bg-[#779BE7] text-white px-4 py-1 h-10 w-44 text-md gap-20 rounded-lg">Log in</button>
+        className="bg-[#779BE7] text-white px-4 py-1 h-10 w-44 text-md gap-20 rounded-lg cursor-pointer">Log in</button>
       </nav>
       </div>
     );

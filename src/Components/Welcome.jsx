@@ -44,14 +44,14 @@ const Welcome = () => {
             <button 
               type="button"
               onClick={handleArtisan}
-              className="bg-[#A1B7F2]  text-white px-4 py-2 w-44 h-10 rounded-md">
+              className="bg-[#A1B7F2]  text-white px-4 py-2 w-44 h-10 rounded-md cursor-pointer">
               Artisan SignUp
             </button> 
 
             <button 
               type="button"
               onClick={handleGuest}
-              className="bg-[#A1B7F2] text-white px-4 py-2 w-44 h-10 rounded-md">
+              className="bg-[#A1B7F2] text-white px-4 py-2 w-44 h-10 rounded-md cursor-pointer">
               Client SignUp
             </button>
             </div>
@@ -63,7 +63,7 @@ const Welcome = () => {
           <p className="text-sm text-[#110000C2] mt-6">
             🔑 Already a member?
             Welcome back!
-             <a href='/logIn' className='text-[#A1B7F2] underline px-2' >
+             <a href='/logIn' className='text-[#A1B7F2] underline px-2 cursor-pointer' >
             Log in 
             </a> 
             to continue

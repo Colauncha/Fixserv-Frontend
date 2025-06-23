@@ -77,6 +77,9 @@ const ClientSelection = ({ artisan }) => {
               </div>
               <p className="mt-2 text-[#110000C2]">{"★".repeat(review.rating)}</p>
               <p className="text-[#110000C2] mt-1">{review.comment}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Helpful? {review.helpful ? "Yes" : "No"} •{" "}
+              </p>
             </div>
           ))}
         </div>

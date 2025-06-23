@@ -30,7 +30,7 @@ const ArtisanNavbar = () => {
         />
 
        <button>
-        <img src={SearchLogo} alt='search' className="bg-[#7A9DF7] p-3 px-10 rounded-full text-white" />
+        <img src={SearchLogo} alt='search' className="bg-[#7A9DF7] p-3 px-10 rounded-full text-white cursor-pointer" />
          </button>
         {/* <button className="bg-[#7A9DF7] p-3 px-10 rounded-full text-white">
           🔍
