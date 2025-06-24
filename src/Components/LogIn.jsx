@@ -43,8 +43,11 @@ const LogIn = () => {
       console.log('Login successful:', data);
       // Handle successful login, e.g., store token, redirect user
       localStorage.setItem('token', data?.data?.sessionToken); // Store token if needed
-      navigate("/client-home"); 
-
+      if(data.data.response.role === 'CLIENT') {
+        navigate("/client-home"); 
+      }else if (data.data.response.role === 'ARTISAN') {
+        navigate("/artisan-home")
+      }
     } catch (error) {
       console.error('Error during login:', error);
     }
