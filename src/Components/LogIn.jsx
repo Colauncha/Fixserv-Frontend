@@ -43,8 +43,11 @@ const LogIn = () => {
       console.log('Login successful:', data);
       // Handle successful login, e.g., store token, redirect user
       localStorage.setItem('token', data?.data?.sessionToken); // Store token if needed
-      navigate("/client-home"); 
-
+      if(data.data.response.role === 'CLIENT') {
+        navigate("/client-home"); 
+      }else if (data.data.response.role === 'ARTISAN') {
+        navigate("/artisan-home")
+      }
     } catch (error) {
       console.error('Error during login:', error);
     }
@@ -83,7 +86,7 @@ const LogIn = () => {
             
             <button
               type="button"
-              className="absolute inset-y-0 right-3 flex items-center text-[#113ca8]"
+              className="absolute inset-y-0 right-3 flex items-center text-[#113ca8] cursor-pointer"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -98,13 +101,13 @@ const LogIn = () => {
           </div>
 
           {/* Role Selector */}
-      <div className="flex relative w-48 h-12 mb-28">
+      <div className="flex relative w-48 h-12 mb-6">
             {/* Artisan Button (Main) */}
          <button
             type="button"
             onClick={handleArtisan}
             className='w-full h-10 py-2 rounded-full font-medium text-xl transition-all flex
-            justify-end bg-[#A1B7F2] text-white '>
+            items-center justify-center pl-24 bg-[#A1B7F2] text-white cursor-pointer'>
             Artisan
          </button>
 
@@ -113,28 +116,29 @@ const LogIn = () => {
             type="button"
             onClick={handleGuest}
             className='absolute text-xl h-10 w-24 rounded-full transition-all flex
-            items-center justify-center bg-[#ECF1FC] text-[#A1B7F2]'>
+            items-center justify-center bg-[#ECF1FC] text-[#A1B7F2] cursor-pointer'>
            Client
          </button>
         </div>
                    
-        <div className="flex relative w-48 h-12 mb-28"> 
+        <div className="flex relative w-48 h-12 mb-6"> 
           <button
             type="button"
             onClick={handleLogin}
-            className="flex items-center justify-center w-16 h-10 rounded px-4 py-2 shadow-md hover:bg-red-200 transition"
-          >
+            className="flex items-center justify-center w-32 h-10 rounded-2xl px-4 py-2 bg-[#ECF1FC]
+             shadow-md hover:bg-[#A1B7F2] transition cursor-pointer">
             Login
           </button>
+
           <button
             type="button"
-            onClick={handleLogin}
-            className="flex items-center justify-center w-16 h-10 rounded px-4 py-2 shadow-md hover:bg-red-200 transition"
-          >                     
+            onClick={handleLogin}                       
+            className="flex items-center justify-center w-16 h-10 rounded-md px-4 py-2 shadow-xl
+             hover:bg-gray-300 transition cursor-pointer">                     
             <img
               src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
               alt="Google"
-              className="w-6 h-6"
+              className="w-6 h-6 cursor-pointer"
             />
           </button>
           </div>

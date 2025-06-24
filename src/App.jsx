@@ -8,7 +8,7 @@ import LogInPage from "./Pages/LogInPage";
 import ClientHomePage from "./Pages/Clients/ClientHomePage";
 import TechSelection from "./Pages/Clients/TechSelection";
 import ArtisanHomePage from "./Pages/ArtisanPages/ArtisanHomePage";
-
+import ArtisanProfile from "./Components/Artisan/ArtisanProfile";
 
 
 
@@ -27,6 +27,7 @@ function App() {
         <Route path="/client-navbar" element={<ClientHomePage />} />
         <Route path="/client-selection" element={<TechSelection />} />
         <Route path="/artisan-home" element={<ArtisanHomePage />} />
+        <Route path="artisan-profile" element={<ArtisanProfile/>} />
         
       </Routes>
       

@@ -1,5 +1,8 @@
 import React from "react";
-import Footer from "../Footer";  
+import Footer from "../Footer"; 
+import AllRepairs from "./AllRepairs"; 
+
+
 
 const ArtisanCard = ({ artisan }) => {
   return (
@@ -71,7 +74,7 @@ const ClientHome = ({ artisans }) => {
   if (!artisans || artisans.length === 0) {
     return (   
       <p className="text-center text-gray-500 mt-10">
-        No artisans available yet. Please sign up to see artisans.
+        <AllRepairs />
       </p>
     );
   }
@@ -86,4 +89,6 @@ const ClientHome = ({ artisans }) => {
 };
 
 export default ClientHome;
+
+
 

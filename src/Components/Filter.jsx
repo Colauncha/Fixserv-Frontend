@@ -14,7 +14,7 @@ const Filter = () => {
             placeholder="Service Names, Service Categories or Location"
             className="flex-1 outline-none h-4 pl-20 text-[#FFFFFF] bg-[#94B0F8] items-center justify-center"
           />         
-          <button className="bg-[#FFFFFF] w-36 h-12 text-[#000000] font-semibold rounded-full ">
+          <button className="bg-[#FFFFFF] w-36 h-12 text-[#000000] font-semibold rounded-full cursor-pointer ">
             Enter
           </button>
         </div>
