@@ -11,13 +11,13 @@ const LogIn = () => {
 
   const navigate = useNavigate();
 
-  const handleArtisan = () => {
-    navigate("/artisan-home");
-  };
+  // const handleArtisan = () => {
+  //   navigate("/artisan-home");
+  // };
 
-  const handleGuest = () => {
-    navigate("/client-home");
-  }
+  // const handleGuest = () => {
+  //   navigate("/client-home");
+  // }
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -101,25 +101,25 @@ const LogIn = () => {
           </div>
 
           {/* Role Selector */}
-      <div className="flex relative w-48 h-12 mb-6">
+      {/* <div className="flex relative w-48 h-12 mb-6"> */}
             {/* Artisan Button (Main) */}
-         <button
+         {/* <button
             type="button"
             onClick={handleArtisan}
             className='w-full h-10 py-2 rounded-full font-medium text-xl transition-all flex
             items-center justify-center pl-24 bg-[#A1B7F2] text-white cursor-pointer'>
             Artisan
-         </button>
+         </button> */}
 
           {/* Guest Button */}
-         <button
+         {/* <button
             type="button"
             onClick={handleGuest}
             className='absolute text-xl h-10 w-24 rounded-full transition-all flex
             items-center justify-center bg-[#ECF1FC] text-[#A1B7F2] cursor-pointer'>
            Client
          </button>
-        </div>
+        </div> */}
                    
         <div className="flex relative w-48 h-12 mb-6"> 
           <button

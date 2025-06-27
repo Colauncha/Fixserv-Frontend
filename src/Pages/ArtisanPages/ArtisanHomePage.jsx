@@ -4,6 +4,7 @@ import Footer from '../../Components/Footer'
 import ArrowUp from '../../assets/uploads/ArrowUp.png'
 import ArtisanNavbar from '../../Components/Artisan/ArtisanNavbar'
 
+
 const ArtisanHomePage = () => {
 
   // Scroll to top function

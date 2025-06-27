@@ -4,21 +4,21 @@ import SearchLogo from '../../assets/icons/search.png';
 
 const ArtisanNavbar = () => {
   return (
-    <div className="flex items-center justify-between px-6 py-4 shadow-md bg-white w-full">
+    <div className="flex items-center justify-between px-6 py-2 shadow-md bg-white w-full">
       
       <div className="flex items-center space-x-4">
         {/* Hamburger/more Icon */}
-        <div className="flex flex-col justify-between w-18 h-10 cursor-pointer">
-          <span className="h-2 bg-[#7A9DF7] rounded"></span>
-          <span className="h-2 bg-[#7A9DF7] rounded"></span>
-          <span className="h-2 bg-[#7A9DF7] rounded"></span>
+        <div className="flex flex-col justify-between w-12 h-8 cursor-pointer">
+          <span className="h-1 bg-[#7A9DF7] rounded"></span>
+          <span className="h-1 bg-[#7A9DF7] rounded"></span>
+          <span className="h-1 bg-[#7A9DF7] rounded"></span>
         </div>
 
         {/* Welcome Text */}
-        <h1 className="text-4xl font-light text-[#000000] pl-15">
+        <h3 className="text-2xl font-light text-[#000000] pl-15">
           Welcome <br />
-          <span className="text-4xl font-light">to Fixserv</span>
-        </h1>
+          <span className="text-2xl font-light">to Fixserv</span>
+        </h3>
       </div>
 
       {/* Center: Search Bar */}
@@ -26,7 +26,7 @@ const ArtisanNavbar = () => {
         <input
           type="text"
           placeholder="Available works"
-          className="px-4 py-3 w-full outline-none text-[#110000C2]"
+          className="px-4 py-1 w-full outline-none text-[#110000C2]"
         />
 
        <button>
