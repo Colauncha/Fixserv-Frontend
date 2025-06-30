@@ -4,37 +4,34 @@ import { useNavigate } from "react-router-dom";
 import BackgroundImage from "../assets/uploads/Welcome_bg.png";
 import ArtisanImage from "../assets/uploads/Artisan_Image.png";
 
-
-import { useUser } from "../context/UserContent"
+import { useUser } from "../context/UserContent";
 
 const ArtisanSignUp = () => {
+  const { setFirstName, setTime, setLocation } = useUser();
 
-    const { setFirstName, setTime, setLocation } = useUser();
-
-     const handleFirstNameChange = (e) => {
+  const handleFirstNameChange = (e) => {
     setFirstName(e.target.value);
   };
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-  email: "",
-  firstName: "",
-  lastName: "", 
-  password: "",
-  confirmPassword: "",
-  skillSet: [],
-  time: new Date().toLocaleString(), 
-  businessName: "",
-  role: "ARTISAN",
-  location: "",
-  rating: 0,
-});
+    email: "",
+    firstName: "",
+    lastName: "",
+    password: "",
+    confirmPassword: "",
+    skillSet: [],
+    time: new Date().toLocaleString(),
+    businessName: "",
+    role: "ARTISAN",
+    location: "",
+    rating: 0,
+  });
 
-useEffect(() => {
-  setTime(formData.time);
-}, []);
-
+  useEffect(() => {
+    setTime(formData.time);
+  }, []);
 
   const [businessHours, setBusinessHours] = useState({
     monday: { open: "09:00", close: "17:00" },
@@ -67,10 +64,7 @@ useEffect(() => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(
-            submitData
-            // Add your form data here
-          ),
+          body: JSON.stringify(submitData),
         }
       );
 
@@ -84,7 +78,7 @@ useEffect(() => {
       return data;
     } catch (error) {
       console.error("Error:", error);
-      throw error; // Re-throw the error for further handling if needed
+      throw error;
     }
   };
   const handleArtisanSignUp = async () => {
@@ -92,7 +86,7 @@ useEffect(() => {
     try {
       if (formData.password !== formData.confirmPassword) {
         console.error("Passwords do not match");
-        return; // Handle password mismatch, e.g., show an error message
+        return;
       }
 
       const artisanData = {
@@ -113,10 +107,8 @@ useEffect(() => {
       const data = await runFetch(submitData);
       console.log("Data received:", data);
       navigate("/login");
-      // Handle successful registration, e.g., navigate to another page or show a success message
     } catch (error) {
       console.error("Error during registration:", error);
-      // Handle error, e.g., show an error message to the user
     }
   };
 
@@ -139,20 +131,19 @@ useEffect(() => {
         </h2>
 
         <form className="w-full max-w-sm">
-          
-         <label className="block mb-2 text-sm text-[#110000C2] font-medium">
-  First Name
-</label>
-<input
-  type="text"
-  value={formData.firstName}
-  onChange={(e) => {
-    setFormData({ ...formData, firstName: e.target.value });
-    setFirstName(e.target.value);
-  }}
-  placeholder="Enter first name"
-  className="w-full flex p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-/>
+          <label className="block mb-2 text-sm text-[#110000C2] font-medium">
+            First Name
+          </label>
+          <input
+            type="text"
+            value={formData.firstName}
+            onChange={(e) => {
+              setFormData({ ...formData, firstName: e.target.value });
+              setFirstName(e.target.value);
+            }}
+            placeholder="Enter first name"
+            className="w-full flex p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+          />
 
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
             Last Name
@@ -165,7 +156,6 @@ useEffect(() => {
             }
             className="w-full flex p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
-         
 
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
             Email
@@ -246,39 +236,38 @@ useEffect(() => {
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
           <label className="block mb-2 text-sm font-medium">Time</label>
-<input
-  type="text"
-  placeholder="e.g. Two weeks ago"
-  value={formData.time}
-  onChange={(e) => {
-    setFormData({ ...formData, time: e.target.value });
-    setTime(e.target.value); 
-  }}
-  className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
-/>
+          <input
+            type="text"
+            placeholder="e.g. Two weeks ago"
+            value={formData.time}
+            onChange={(e) => {
+              setFormData({ ...formData, time: e.target.value });
+              setTime(e.target.value);
+            }}
+            className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
+          />
 
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
-  Location
-</label>
-<input
-   type="text"
-  placeholder="e.g. 2 Ifat Solarity Close, Lagos"
-  value={formData.location}
-  onChange={(e) => {
-    setFormData({ ...formData, location: e.target.value });
-    setLocation(e.target.value); 
-  }}
-  className="w-full p-2 mb-15 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-/>
-
-
+            Location
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. 2 Ifat Solarity Close, Lagos"
+            value={formData.location}
+            onChange={(e) => {
+              setFormData({ ...formData, location: e.target.value });
+              setLocation(e.target.value);
+            }}
+            className="w-full p-2 mb-15 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+          />
 
           <div className="flex relative h-12 mb-2">
             <button
               type="button"
               onClick={handleArtisanSignUp}
               className="w-75 h-10 py-2 rounded-md font-medium text-xl transition-all flex
-                justify-center bg-[#A1B7F2] text-white cursor-pointer">
+                justify-center bg-[#A1B7F2] text-white cursor-pointer"
+            >
               Sign Up
             </button>
 
@@ -293,12 +282,13 @@ useEffect(() => {
               />
             </button>
           </div>
-          
+
           <p className="text-sm mt-4 text-center">
             Already have an account?{" "}
             <button
               onClick={() => navigate("/login")}
-              className="text-blue-600 font-semibold cursor-pointer">
+              className="text-blue-600 font-semibold cursor-pointer"
+            >
               Log in
             </button>
           </p>
