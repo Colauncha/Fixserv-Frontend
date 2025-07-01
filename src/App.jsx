@@ -27,9 +27,7 @@ function App() {
         <Route path="/client-navbar" element={<ClientHomePage />} />
         <Route path="/client-selection" element={<TechSelection />} />
         <Route path="/artisan-home" element={<ArtisanHomePage />} />
-         {/* <Route path="/artisan-home" element={<ClientHomePage />} /> */}
         <Route path="artisan-profile" element={<ArtisanProfile/>} />
-
         
       </Routes>
       
@@ -39,4 +37,3 @@ function App() {
 }
 
 export default App;
-
