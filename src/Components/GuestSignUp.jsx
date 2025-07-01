@@ -348,7 +348,8 @@ const GuestSignUp = () => {
 
   const [formData, setFormData] = useState({
     email: "",
-    fullName: "",
+    firstName: "",
+    lastName: "",
     password: "",
     confirmPassword: "",
     role: "CLIENT",
@@ -432,17 +433,30 @@ const GuestSignUp = () => {
         </h2>
 
         <form className="w-full max-w-md">
-          {/* Full Name */}
-          <label className="block mb-2 text-sm font-medium text-[#110000C2]">
-            Full Name
+      
+          <label className="block mb-2 text-sm text-[#110000C2] font-medium">
+            First Name
           </label>
           <input
             type="text"
-            value={formData.fullName}
+            value={formData.firstName}
+            onChange={(e) => {
+              setFormData({ ...formData, firstName: e.target.value });
+              // setFirstName(e.target.value);
+            }}
+            className="w-full flex p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+          />
+
+          <label className="block mb-2 text-sm text-[#110000C2] font-medium">
+            Last Name
+          </label>
+          <input
+            type="text"
+            value={formData.lastName || ""}
             onChange={(e) =>
-              setFormData({ ...formData, fullName: e.target.value })
+              setFormData({ ...formData, lastName: e.target.value })
             }
-            className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
+            className="w-full flex p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
 
           {/* Email */}
@@ -506,17 +520,19 @@ const GuestSignUp = () => {
 
           {/* Service Preferences */}
           <label className="block mb-2 text-sm font-medium text-[#110000C2]">
-            Service Preferences (comma separated)
+            Service Preferences 
           </label>
           <input
             type="text"
+            placeholder="Enter your services separated by commas"
+            // placeholder="comma separated"
             value={formData.servicePreferences.join(", ")}
             onChange={(e) =>
               setFormData({
                 ...formData,
                 servicePreferences: e.target.value
                   .split(",")
-                  .map((s) => s.trim()),
+                  .map((pref) => pref.trim()),
               })
             }
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
@@ -559,7 +575,7 @@ const GuestSignUp = () => {
 
             <button
               type="button"
-              className="flex items-center gap-2 px-4 py-2 rounded-md shadow-xl"
+              className="flex items-center gap-2 px-4 py-2 rounded-md shadow-xl bg-[gray]"
             >
               <img
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
