@@ -4,20 +4,34 @@ import { useNavigate } from "react-router-dom";
 import BackgroundImage from "../assets/uploads/Welcome_bg.png";
 import ArtisanImage from "../assets/uploads/Artisan_Image.png";
 
+import { useUser } from "../context/UserContent";
+
 const ArtisanSignUp = () => {
+  const { setFirstName, setTime, setLocation } = useUser();
+
+  const handleFirstNameChange = (e) => {
+    setFirstName(e.target.value);
+  };
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
-    fullName: "",
+    firstName: "",
+    lastName: "",
     password: "",
     confirmPassword: "",
     skillSet: [],
+    time: new Date().toLocaleString(),
     businessName: "",
     role: "ARTISAN",
     location: "",
     rating: 0,
   });
+
+  useEffect(() => {
+    setTime(formData.time);
+  }, []);
 
   const [businessHours, setBusinessHours] = useState({
     monday: { open: "09:00", close: "17:00" },
@@ -50,10 +64,7 @@ const ArtisanSignUp = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(
-            submitData
-            // Add your form data here
-          ),
+          body: JSON.stringify(submitData),
         }
       );
 
@@ -67,7 +78,7 @@ const ArtisanSignUp = () => {
       return data;
     } catch (error) {
       console.error("Error:", error);
-      throw error; // Re-throw the error for further handling if needed
+      throw error;
     }
   };
   const handleArtisanSignUp = async () => {
@@ -75,7 +86,7 @@ const ArtisanSignUp = () => {
     try {
       if (formData.password !== formData.confirmPassword) {
         console.error("Passwords do not match");
-        return; // Handle password mismatch, e.g., show an error message
+        return;
       }
 
       const artisanData = {
@@ -96,10 +107,8 @@ const ArtisanSignUp = () => {
       const data = await runFetch(submitData);
       console.log("Data received:", data);
       navigate("/login");
-      // Handle successful registration, e.g., navigate to another page or show a success message
     } catch (error) {
       console.error("Error during registration:", error);
-      // Handle error, e.g., show an error message to the user
     }
   };
 
@@ -123,13 +132,27 @@ const ArtisanSignUp = () => {
 
         <form className="w-full max-w-sm">
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
-            Full Name
+            First Name
           </label>
           <input
             type="text"
-            value={formData.fullName || ""}
+            value={formData.firstName}
+            onChange={(e) => {
+              setFormData({ ...formData, firstName: e.target.value });
+              setFirstName(e.target.value);
+            }}
+            placeholder="Enter first name"
+            className="w-full flex p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+          />
+
+          <label className="block mb-2 text-sm text-[#110000C2] font-medium">
+            Last Name
+          </label>
+          <input
+            type="text"
+            value={formData.lastName || ""}
             onChange={(e) =>
-              setFormData({ ...formData, fullName: e.target.value })
+              setFormData({ ...formData, lastName: e.target.value })
             }
             className="w-full flex p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
@@ -212,15 +235,29 @@ const ArtisanSignUp = () => {
             }
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
+          <label className="block mb-2 text-sm font-medium">Time</label>
+          <input
+            type="text"
+            placeholder="e.g. Two weeks ago"
+            value={formData.time}
+            onChange={(e) => {
+              setFormData({ ...formData, time: e.target.value });
+              setTime(e.target.value);
+            }}
+            className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
+          />
+
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
             Location
           </label>
           <input
             type="text"
-            value={formData.location || ""}
-            onChange={(e) =>
-              setFormData({ ...formData, location: e.target.value })
-            }
+            placeholder="e.g. 2 Ifat Solarity Close, Lagos"
+            value={formData.location}
+            onChange={(e) => {
+              setFormData({ ...formData, location: e.target.value });
+              setLocation(e.target.value);
+            }}
             className="w-full p-2 mb-15 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
 
@@ -229,7 +266,8 @@ const ArtisanSignUp = () => {
               type="button"
               onClick={handleArtisanSignUp}
               className="w-75 h-10 py-2 rounded-md font-medium text-xl transition-all flex
-                justify-center bg-[#A1B7F2] text-white cursor-pointer">
+                justify-center bg-[#A1B7F2] text-white cursor-pointer"
+            >
               Sign Up
             </button>
 
@@ -244,12 +282,13 @@ const ArtisanSignUp = () => {
               />
             </button>
           </div>
-          
+
           <p className="text-sm mt-4 text-center">
             Already have an account?{" "}
             <button
               onClick={() => navigate("/login")}
-              className="text-blue-600 font-semibold cursor-pointer">
+              className="text-blue-600 font-semibold cursor-pointer"
+            >
               Log in
             </button>
           </p>
