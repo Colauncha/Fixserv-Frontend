@@ -9,6 +9,8 @@ import ClientHomePage from "./Pages/Clients/ClientHomePage";
 import TechSelection from "./Pages/Clients/TechSelection";
 import ArtisanHomePage from "./Pages/ArtisanPages/ArtisanHomePage";
 import ArtisanProfile from "./Components/Artisan/ArtisanProfile";
+import ClientProfilePage from "./Components/Guest/ClientProfilePage";
+
 
 
 
@@ -28,6 +30,7 @@ function App() {
         <Route path="/client-selection" element={<TechSelection />} />
         <Route path="/artisan-home" element={<ArtisanHomePage />} />
         <Route path="artisan-profile" element={<ArtisanProfile/>} />
+        <Route path="/client-profile" element={<ClientProfilePage />} />
         
       </Routes>
       
