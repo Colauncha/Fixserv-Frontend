@@ -65,7 +65,6 @@
 //       <div>
 //         <Footer />
 //       </div>
-
 //     </div>    
 //   );
 // };
@@ -122,7 +121,6 @@ const artisans = [
 const ClientHome = () => {
 
   const navigate = useNavigate();
-
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
      <div>
@@ -138,9 +136,7 @@ const ClientHome = () => {
             <img
               src={artisan.image}
               alt={artisan.name}
-              className="w-20 h-20 rounded-full object-cover mb-3"
-
-                    
+              className="w-20 h-20 rounded-full object-cover mb-3"                    
             />
             <h3 className="text-lg font-medium mb-4">{artisan.name}</h3>
             <button 
@@ -207,7 +203,6 @@ const ClientHome = () => {
      </div>
      <div>
        <h2 className="text-xl font-semibold mb-6">Booked Artisans</h2>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {artisans.map((artisan) => (
           <div>
@@ -247,4 +242,3 @@ const ClientHome = () => {
 };
 
 export default ClientHome;
-

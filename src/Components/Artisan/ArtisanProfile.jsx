@@ -1,146 +1,84 @@
-// import React from 'react';
+import React from "react";
 
-// const ArtisanProfile = ({ artisan }) => {
-//   return (
-//     <div className="flex flex-col w-full lg:flex-row justify-center items-start max-w-6xl mx-auto bg-gray-50">
-      
-//       {/* Profile Section */}
-//       <div className="w-full lg:w-1/3 bg-white rounded-xl shadow-md p-6">
-//         <img
-//           src={artisan?.photo}
-//           alt={artisan?.name}
-//           className="w-32 h-32 rounded-full object-cover mx-auto"
-//         />
-//         <h2 className="text-2xl font-semibold text-center mt-4">{artisan?.name}</h2>
-//         <p className="text-center text-[#110000C2]">{artisan?.location}</p>
-//         <p className="text-center mt-2 text-[#110000C2]">⭐ {artisan?.rating} ({artisan?.reviews} reviews)</p>
-
-//         {/* Availability toggle */}
-//         <div className="mt-4 flex justify-center">
-//           <span className={`px-4 py-1 rounded-full text-white ${artisan?.available ? 'bg-[#ECF1FC]' : 'bg-[#A1B7F2]'}`}>
-//             {artisan?.available ? 'Available' : 'Unavailable'}
-//           </span>
-//         </div>
-
-//       {/* Details Section */}
-//       <div className="w-full lg:w-2/3 bg-white rounded-xl shadow-md p-6">
-//         <h3 className="text-xl font-semibold mb-2">About Me</h3>
-//         <p className="text-gray-600 mb-4">{artisan?.about}</p>
-
-//         {/* Skills */}
-//         <div className="mt-6">
-//           <h4 className="font-bold text-gray-700">Skills</h4>
-//           <p className="text-gray-600">{artisan?.skills.join(', ')}</p>
-//         </div>
-//         <button className="mt-6 w-full bg-[#7A9DF7] text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
-//           <span className="text-#110000C2 hover:underline mt-4 block text-center">Edit Profile</span>
-//         </button>
-//       </div>
-
-//         <h3 className="text-xl font-semibold mb-2 text-[#110000C2]">Contact Info</h3>
-//         <div className='text-[#000000]'> 
-//         <p><strong>Phone:</strong> {artisan?.phone}</p>
-//         <p><strong>Email:</strong> {artisan?.email}</p>
-//         <p><strong>Address:</strong> {artisan?.address}</p>
-//         <p><strong>Available Work Locations:</strong> {artisan?.availableLocations}</p>
-//         </div>
-
-//             <h3 className="text-xl font-semibold mt-6 mb-2 text-[#000000]">Works</h3>
-//         <div className="space-y-4">
-//           {artisan?.works.map((work, idx) => (
-//             <div key={idx} className="border border-[#7A9DF75C] rounded-lg p-4">
-//               <p><strong>Client:</strong> {work?.client}</p>
-//               <p><strong>Repair Type:</strong> {work?.repairType}</p>
-//               <p><strong>Location:</strong> {work?.location}</p>
-//               <p><strong>Duration:</strong> {work?.duration}</p>
-//               <p><strong>Price:</strong> {work?.price}</p>
-//               <p className="text-sm italic text-[#11000080]">{work?.status}</p>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default ArtisanProfile;
-
-
-import React from 'react';
-
-const ArtisanProfile = ({ artisan }) => {
+const ArtisanProfile = () => {
   return (
-    <div className="flex flex-col lg:flex-row w-full min-h-screen bg-gray-100 p-6 lg:p-10 gap-8 justify-center">
-      
-      {/* Profile Section (Left Panel) */}
-      <div className="w-full lg:w-[30%] bg-white shadow-md rounded-xl p-6 space-y-4">
-        <img
-          src={artisan?.photo}
-          alt={artisan?.name}
-          className="w-32 h-32 rounded-full object-cover mx-auto"
-        />
-        <h2 className="text-2xl font-semibold text-center">{artisan?.name}</h2>
-        <p className="text-center text-[#110000C2]">{artisan?.location}</p>
-        <p className="text-center mt-2 text-[#110000C2]">
-          ⭐ {artisan?.rating} ({artisan?.reviews} reviews)
-        </p>
+    <div className="min-h-screen flex flex-col items-center p-6">
+      {/* Top Profile Card */}
+      <div className="w-full max-w-4xl flex flex-col md:flex-row items-start p-6 relative">
+        {/* Left Profile Section */}
+        <div className="flex-shrink-0">
+          <img
+            src="https://randomuser.me/api/portraits/men/32.jpg"
+            // src="ProfileImage"
+            alt="Artisan"
+            className="w-32 h-32 rounded-full object-cover"
+          />
+        </div>
 
-        {/* Availability Toggle */}
-        <div className="flex justify-center mt-4">
-          <span className={`px-4 py-1 rounded-full text-white ${artisan?.available ? 'bg-blue-500' : 'bg-gray-400'}`}>
-            {artisan?.available ? 'Available' : 'Unavailable'}
-          </span>
+        {/* Middle Info Section */}
+        <div className="flex-1 md:ml-6 mt-4 md:mt-0">
+          <h2 className="text-2xl font-semibold">Abbas Akande</h2>
+          <p className="text-gray-600">★ 4.5 (15)</p>
+          <p className="text-sm text-gray-500 mb-4">📍 Ikeja, Lagos State</p>
+
+          <h3 className="font-semibold mb-1">About me</h3>
+          <p className="text-sm text-gray-700 mb-4">
+            Convallis, dolor non, convallis. non quam urna, facilisis dui nisl. adipiscing
+            Nunc elit ullamcorper at, odio Praesent lobortis, gravida nulla, turpis nec
+            non placerat viverra vehicula, hendrerit amet, in in malesuada quis.
+          </p>
+
+          <h3 className="font-semibold mb-1">Skills</h3>
+          <p className="text-sm text-gray-700">
+            Refrigerator repair, Television repair and Microwave
+          </p>
+
+          <button className="mt-4 px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
+            Edit Profile
+          </button>
+        </div>
+
+        {/* Availability Card */}
+        <div className="absolute top-6 right-6 bg-white shadow-md rounded-xl px-4 py-2 flex items-center space-x-2">
+          <img
+            src="https://randomuser.me/api/portraits/men/32.jpg"
+            alt="Artisan"
+            className="w-10 h-10 rounded-full object-cover"
+          />
+          <div>
+            <p className="text-sm font-medium">Abbas Akande</p>
+            <div className="flex items-center space-x-1">
+              <span className="text-green-500 text-xs">●</span>
+              <span className="text-xs text-gray-600">Available</span>
+            </div>
+            <div className="flex mt-1 space-x-2 text-xs">
+              <button className="bg-gray-200 rounded-full px-2 py-1">Unavailable</button>
+              <button className="bg-blue-500 text-white rounded-full px-2 py-1">Available</button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Details Section (Right Panel) */}
-      <div className="w-full lg:w-[65%] bg-white shadow-md rounded-xl p-6 space-y-6">
-        
-        {/* About Me */}
-        <div>
-          <h3 className="text-xl font-semibold mb-1 text-[#110000C2]">About Me</h3>
-          <p className="text-gray-700">{artisan?.about}</p>
-        </div>
+      {/* Contact Info */}
+      <div className=" mt-6 w-full max-w-4xl p-6">
+        <h3 className="font-semibold mb-2">Contact info</h3>
+        <p className="text-sm text-gray-700">
+          <strong>Phone:</strong> +234 904454667 <br />
+          <strong>Email:</strong> abbasakande233@gmail.com <br />
+          <strong>Address:</strong> Mr Daniel Izuchukwu Nwoye, 8|, My Street, Ilasan Lekki, Lagos
+          <br />
+          <strong>Available Work Locations:</strong> Anywhere in Lagos
+        </p>
+      </div>
 
-        {/* Skills */}
-        <div>
-          <h3 className="text-xl font-semibold mb-1 text-[#110000C2]">Skills</h3>
-          <p className="text-gray-700">{artisan?.skills.join(', ')}</p>
-        </div>
-
-        {/* Contact Info */}
-        <div>
-          <h3 className="text-xl font-semibold mb-1 text-[#110000C2]">Contact Info</h3>
-          <div className="text-gray-800 space-y-1">
-            <p><strong>Phone:</strong> {artisan?.phone}</p>
-            <p><strong>Email:</strong> {artisan?.email}</p>
-            <p><strong>Address:</strong> {artisan?.address}</p>
-            <p><strong>Available Work Locations:</strong> {artisan?.availableLocations}</p>
+      {/* Works Section */}
+      <div className=" mt-6 rounded shadow-sm w-full max-w-4xl p-6">
+        <h3 className="font-semibold mb-2">Works</h3>
+        <div className="flex items-center space-x-3">
+          <div className="bg-gray-200 rounded-full w-10 h-10 flex items-center justify-center text-gray-700 font-bold">
+            K
           </div>
-        </div>
-
-        {/* Works */}
-        <div>
-          <h3 className="text-xl font-semibold mb-1 text-[#110000C2]">Works</h3>
-          <div className="space-y-4">
-            {artisan?.works.map((work, idx) => (
-              <div key={idx} className="border border-[#7A9DF75C] rounded-lg p-4 bg-gray-50">
-                <p><strong>Client:</strong> {work.client}</p>
-                <p><strong>Repair Type:</strong> {work.repairType}</p>
-                <p><strong>Location:</strong> {work.location}</p>
-                <p><strong>Duration:</strong> {work.duration}</p>
-                <p><strong>Price:</strong> {work.price}</p>
-                <p className="text-sm italic text-[#11000080]">{work.status}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Edit Profile Button */}
-        <div className="pt-2">
-          <button className=" bg-[#7A9DF7] text-black py-2 rounded-lg hover:bg-blue-600 transition-colors">
-            Edit Profile
-          </button>
+          <p className="text-sm text-gray-700">Kunle Juwon</p>
         </div>
       </div>
     </div>
@@ -148,4 +86,3 @@ const ArtisanProfile = ({ artisan }) => {
 };
 
 export default ArtisanProfile;
-
