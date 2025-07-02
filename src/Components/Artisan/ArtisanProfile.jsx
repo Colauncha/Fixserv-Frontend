@@ -20,7 +20,9 @@ const ArtisanProfile = () => {
           <h2 className="text-2xl font-semibold">Abbas Akande</h2>
           <p className="text-gray-600">★ 4.5 (15)</p>
           <p className="text-sm text-gray-500 mb-4">📍 Ikeja, Lagos State</p>
+          {/* </div> */}
 
+          {/* <div className="" > */}
           <h3 className="font-semibold mb-1">About me</h3>
           <p className="text-sm text-gray-700 mb-4">
             Convallis, dolor non, convallis. non quam urna, facilisis dui nisl. adipiscing
