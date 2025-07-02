@@ -19,9 +19,9 @@ const ArtisanSignUp = () => {
 } = useUser();
 
 
-  const handleFirstNameChange = (e) => {
-    setFirstName(e.target.value);
-  };
+  // const handleFirstNameChange = (e) => {
+  //   setFirstName(e.target.value);
+  // };
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -304,7 +304,6 @@ const ArtisanSignUp = () => {
             }}
             className="w-full p-2 mb-15 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
-
 
           <div className="flex relative h-12 mb-2">
             <button
