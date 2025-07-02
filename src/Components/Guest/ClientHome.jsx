@@ -65,7 +65,6 @@
 //       <div>
 //         <Footer />
 //       </div>
-
 //     </div>    
 //   );
 // };
@@ -92,7 +91,8 @@
 
 
 import React from "react";
-import { MapPin, Star } from "lucide-react"; // or use any icon library you prefer
+import { MapPin, Star } from "lucide-react"; 
+import { useNavigate } from "react-router-dom";
 
 const artisans = [
   {
@@ -119,6 +119,8 @@ const artisans = [
 ];
 
 const ClientHome = () => {
+
+  const navigate = useNavigate();
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
      <div>
@@ -134,10 +136,13 @@ const ClientHome = () => {
             <img
               src={artisan.image}
               alt={artisan.name}
-              className="w-20 h-20 rounded-full object-cover mb-3"
+              className="w-20 h-20 rounded-full object-cover mb-3"                    
             />
             <h3 className="text-lg font-medium mb-4">{artisan.name}</h3>
-            <button className="bg-blue-400 hover:bg-blue-500 text-white px-12 py-2 rounded-lg mt-6 transition cursor-pointer">
+            <button 
+                            // key={index}
+            onClick={() => navigate("/client-profile")}
+            className="bg-blue-400 hover:bg-blue-500 text-white px-12 py-2 rounded-lg mt-6 transition cursor-pointer">
               Book Artisan
             </button>
 
@@ -198,7 +203,6 @@ const ClientHome = () => {
      </div>
      <div>
        <h2 className="text-xl font-semibold mb-6">Booked Artisans</h2>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {artisans.map((artisan) => (
           <div>

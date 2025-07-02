@@ -271,12 +271,14 @@ import { useUser } from "../Context/UserContext";
 
 
 
+import { useUser } from "../context/UserContent";
+
 const ArtisanSignUp = () => {
   const { setFirstName, setTime, setLocation } = useUser();
 
-  // const handleFirstNameChange = (e) => {
-  //   setFirstName(e.target.value);
-  // };
+  const handleFirstNameChange = (e) => {
+    setFirstName(e.target.value);
+  };
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
