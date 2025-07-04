@@ -6,11 +6,22 @@ import ArtisanImage from "../assets/uploads/Artisan_Image.png";
 import { useUser } from "../Context/UserContext";
 
 const ArtisanSignUp = () => {
-  const { setFirstName, setTime, setLocation } = useUser();
+  // const { setFirstName, setTime, setLocation } = useUser();
 
-  const handleFirstNameChange = (e) => {
-    setFirstName(e.target.value);
-  };
+  const {
+  setFirstName,
+  setTime,
+  setLocation,
+  // setRepairType,
+  setDuration,
+  setPrice,
+  setStatus
+} = useUser();
+
+
+  // const handleFirstNameChange = (e) => {
+  //   setFirstName(e.target.value);
+  // };
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -140,7 +151,6 @@ const ArtisanSignUp = () => {
               setFormData({ ...formData, firstName: e.target.value });
               setFirstName(e.target.value);
             }}
-            placeholder="Enter first name"
             className="w-full flex p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
 
@@ -210,6 +220,31 @@ const ArtisanSignUp = () => {
             </button>
           </div>
 
+
+         <label className="block mb-2 text-sm font-medium">Duration</label>
+           <input
+             type="text"
+             // placeholder="e.g. 2 weeks"
+             onChange={(e) => setDuration(e.target.value)}
+             className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
+          />
+
+          <label className="block mb-2 text-sm font-medium">Price</label>
+            <input
+              type="text"
+              // placeholder="e.g. 30 thousand naira"
+              onChange={(e) => setPrice(e.target.value)}
+              className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
+            />
+
+            {/* <label className="block mb-2 text-sm font-medium">Repair Type</label>
+            <input
+              type="text"
+              // placeholder="e.g. Refrigerator repair"
+              onChange={(e) => setRepairType(e.target.value)}
+              className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
+          /> */}
+
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
             SkillSet
           </label>
@@ -246,12 +281,22 @@ const ArtisanSignUp = () => {
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
           />
 
+          <label className="block mb-2 text-sm font-medium">Status</label>
+              <select
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
+            >
+              <option value="">Select status</option>
+              <option value="Booked">Booked</option>
+              <option value="Available">Available</option>
+             </select>
+
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
             Location
           </label>
           <input
             type="text"
-            placeholder="e.g. 2 Ifat Solarity Close, Lagos"
+            // placeholder="e.g. 2 Ifat Solarity Close, Lagos"
             value={formData.location}
             onChange={(e) => {
               setFormData({ ...formData, location: e.target.value });

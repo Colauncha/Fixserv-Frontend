@@ -197,6 +197,7 @@ function ArtisanHome() {
           </div>
           <p className="text-sm">
             <strong>Repair Type:</strong> {artisan.skillSet}
+            {/* <strong>Skill Set:</strong> {artisan.skillSet} */}
           </p>
           <p className="text-sm">
             <strong>Location:</strong> {artisan.location}
