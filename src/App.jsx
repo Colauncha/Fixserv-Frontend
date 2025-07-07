@@ -8,34 +8,29 @@ import LogInPage from "./Pages/LogInPage";
 import ClientHomePage from "./Pages/Clients/ClientHomePage";
 import TechSelection from "./Pages/Clients/TechSelection";
 import ArtisanHomePage from "./Pages/ArtisanPages/ArtisanHomePage";
-import ArtisanProfile from "./Components/Artisan/ArtisanProfile";
+import ArtisanDashboard from "./Components/Artisan/ArtisanDashboard";
+// import ArtisanProfile from "./Components/Artisan/ArtisanDashboard";
 import ClientProfilePage from "./Components/Guest/ClientProfilePage";
-
-
 
 
 function App() {
   return (
-    <div> 
-
+    <div>
       <Routes>
         {/* <Route path="/" element={<Waiting />} /> */}
         <Route path="/" element={<Landing />} />
-        <Route path="/welcome" element={<Home/>} />
-        <Route path="/artisan-signup" element={<BuilderSignUp/>} />
-        <Route path="/client-signup" element={<UserSignUp/>} />
-        <Route path="/login" element={<LogInPage/>} />
-        <Route path="/client-home" element={<ClientHomePage/>} />
+        <Route path="/welcome" element={<Home />} />
+        <Route path="/artisan-signup" element={<BuilderSignUp />} />
+        <Route path="/client-signup" element={<UserSignUp />} />
+        <Route path="/login" element={<LogInPage />} />
+        <Route path="/client-home" element={<ClientHomePage />} />
         <Route path="/client-navbar" element={<ClientHomePage />} />
         <Route path="/client-selection" element={<TechSelection />} />
         <Route path="/artisan-home" element={<ArtisanHomePage />} />
-        <Route path="artisan-profile" element={<ArtisanProfile/>} />
+        <Route path="artisan-dashboard" element={<ArtisanDashboard />} />
         <Route path="/client-profile" element={<ClientProfilePage />} />
-        
       </Routes>
-      
     </div>
-  
   );
 }
 
