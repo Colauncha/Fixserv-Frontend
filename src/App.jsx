@@ -11,6 +11,8 @@ import ArtisanHomePage from "./Pages/ArtisanPages/ArtisanHomePage";
 import ArtisanDashboard from "./Components/Artisan/ArtisanDashboard";
 // import ArtisanProfile from "./Components/Artisan/ArtisanDashboard";
 import ClientProfilePage from "./Components/Guest/ClientProfilePage";
+import ArtisanHistory from "./Components/Artisan/ArtisanHistory";
+import EditProfile from "./Components/Artisan/EditProfile";
 
 
 function App() {
@@ -29,6 +31,8 @@ function App() {
         <Route path="/artisan-home" element={<ArtisanHomePage />} />
         <Route path="artisan-dashboard" element={<ArtisanDashboard />} />
         <Route path="/client-profile" element={<ClientProfilePage />} />
+        <Route path="/artisan-history" element={<ArtisanHistory />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
       </Routes>
     </div>
   );
