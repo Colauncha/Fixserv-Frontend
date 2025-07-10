@@ -8,6 +8,7 @@ import Filter from '../Components/Filter'
 import Testimonials from '../Components/Testimonials'
 import ArrowUp from '../assets/uploads/ArrowUp.png'
 import Footer from '../Components/Footer'
+import TestimonialsSection from '../Components/TestimonialSection'
 
 const Landing = () => {
 
@@ -24,9 +25,10 @@ const Landing = () => {
       <HeroBooking />
       <TopArtisans />
       <Location />
-      <AboutSection />
+      {/* <AboutSection /> */}
       <Filter />
-      <Testimonials />
+      <TestimonialsSection />
+      {/* <Testimonials /> */}
 
       {/* Arrow image - above Footer */}
             <div className="w-full flex justify-end -mb-10 px-8">
