@@ -21,12 +21,25 @@ const Navbar = () => {
           <span>Fixserv</span>
         </div>
         <ul className="flex items-center space-x-4 text-md gap-10 text-[#7A9DF7]">
-          <li className="hover:text-blue-600 cursor-pointer"
-            onClick={() => navigate('/')}>Home</li>
-          <li className="hover:text-blue-600 cursor-pointer">About Us</li>
-          <li className="hover:text-blue-600 cursor-pointer">Contact Us</li>
+            <li
+              className="hover:text-blue-600 cursor-pointer"
+              onClick={() => navigate('/')}
+            >
+              Home
+            </li>
+          <li
+            className="hover:text-blue-600 cursor-pointer"
+            onClick={() => navigate('/about-us')}
+          >
+            About Us
+          </li>
+          <li
+            className="hover:text-blue-600 cursor-pointer"
+            onClick={() => navigate('/contact-us')}
+          >
+            Contact Us
+          </li>
         </ul>
-    
         <div  className="flex items-center space-x-2">
 
         <button

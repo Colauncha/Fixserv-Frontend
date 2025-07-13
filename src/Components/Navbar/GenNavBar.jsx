@@ -1,11 +1,9 @@
 import { useLocation } from "react-router-dom"
 import { useState, useEffect } from "react";
 import Navbar from "./Navbar";
-import ClientNavbar from "./Guest/ClientNavbar";
-import SelectionNavbar from "./Guest/SelectionNavbar";
+import SelectionNavbar from "./SelectionNavbar";
 import HomeNavbar from "./HomeNavbar";
-import ArtisanNavbar from "./Artisan/ArtisanNavbar";
-import DashboardNavbar from "./Artisan/DashboardNavbar";
+import DashboardNavbar from "./DashboardNavbar";
 
 const GenNavBar = () => {
   const location = useLocation();
@@ -26,7 +24,7 @@ const GenNavBar = () => {
     } else if (path.startsWith("/artisans")) {
       setIsVisible(true);
       setNavbarComponent(<DashboardNavbar />);
-    } else if (path.startsWith("/welcome")) {
+    } else if (path.startsWith("/welcome") || path.startsWith("/about-us")) {
       setIsVisible(true);
       setNavbarComponent(<HomeNavbar />);
     } else {

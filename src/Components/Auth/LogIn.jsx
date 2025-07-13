@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import BackgroundImage from '../assets/uploads/Welcome_bg.png';
+import BackgroundImage from '../../assets/uploads/Welcome_bg.png';
 import { useNavigate } from 'react-router-dom';
 
 const LogIn = () => {

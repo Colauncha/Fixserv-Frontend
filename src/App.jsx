@@ -1,11 +1,11 @@
 import { Routes, Route } from "react-router-dom";
 // import Waiting from "./Pages/Waiting";
-import Landing from "./Pages/Landing";
-import GenNavBar from "./Components/GenNavBar";
-import Home from "./Pages/Home";
-import BuilderSignUp from "./Pages/BuilderSignUp";
-import UserSignUp from "./Pages/UserSignUp";
-import LogInPage from "./Pages/LogInPage";
+import Landing from "./Pages/Home/Landing";
+import GenNavBar from "./Components/Navbar/GenNavBar";
+import Home from "./Pages/Home/Home";
+import BuilderSignUp from "./Pages/Auth/BuilderSignUp";
+import UserSignUp from "./Pages/Auth/UserSignUp";
+import LogInPage from "./Pages/Auth/LogInPage";
 import ClientHomePage from "./Pages/Clients/ClientHomePage";
 import TechSelection from "./Pages/Clients/TechSelection";
 import ArtisanHomePage from "./Pages/ArtisanPages/ArtisanHomePage";
@@ -16,6 +16,7 @@ import ArtisanHistory from "./Components/Artisan/ArtisanHistory";
 import EditProfile from "./Components/Artisan/EditProfile";
 import ScrollToTop from "./Components/ScrollToTop";
 import Footer from "./Components/Footer";
+import AboutUsPage from "./Pages/Home/AboutUsPage";
 
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
         {/* General / Shared */}
         <Route path="/" element={<Landing />} />
         <Route path="/welcome" element={<Home />} />
+        <Route path="/about-us" element={<AboutUsPage />} />
 
         {/* Auth Routes */}
         <Route path="/auth">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import DashboardNavbar from "./DashboardNavbar";
+import DashboardNavbar from "../Navbar/DashboardNavbar";
 import Footer from "../Footer";
 
 const ArtisanHistory = () => {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pencil } from "lucide-react";
 import ArrowUp from "../../assets/uploads/ArrowUp.png";
 import Footer from "../Footer";
-import DashboardNavbar from "./DashboardNavbar";
+import DashboardNavbar from "../Navbar/DashboardNavbar";
 
 const artisanId = "b647ea46-9e42-4a6f-a30e-28c2eeb12f2f";
 

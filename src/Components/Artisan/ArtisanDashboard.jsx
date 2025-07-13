@@ -1,7 +1,7 @@
 import { useState, } from "react";
 import Footer from "../Footer";
 import ArrowUp from "../../assets/uploads/ArrowUp.png";
-import DashboardNavbar from "./DashboardNavbar";
+import DashboardNavbar from "../Navbar/DashboardNavbar";
 import { useNavigate } from "react-router-dom";
 
 const ArtisanDashboard = () => {

@@ -1,4 +1,4 @@
-import ArtisanSignUp from "../Components/ArtisanSignUp"; 
+import ArtisanSignUp from "../../Components/Auth/ArtisanSignUp"; 
 
 const BuilderSignUp = () => {
   return (

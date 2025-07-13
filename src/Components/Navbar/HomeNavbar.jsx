@@ -28,8 +28,18 @@ const HomeNavbar = () => {
             >
               Home
             </li>
-          <li className="hover:text-blue-600 cursor-pointer">About Us</li>
-          <li className="hover:text-blue-600 cursor-pointer">Contact Us</li>
+          <li
+            className="hover:text-blue-600 cursor-pointer"
+            onClick={() => navigate('/about-us')}
+          >
+            About Us
+          </li>
+          <li
+            className="hover:text-blue-600 cursor-pointer"
+            onClick={() => navigate('/contact-us')}
+          >
+            Contact Us
+          </li>
         </ul>
         <button 
         onClick={handleLogIn}
