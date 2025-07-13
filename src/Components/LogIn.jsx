@@ -48,9 +48,9 @@ const LogIn = () => {
 
       setTimeout(() => {
         if (data.data.response.role === 'CLIENT') {
-          navigate("/client-home");
+          navigate("/client/home");
         } else if (data.data.response.role === 'ARTISAN') {
-          navigate("/artisan-dashboard");
+          navigate("/artisans/dashboard");
         }
       }, 500);
     } catch (error) {

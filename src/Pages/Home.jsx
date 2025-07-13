@@ -5,11 +5,7 @@ import Welcome from '../Components/Welcome'
 
 const Home = () => {
   return (
-    <div>
-        <HomeNavbar />
-        <Welcome />
-      
-    </div>
+    <Welcome />
   )
 }
 

@@ -5,11 +5,11 @@ const Welcome = () => {
    const navigate = useNavigate();
 
   const handleArtisan = () => {
-    navigate("/artisan-signup");
+    navigate("/auth/artisan-signup");
   };
 
   const handleGuest = () => {
-    navigate("/client-signup");
+    navigate("/auth/client-signup");
   }
 
 
@@ -20,11 +20,11 @@ const Welcome = () => {
       <div className="flex flex-col md:flex-row items-center justify-center w-full h-screen">
 
         {/* Left Illustration */}
-        <div className="w-1/2 flex items-center justify-center">
+        <div className="w-1/2 h-[90dvh] flex items-center justify-center object-contain overflow-hidden">
           <img
             src={FixservLogo}
             alt="fixserv-logo"
-            className="h-3xl mt-10 ml-10"
+            className="ml-10"
           />
         </div>
 
@@ -63,7 +63,7 @@ const Welcome = () => {
           <p className="text-sm text-[#110000C2] mt-6">
             🔑 Already a member?
             Welcome back!
-             <a href='/logIn' className='text-[#A1B7F2] underline px-2 cursor-pointer' >
+             <a href='/auth/logIn' className='text-[#A1B7F2] underline px-2 cursor-pointer' >
             Log in 
             </a> 
             to continue

@@ -141,7 +141,7 @@ const ClientHome = () => {
             <h3 className="text-lg font-medium mb-4">{artisan.name}</h3>
             <button 
                             // key={index}
-            onClick={() => navigate("/client-profile")}
+            onClick={() => navigate("/client/profile")}
             className="bg-blue-400 hover:bg-blue-500 text-white px-12 py-2 rounded-lg mt-6 transition cursor-pointer">
               Book Artisan
             </button>

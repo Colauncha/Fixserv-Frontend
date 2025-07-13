@@ -1,4 +1,5 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import PhoneImage from '../assets/uploads/Phone_call.png';  
 import EmailImage from '../assets/uploads/Email.png';
 import Facebook from '../assets/icons/FB.png'; 
@@ -7,9 +8,20 @@ import LinkedIn from '../assets/icons/in.png';
 import Twitter from '../assets/icons/X.png';
 
 const Footer = () => {
-    return (  
-        
-      <footer className="bg-[#7A9DF7] text-[#ECF1FC] px-10 py-10 mt-1">
+  const [isVisible, setIsVisible] = useState(false);
+  const location = useLocation();
+  const path = location.pathname;
+
+  useEffect(() => {
+    if (path.startsWith('/auth')) {
+      setIsVisible(false);
+    } else {
+      setIsVisible(true);
+    }
+
+  }, [path]);
+    return (        
+      (isVisible && <footer className="bg-[#7A9DF7] text-[#ECF1FC] px-10 py-10 mt-1">
          <div className="grid grid-cols-1 md:grid-cols-4 gap-24">
    
         <div>
@@ -55,7 +67,6 @@ const Footer = () => {
             <li>Events</li>
             </ul>
 
-                    {/* Book a service Section */}
            <div className="flex flex-col w-84 bg-[#FFFFFF] rounded-md sm:flex-row justify-center items-center">
             <input
               type="email"
@@ -72,7 +83,7 @@ const Footer = () => {
           
           </div>        
         </div>
-      </footer>
+      </footer>)
     );
   };
 export default Footer;  

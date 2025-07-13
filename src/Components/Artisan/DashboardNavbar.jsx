@@ -11,10 +11,13 @@ const DashboardNavbar = () => {
   };
 
   return (
-    <nav className="flex items-center justify-between bg-white px-20 py-8">
+    <nav className="flex items-center justify-between bg-white px-5 py-8">
       {/* Left side: Logo and Name */}
       <div className="flex items-center space-x-2">
-        <div className="flex items-center space-x-2 text-xl font-JejuMyeongjo text-[#7A9DF7]">
+        <div
+          className="flex items-center space-x-2 text-xl font-JejuMyeongjo text-[#7A9DF7] cursor-pointer"
+          onClick={() => navigate('/')}
+        >
           <span className="bg-[#779BE7] font-JejuMyeongjo text-white w-15 h-15 items-center 
            justify-center flex rounded-lg">FS</span>
           <span>Fixserv</span>

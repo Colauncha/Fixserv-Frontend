@@ -52,10 +52,6 @@ const ArtisanDashboard = () => {
     setAvailability(status);
   };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   // useEffect(() => {
   //   const fetchHistory = async () => {
   //     try {
@@ -74,7 +70,6 @@ const ArtisanDashboard = () => {
 
   return (
     <>
-      <DashboardNavbar />
       <div className="min-h-screen flex flex-col px-6 md:px-16 py-12">
         {/* Profile Section */}
         <div className="w-full max-w-6xl p-6 rounded-xl">
@@ -179,7 +174,7 @@ const ArtisanDashboard = () => {
             <p className="text-md text-gray-700">{skillSet.join(", ")}</p>
 
             <button
-              onClick={() => navigate("/edit-profile")}
+              onClick={() => navigate("/artisans/edit-profile")}
               className="mt-4 px-4 py-2 text-md bg-blue-500 text-white rounded hover:bg-blue-600"
             >
               Edit Profile
@@ -202,7 +197,7 @@ const ArtisanDashboard = () => {
         <div className="mt-6 w-full max-w-4xl p-6 bg-white shadow-sm border border-gray-200">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-lg text-[#110000C2]">History</h3>
-            <a href="/artisan-history" className="text-sm text-blue-600 hover:underline">
+            <a href="/artisans/history" className="text-sm text-blue-600 hover:underline">
               View History
             </a>
           </div>
@@ -247,17 +242,6 @@ const ArtisanDashboard = () => {
 
         </div>
       </div>
-
-      {/* Scroll to Top */}
-      <div className="w-full flex justify-end -mb-10 px-8 mt-10 z-50">
-        <img
-          src={ArrowUp}
-          alt="Back to Top"
-          className="w-16 h-16 cursor-pointer hover:scale-110 transition duration-300"
-          onClick={scrollToTop}
-        />
-      </div>
-      <Footer />
     </>
   );
 };
