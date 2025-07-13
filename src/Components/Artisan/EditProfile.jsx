@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pencil } from "lucide-react";
 import ArrowUp from "../../assets/uploads/ArrowUp.png";
 import Footer from "../Footer";
-import DashboardNavbar from "./DashboardNavbar";
+import DashboardNavbar from "../Navbar/DashboardNavbar";
 
 const artisanId = "b647ea46-9e42-4a6f-a30e-28c2eeb12f2f";
 
@@ -111,28 +111,23 @@ console.log("Sending to backend:", updatedProfile);
   }
 };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   return (
     <>
-    <DashboardNavbar />
-
-    <div className="p-6 max-w-3xl mx-auto bg-white shadow rounded">
+    <div className="p-6 w-full mx-auto bg-white shadow rounded">
       {/* Profile Image Section */}
       <div className="flex flex-col items-center mb-6">
         <div className="relative">
           <img
             src={profileImage || "https://randomuser.me/api/portraits/men/32.jpg"}
             alt="profile"
-            className="rounded-full w-28 h-28 object-cover"
+            className="rounded-full w-100 h-100 object-cover"
           />
           <label
             htmlFor="profileImageUpload"
-            className="absolute bottom-2 right-2 bg-white p-1 rounded-full shadow cursor-pointer"
+            className="absolute bottom-10 right-10 bg-white p-3 rounded-full shadow cursor-pointer"
           >
-            <Pencil size={16} />
+            <Pencil size={26} color="#7A9DF7" />
             <input
               type="file"
               id="profileImageUpload"
@@ -142,12 +137,12 @@ console.log("Sending to backend:", updatedProfile);
             />
           </label>
         </div>
-        <p className="mt-2 text-lg font-semibold">Edit Personal Information</p>
+        <p className="mt-5 text-2xl text-gray-800 font-Light">Edit Personal Information</p>
       </div>
 
       {/* ABOUT SECTION */}
       <div className="mb-6">
-        <h3 className="text-sm font-bold mb-2 text-gray-700">ABOUT</h3>
+        <h3 className="text-xl font-Light mb-2 text-gray-500">ABOUT</h3>
         <InfoCard
           title="User Name"
           value={profile.username}
@@ -167,7 +162,7 @@ console.log("Sending to backend:", updatedProfile);
 
       {/* CONTACT INFORMATION */}
       <div className="mb-6">
-        <h3 className="text-sm font-bold mb-2 text-gray-700">CONTACT INFORMATION</h3>
+        <h3 className="text-xl font-Light mb-2 text-gray-500">CONTACT INFORMATION</h3>
         <InfoCard
           title="Phone number"
           value={profile.phone}
@@ -208,23 +203,12 @@ console.log("Sending to backend:", updatedProfile);
         </button>
       </div>
     </div>
-
-    {/* Scroll to Top */}
-          <div className="w-full flex justify-end -mb-10 px-8 mt-10 z-50">
-            <img
-              src={ArrowUp}
-              alt="Back to Top"
-              className="w-16 h-16 cursor-pointer hover:scale-110 transition duration-300"
-              onClick={scrollToTop}
-            />
-          </div>
-    <Footer />
     </>
   );
 };
 
 const InfoCard = ({ title, value, onChange }) => (
-  <div className="border rounded p-4 mb-3 relative">
+  <div className="border-2 border-gray-500 rounded-lg p-4 mb-3 relative">
     <label className="text-sm font-semibold text-gray-600 mb-1 block">{title}</label>
     <input
       type="text"

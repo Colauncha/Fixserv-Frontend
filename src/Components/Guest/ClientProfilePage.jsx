@@ -1,6 +1,6 @@
 import React from "react";
 import { Star, MapPin, PhoneCall } from "lucide-react";
-import Navbar from "../Navbar";
+import Navbar from "../Navbar/Navbar";
 import Footer from "../../Components/Footer";
 import ArrowUp from "../../assets/uploads/ArrowUp.png";
 

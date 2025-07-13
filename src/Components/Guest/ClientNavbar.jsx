@@ -21,7 +21,7 @@ const ClientNavbar = () => {
       </div>
 
       {/* Center: Search Bar */}
-      <div className="flex items-center bg-[#94B0F8] rounded-full overflow-hidden mr-30 h-12 w-[850px] max-w-[90%]">
+      <div className="flex items-center bg-[#ffffff] border border-[#7A9DF7] rounded-full overflow-hidden mr-30 h-12 w-[850px] max-w-[90%]">
         <input
           type="text"
           placeholder="Service, Artisans or Location"
@@ -29,7 +29,7 @@ const ClientNavbar = () => {
         />
 
        <button>
-        <img src={SearchLogo} alt='search' className="bg-[#7A9DF7] p-3 px-10 rounded-full text-white" />
+        <img src={SearchLogo} alt='search' className="bg-[#7A9DF7] p-3 px-7 rounded-full text-white" />
          </button>
       </div>
 

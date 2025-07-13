@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import BackgroundImage from '../assets/uploads/Welcome_bg.png';
+import BackgroundImage from '../../assets/uploads/Welcome_bg.png';
 import { useNavigate } from 'react-router-dom';
 
 const LogIn = () => {
@@ -48,9 +48,9 @@ const LogIn = () => {
 
       setTimeout(() => {
         if (data.data.response.role === 'CLIENT') {
-          navigate("/client-home");
+          navigate("/client/home");
         } else if (data.data.response.role === 'ARTISAN') {
-          navigate("/artisan-dashboard");
+          navigate("/artisans/dashboard");
         }
       }, 500);
     } catch (error) {

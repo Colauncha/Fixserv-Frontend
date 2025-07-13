@@ -339,7 +339,7 @@
 
 import {  useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import GuestImage from "../assets/uploads/Guest_Image.png";
+import GuestImage from "../../assets/uploads/Guest_Image.png";
 import { useNavigate } from "react-router-dom";
 
 const GuestSignUp = () => {

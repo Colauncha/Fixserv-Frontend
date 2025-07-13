@@ -1,5 +1,5 @@
 import React from 'react'
-import GuestSignUp from '../Components/GuestSignUp'
+import GuestSignUp from '../../Components/Auth/GuestSignUp'
 
 const UserSignUp = () => {
   return (

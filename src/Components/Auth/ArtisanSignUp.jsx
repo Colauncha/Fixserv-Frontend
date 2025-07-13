@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import BackgroundImage from "../assets/uploads/Welcome_bg.png";
-import ArtisanImage from "../assets/uploads/Artisan_Image.png";
-import { useUser } from "../Context/UserContext";
+import BackgroundImage from "../../assets/uploads/Welcome_bg.png";
+import ArtisanImage from "../../assets/uploads/Artisan_Image.png";
+import { useUser } from "../../Context/UserContext";
 
 const ArtisanSignUp = () => {
   const { setFirstName, setTime, setLocation } = useUser();
