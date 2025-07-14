@@ -30,7 +30,6 @@ const ClientProfilePage = () => {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 mt-4 bg-gray-50">
         <div className="flex flex-col md:flex-row items-start gap-10 max-w-7xl w-full">
           {/* Left Profile Section */}
@@ -194,19 +193,6 @@ const ClientProfilePage = () => {
     </button>
   </div>
 </div>
-
-
-        {/* Arrow image - above Footer */}
-        <div className="w-full flex justify-end -mb-10 px-8 mt-10 z-100">
-          <img
-            src={ArrowUp}
-            alt="Back to Top"
-            className="w-20 h-20 text-[#110000C2] cursor-pointer hover:scale-110 transition duration-300"
-            onClick={scrollToTop}
-          />
-        </div>
-        <Footer />
-
       </div>
     </>
   );

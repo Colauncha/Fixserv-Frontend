@@ -1,39 +1,31 @@
-import { useState, } from "react";
-import Footer from "../Footer";
-import ArrowUp from "../../assets/uploads/ArrowUp.png";
-import DashboardNavbar from "../Navbar/DashboardNavbar";
+import { useState, useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 
 const ArtisanDashboard = () => {
-  const artisanId = "b647ea46-9e42-4a6f-a30e-28c2eeb12f2f";
-  const HISTORY_API_URL = `https://user-management-h4hg.onrender.com/api/admin/artisan/${artisanId}`; // Replace with real API
-
   const navigate = useNavigate();
 
   const [availability, setAvailability] = useState("Available");
-  const [businessHours, setBusinessHours] = useState({
-    monday: { open: "09:00", close: "17:00" },
-    tuesday: { open: "09:00", close: "17:00" },
-    wednesday: { open: "09:00", close: "17:00" },
-    thursday: { open: "09:00", close: "17:00" },
-    friday: { open: "09:00", close: "17:00" },
-    saturday: { open: "10:00", close: "14:00" },
-    sunday: { open: "Closed", close: "" },
-  });
+  const [businessHours, setBusinessHours] = useState({});
 
-  const [fullName, setFullName] = useState("Abbas Akande");
-  const [businessName, setBusinessName] = useState("Akande Repairs");
-  const [location, setLocation] = useState("Ikeja, Lagos");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState('')
+  const [businessName, setBusinessName] = useState("");
+  const [location, setLocation] = useState("");
   const [aboutMe,] = useState(
     "Convallis, dolor non, convallis. non quam urna, facilisis dui nisl. adipiscing Nunc elit ullamcorper at, odio Praesent lobortis, gravida nulla, turpis nec non placerat viverra vehicula, hendrerit amet."
   );
-  const [skillSet, setSkillSet] = useState([
-    "Refrigerator repair",
-    "Television repair",
-    "Microwave",
-  ]);
+  const [skillSet, setSkillSet] = useState([]);
 
-  
+  useEffect(() => {
+    const userData = JSON.parse(sessionStorage.getItem('userData'))
+    console.log(userData)
+    setFullName(userData.fullName)
+    setEmail(userData.email)
+    setBusinessHours(userData.businessHours)
+    setBusinessName(userData.businessName)
+    setLocation(userData.location)
+    setSkillSet(userData.skillSet)
+  }, [])
 
   // const [history, setHistory] = useState([]);
   // const [loadingHistory, setLoadingHistory] = useState(true);
@@ -52,25 +44,9 @@ const ArtisanDashboard = () => {
     setAvailability(status);
   };
 
-  // useEffect(() => {
-  //   const fetchHistory = async () => {
-  //     try {
-  //       const res = await fetch(HISTORY_API_URL);
-  //       const data = await res.json();
-  //       setHistory(data);
-  //     } catch (error) {
-  //       console.error("Error fetching history:", error);
-  //     } finally {
-  //       setLoadingHistory(false);
-  //     }
-  //   };
-
-  //   fetchHistory();
-  // }, [HISTORY_API_URL]);
-
   return (
     <>
-      <div className="min-h-screen flex flex-col px-6 md:px-16 py-12">
+      <div className="min-h-screen flex flex-col px-6 md:px-16 py-5">
         {/* Profile Section */}
         <div className="w-full max-w-6xl p-6 rounded-xl">
           <div className="flex flex-col lg:flex-row items-start gap-6">
@@ -187,14 +163,14 @@ const ArtisanDashboard = () => {
           <h3 className="font-semibold text-lg mb-2 text-[#110000C2]">Contact info</h3>
           <p className="text-md text-[#000000]">
             <strong>Phone:</strong> +234 904454667 <br />
-            <strong>Email:</strong> abbasakande233@gmail.com <br />
-            <strong>Address:</strong> Mr Daniel Izuchukwu Nwoye, 8, My Street, Ilasan Lekki, Lagos <br />
-            <strong>Available Work Locations:</strong> Anywhere in Lagos
+            <strong>Email:</strong> {email} <br />
+            <strong>Address:</strong> {location} <br />
+            <strong>Business Name:</strong> {businessName}
           </p>
         </div>
 
         {/* Booking History Preview */}
-        <div className="mt-6 w-full max-w-4xl p-6 bg-white shadow-sm border border-gray-200">
+        <div className="mt-6 w-full p-6 bg-white shadow-sm border border-gray-200">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-lg text-[#110000C2]">History</h3>
             <a href="/artisans/history" className="text-sm text-blue-600 hover:underline">

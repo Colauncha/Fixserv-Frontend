@@ -1,9 +1,26 @@
-import React from 'react';
+import {useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import { Bell, Globe, Folder, UserCircleIcon } from "lucide-react";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem("userData");
+
+    if (storedUser) {
+      setUserData(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleUserDashboard = () => {
+    if (userData.role === "CLIENT") {
+      navigate("/client/profile");
+    } else if (userData.role === "ARTISAN") {
+      navigate("/artisans/dashboard");
+    }
+  };
 
   const handleAuth = () => {
     navigate("/welcome");
@@ -40,13 +57,37 @@ const Navbar = () => {
             Contact Us
           </li>
         </ul>
-        <div  className="flex items-center space-x-2">
 
-        <button
-        onClick={handleAuth}
-        className="bg-[#779BE7] text-white px-5 py-1 h-10 w-35 text-md rounded-xl 
-        cursor-pointer">Get Started</button>
-        </div>
+        {userData ?
+          (<div className="flex items-center gap-8 mx-5">
+            <div 
+              className="relative w-6 h-6 cursor-pointer"
+              onClick={() => {}}
+              title="Public Listing">
+              <Folder className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6 absolute" />
+              <Globe className="text-[#00FF9D] w-4 h-4 absolute top-3 left-4" />
+            </div>
+    
+            <div className="relative cursor-pointer" title="Notifications">
+              <Bell className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6" />
+              <span className="absolute top-3 right-0 bg-[#00FF9D] w-4 h-4 rounded-full" />
+            </div>
+
+            <div className="relative cursor-pointer" title="Profile">
+              <UserCircleIcon 
+                className="w-6 h-6 text-[#7A9DF7] fill-[#ffffff] cursor-pointer"
+                onClick={handleUserDashboard}
+              />
+            </div>
+          </div>)
+        : (<div  className="flex items-center space-x-2">
+          <button
+            onClick={handleAuth}
+            className="bg-[#779BE7] text-white px-4 py-1 h-10 w-44 text-md gap-20 rounded-xl cursor-pointer"
+          >
+            Get Started
+          </button>
+        </div>)}
       </nav>
       </div>
     );

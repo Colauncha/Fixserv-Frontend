@@ -14,7 +14,7 @@ const GenNavBar = () => {
   
   useEffect(() => {
     console.log("Current Path:", path);
-    if (path === "/") {
+    if (path === "/" || path.startsWith("/about-us")) {
       setIsVisible(true);
       setNavbarComponent(<Navbar />)
     } else if (path.startsWith("/client")) {
@@ -24,7 +24,7 @@ const GenNavBar = () => {
     } else if (path.startsWith("/artisans")) {
       setIsVisible(true);
       setNavbarComponent(<DashboardNavbar />);
-    } else if (path.startsWith("/welcome") || path.startsWith("/about-us")) {
+    } else if (path.startsWith("/welcome")) {
       setIsVisible(true);
       setNavbarComponent(<HomeNavbar />);
     } else {
