@@ -6,7 +6,7 @@ import ArtisanImage from "../../assets/uploads/Artisan_Image.png";
 import { useUser } from "../../Context/UserContext";
 
 const ArtisanSignUp = () => {
-  const { setFirstName, setTime, setLocation } = useUser();
+  const { setFullName, setTime, setLocation } = useUser();
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -176,7 +176,7 @@ const ArtisanSignUp = () => {
             value={formData.firstName}
             onChange={(e) => {
               setFormData({ ...formData, firstName: e.target.value });
-              setFirstName(e.target.value);
+              setFullName(e.target.value);
             }}
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:ring-2 focus:ring-blue-300 focus:outline-none"
           />

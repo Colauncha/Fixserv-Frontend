@@ -36,79 +36,56 @@ const TestimonialsSection = () => {
 
 
         <div className="md:w-1/2 flex flex-col gap-12">
-  {testimonials.map((client, index) => (
-    <div
-      key={index}
-      className={`flex items-start shadow-md relative w-[85%] h-40 overflow-hidden ${
-        index === 1 ? "-translate-x-30" : ""
-      }`}
-    >
-      {/* Colored Left Edge - changes per index */}
-      <div
-        className={`w-4 h-full ${
-          index === 1 ? "bg-[#6A5FAD]" : "bg-[#D9D9D9]"
-        }`}
-      ></div>
-
-      {/* Card content */}
-      <div className="flex bg-white w-full h-full p-4 items-start gap-4">
-        {/* Profile Image overlapping the colored strip */}
-        <div className="relative z-10 rounded-lg flex gap-4 items-start">
-          <img
-            src={client.image}
-            alt={client.name}
-            className="w-18 h-18 rounded-full object-cover"
-          />
-        </div>
-
-        {/* Text */}
-        <div className="relative">
-          {/* Decorative Quote Mark */}
-          <span
-            className={`absolute -top-2 right-10 text-5xl font-bold opacity-90 ${
-              index === 1 ? "text-[#6A5FAD]" : "text-[#D9D9D9]"
-            }`}
-          >
-            &ldquo;
-          </span>
-          <p className="text-gray-800 font-semibold">{client.name}</p>
-          <p className="text-gray-600 text-sm mt-1">{client.text}</p>
-        </div>
-        
-      </div>
-    </div>
-  ))}
-</div>
-
-
-        {/* Right Side */}
-        {/* <div className="md:w-1/2 flex flex-col gap-12">
           {testimonials.map((client, index) => (
             <div
               key={index}
-              className={`flex items-start bg-white rounded-lg shadow-md p-4 relative w-[85%] h-40  ${
-                index === 1 ? "-translate-x-30" : ""
-              } transition-transform duration-300`}
+              className={`
+                group
+                flex items-center justify-start
+                shadow-md
+                relative w-[90%] h-44
+                overflow-hidden
+                transition-all duration-300
+                hover:shadow-lg hover:scale-[1.2]
+                hover:-translate-x-12
+                bg-white
+                border-l-10 border-[#D9D9D9] hover:border-[#6A5FAD]
+                rounded-sm
+              `}
             >
-              {/* Vertical gradient line */}
-              {/* <div className="w-4 h-full bg-gradient-to-b from-[#D9D9D9] via-[#6A5FAD] to-[#D9D9D9] mr-4 rounded"></div>
+              {/* Card content */}
+              <div className="flex w-full h-full p-4 items-center justify-start gap-4">
+                {/* Profile Image */}
+                <div className="relative z-10">
+                  <img
+                    src={client.image}
+                    alt={client.name}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-white shadow"
+                  />
+                </div>
 
-              {/* Image and Text inside white card */}
-              {/* <div className="flex gap-4 items-start">
-                <img
-                  src={client.image}
-                  alt={client.name}
-                  className="w-18 h-18 rounded-full object-cover"
-                />
-                <div>
-                  <p className="text-gray-800 font-semibold">{client.name}</p>
-                  <p className="text-gray-600 text-sm mt-1">{client.text}</p>
+                {/* Text */}
+                <div className="relative w-full">
+                  {/* Decorative Quote */}
+                  <span
+                    className={`
+                      absolute -top-4 right-4
+                      text-5xl font-bold opacity-10
+                      transition-all duration-300
+                      text-[#D9D9D9]"
+                      group-hover:text-[#6A5FAD]
+                      group-hover:opacity-60
+                    `}
+                  >
+                    &ldquo;
+                  </span>
+                  <p className="text-gray-900 font-bold text-base">{client.name}</p>
+                  <p className="text-gray-600 text-sm mt-1 leading-snug">{client.text}</p>
                 </div>
               </div>
             </div>
           ))}
-        </div>  */} 
-
+        </div>
 
       </div>
     </section>

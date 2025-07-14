@@ -43,7 +43,7 @@ const HomeNavbar = () => {
         </ul>
         <button 
         onClick={handleLogIn}
-        className="bg-[#779BE7] text-white px-4 py-1 h-10 w-44 text-md gap-20 rounded-lg cursor-pointer">Log in</button>
+        className="bg-[#779BE7] text-white px-4 py-1 h-10 w-44 text-md gap-20 rounded-xl cursor-pointer">Log in</button>
       </nav>
       </div>
     );

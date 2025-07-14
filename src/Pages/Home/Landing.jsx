@@ -8,13 +8,12 @@ import TestimonialsSection from '../../Components/TestimonialSection'
 const Landing = () => {
 
   return (
-    <>
+    <div className='mt-25 pt-10'>
       <HeroBooking />
-      <TopArtisans />
-      <Location />
       <Filter />
+      <TopArtisans />
       <TestimonialsSection />  
-    </>
+    </div>
   )
 }
 
