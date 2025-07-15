@@ -126,7 +126,7 @@ const ArtisanSignUp = () => {
     setMessage("Registration successful! Redirecting to login...");
       setMessageType("success");
     console.log("Data received:", data);
-    navigate("/login");
+    navigate("/auth/login");
   } catch (error) {
     setMessage("An error occurred during registration.");
       setMessageType("error");
