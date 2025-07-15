@@ -413,7 +413,7 @@ const GuestSignUp = () => {
 
       const data = await runFetch(submitData);
       console.log("Guest Sign Up Data:", data);
-      navigate("/login");
+      navigate("/auth/login");
     } catch (error) {
       console.error("Error during guest sign up:", error);
     }

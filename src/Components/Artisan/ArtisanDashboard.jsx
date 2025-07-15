@@ -1,225 +1,341 @@
-import { useState, useEffect} from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Star, MapPin, Clock, Phone, Mail, Building, Edit3, Calendar, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 
-const ArtisanDashboard = () => {
-  const navigate = useNavigate();
-
+const ModernProfile = ({ artisanId = "1bfb6be0-093a-4c11-8000-4eb2950fc4a1" }) => {
   const [availability, setAvailability] = useState("Available");
-  const [businessHours, setBusinessHours] = useState({});
-
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState('')
-  const [businessName, setBusinessName] = useState("");
-  const [location, setLocation] = useState("");
-  const [aboutMe,] = useState(
-    "Convallis, dolor non, convallis. non quam urna, facilisis dui nisl. adipiscing Nunc elit ullamcorper at, odio Praesent lobortis, gravida nulla, turpis nec non placerat viverra vehicula, hendrerit amet."
-  );
-  const [skillSet, setSkillSet] = useState([]);
+  const [businessHoursOpen, setBusinessHoursOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  const navigateFunc = useNavigate();
 
   useEffect(() => {
-    const userData = JSON.parse(sessionStorage.getItem('userData'))
-    console.log(userData)
-    setFullName(userData.fullName)
-    setEmail(userData.email)
-    setBusinessHours(userData.businessHours)
-    setBusinessName(userData.businessName)
-    setLocation(userData.location)
-    setSkillSet(userData.skillSet)
-  }, [])
+    const storedUser = JSON.parse(sessionStorage.getItem('userData'));
+    // if (storedUser.role !== 'ARTISAN') {
+    //   navigateFunc('/client/profile');
+    // }
+    console.log(storedUser);
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/artisan/${storedUser._id || artisanId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch user data');
+        }
+        const data = await response.json();
+        console.log(`Data`, data);
+        setUserData(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // const [history, setHistory] = useState([]);
-  // const [loadingHistory, setLoadingHistory] = useState(true);
+    if (artisanId) {
+      fetchUserData();
+    }
+  }, [artisanId, navigateFunc]);
 
-  const handleHourChange = (day, type, value) => {
-    setBusinessHours((prev) => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        [type]: value,
-      },
-    }));
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
+        <p className="text-gray-600">No user data available</p>
+      </div>
+    );
+  }
 
   const toggleAvailability = (status) => {
     setAvailability(status);
   };
 
+  const handleHourChange = (day, type, value) => {
+    setUserData(prev => ({
+      ...prev,
+      businessHours: {
+        ...prev.businessHours,
+        [day]: {
+          ...prev.businessHours[day],
+          [type]: value
+        }
+      }
+    }));
+  };
+
+  const navigate = (path) => {
+    navigateFunc(path);
+  };
+
   return (
-    <>
-      <div className="min-h-screen flex flex-col px-6 md:px-16 py-5">
-        {/* Profile Section */}
-        <div className="w-full max-w-6xl p-6 rounded-xl">
-          <div className="flex flex-col lg:flex-row items-start gap-6">
-            <div className="flex-shrink-0">
-              <img
-                src="https://randomuser.me/api/portraits/men/32.jpg"
-                alt="Artisan"
-                className="w-48 h-48 rounded-full object-cover"
-              />
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
+      {/* Header with subtle background pattern */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5"></div>
+        <div className="relative max-w-7xl mx-auto px-6 py-12">
+          
+          {/* Main Profile Section */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 mb-8">
+            <div className="flex flex-col lg:flex-row gap-8">
+              
+              {/* Profile Image & Info */}
+              <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6 flex-1">
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
+                  <img
+                    src="https://randomuser.me/api/portraits/men/32.jpg"
+                    alt="Artisan"
+                    className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
+                  />
+                  <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                </div>
 
-            <div className="flex-1 mt-8">
-              <h2 className="text-3xl font-semibold">{fullName}</h2>
-              <p className="text-[#110000C2] text-2xl">★ 4.5 (15)</p>
-              <p className="text-2xl text-gray-500">📍 {location}</p>
-            </div>
-
-            {/* Availability Card */}
-            <div className="ml-auto bg-white px-6 py-6 rounded-lg shadow-md w-full md:w-96 border border-gray-200">
-              <div className="flex items-center space-x-3 mb-4">
-                <img
-                  src="https://randomuser.me/api/portraits/men/32.jpg"
-                  alt="Artisan"
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                  <p className="text-md font-bold">{fullName}</p>
-                  <div className="flex items-center space-x-1 text-sm text-gray-600">
-                    <span>{availability}</span>
-                    <span className="text-[#110000C2] text-xs">●</span>
+                <div className="flex-1 text-center lg:text-left">
+                  <div className="mb-4">
+                    <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                      {userData.fullName}
+                    </h1>
+                    <div className="flex items-center justify-center lg:justify-start gap-4 text-lg">
+                      <div className="flex items-center gap-1 text-amber-500">
+                        <Star className="w-5 h-5 fill-current" />
+                        <span className="font-semibold text-gray-900">{userData.rating}</span>
+                        <span className="text-gray-500">(0 reviews)</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <MapPin className="w-5 h-5" />
+                        <span>{userData.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                    {userData.skills.slice(0, 3).map((skill, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 rounded-full text-sm font-medium border border-blue-200/50"
+                      >
+                        {skill.trim()}
+                      </span>
+                    ))}
+                    {userData.skills.length > 3 && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
+                        +{userData.skills.length - 3} more
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-2 mb-4">
-                <button
-                  className={`rounded-full px-3 py-1 text-sm ${
-                    availability === "Unavailable"
-                      ? "bg-[#A1B7F2] text-white"
-                      : "bg-[#ECF1FC]"
-                  }`}
-                  onClick={() => toggleAvailability("Unavailable")}
-                >
-                  Unavailable
-                </button>
-                <button
-                  className={`rounded-full px-3 py-1 text-sm ${
-                    availability === "Available"
-                      ? "bg-[#A1B7F2] text-white"
-                      : "bg-[#ECF1FC]"
-                  }`}
-                  onClick={() => toggleAvailability("Available")}
-                >
-                  Available
-                </button>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-xs mb-2 text-[#110000C2]">
-                  Business Hours
-                </h4>
-                <ul className="text-xs text-gray-700 space-y-2">
-                  {Object.entries(businessHours).map(([day, hours]) => (
-                    <li key={day} className="flex justify-between items-center gap-2">
-                      <span className="capitalize">{day}:</span>
-                      {hours.open.toLowerCase() === "closed" ? (
-                        <span>Closed</span>
-                      ) : (
-                        <div className="flex gap-1">
-                          <input
-                            type="time"
-                            value={hours.open}
-                            onChange={(e) =>
-                              handleHourChange(day, "open", e.target.value)
-                            }
-                            className="text-xs border rounded px-1"
-                          />
-                          <input
-                            type="time"
-                            value={hours.close}
-                            onChange={(e) =>
-                              handleHourChange(day, "close", e.target.value)
-                            }
-                            className="text-xs border rounded px-1"
-                          />
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* About Me + Skills */}
-          <div className="mt-10 ml-2 md:ml-4">
-            <h3 className="font-semibold text-2xl mb-1">About me</h3>
-            <p className="text-md text-gray-700 mb-4">{aboutMe}</p>
-
-            <h3 className="font-semibold mb-1 text-2xl">Skills</h3>
-            <p className="text-md text-gray-700">{skillSet.join(", ")}</p>
-
-            <button
-              onClick={() => navigate("/artisans/edit-profile")}
-              className="mt-4 px-4 py-2 text-md bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Edit Profile
-            </button>
-          </div>
-        </div>
-
-        {/* Contact Info */}
-        <div className="mt-6 w-full max-w-4xl p-6">
-          <h3 className="font-semibold text-lg mb-2 text-[#110000C2]">Contact info</h3>
-          <p className="text-md text-[#000000]">
-            <strong>Phone:</strong> +234 904454667 <br />
-            <strong>Email:</strong> {email} <br />
-            <strong>Address:</strong> {location} <br />
-            <strong>Business Name:</strong> {businessName}
-          </p>
-        </div>
-
-        {/* Booking History Preview */}
-        <div className="mt-6 w-full p-6 bg-white shadow-sm border border-gray-200">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold text-lg text-[#110000C2]">History</h3>
-            <a href="/artisans/history" className="text-sm text-blue-600 hover:underline">
-              View History
-            </a>
-          </div>
-
-          {/* {loadingHistory ? (
-            <p className="text-gray-500">Loading history...</p>
-          ) : history.length === 0 ? (
-            <p className="text-gray-500">No booking history yet.</p>
-          ) : (
-            // history.slice(0, 2).map((job) => (
-              : Array.isArray(history) && history.length > 0 ? (
-  history.slice(0, 2).map((job) => (
-    ...
-  ))
-) : (
-  <p className="text-gray-500">No booking history yet.</p>
-)
-
-              <div key={job.id} className="mb-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-[#ECF1FC] text-[#110000C2] font-bold flex items-center justify-center rounded-full">
-                    {job.clientName?.charAt(0).toUpperCase()}
+              {/* Availability Card */}
+              <div className="lg:w-80 xl:w-96">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <img
+                      src="https://randomuser.me/api/portraits/men/32.jpg"
+                      alt="Artisan"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
+                    />
+                    <div>
+                      <p className="font-semibold text-gray-900">{userData.fullName}</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className={`w-2 h-2 rounded-full ${availability === "Available" ? "bg-green-500" : "bg-gray-400"}`}></div>
+                        <span className="text-gray-600">{availability}</span>
+                      </div>
+                    </div>
                   </div>
+
+                  <div className="flex gap-2 mb-6">
+                    <button
+                      className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-all ${
+                        availability === "Unavailable"
+                          ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                      onClick={() => toggleAvailability("Unavailable")}
+                    >
+                      Unavailable
+                    </button>
+                    <button
+                      className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-all ${
+                        availability === "Available"
+                          ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                      onClick={() => toggleAvailability("Available")}
+                    >
+                      Available
+                    </button>
+                  </div>
+
                   <div>
-                    <p className="font-medium text-[#000000]">{job.clientName}</p>
-                    <p className="text-xs text-gray-500">{job.status}</p>
-                  </div>
-                </div>
-                <div className="flex justify-between flex-wrap gap-2 text-sm text-gray-700 ml-12">
-                  <div className="space-y-1">
-                    <p><span className="font-medium">Repair Type:</span> {job.serviceType}</p>
-                    <p><span className="font-medium">Location:</span> {job.location}</p>
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <p><span className="font-medium">Duration:</span> {job.duration || "N/A"}</p>
-                    <p><span className="font-medium">Price:</span> {job.price}</p>
+                    <button
+                      onClick={() => setBusinessHoursOpen(!businessHoursOpen)}
+                      className="flex items-center justify-between w-full mb-4 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <h4 className="font-semibold text-gray-900">Business Hours</h4>
+                      </div>
+                      {businessHoursOpen ? (
+                        <ChevronUp className="w-4 h-4 text-gray-500" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-500" />
+                      )}
+                    </button>
+                    
+                    {businessHoursOpen && (
+                      <div className="space-y-3 pl-6">
+                        {Object.entries(userData.businessHours).map(([day, hours]) => (
+                          <div key={day} className="flex justify-between items-center">
+                            <span className="capitalize text-sm text-gray-600 w-20">{day}:</span>
+                            {hours.open.toLowerCase() === "closed" ? (
+                              <span className="text-sm text-gray-500">Closed</span>
+                            ) : (
+                              <div className="flex gap-1">
+                                <input
+                                  type="time"
+                                  value={hours.open}
+                                  onChange={(e) => handleHourChange(day, "open", e.target.value)}
+                                  className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                                <input
+                                  type="time"
+                                  value={hours.close}
+                                  onChange={(e) => handleHourChange(day, "close", e.target.value)}
+                                  className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            ))
-          )} */}
+            </div>
+          </div>
 
+          {/* About & Skills Section */}
+          <div className="grid lg:grid-cols-3 gap-8 mb-8">
+            <div className="lg:col-span-2">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">About me</h3>
+                <p className="text-gray-700 leading-relaxed mb-6">
+                  Professional artisan specializing in {userData.skills.join(", ").toLowerCase()}. 
+                  Based in {userData.location}, I provide high-quality services through {userData.businessName}.
+                </p>
+                
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Skills & Expertise</h3>
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {userData.skills.map((skill, index) => (
+                    <span
+                      key={index}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 rounded-xl text-sm font-medium border border-blue-200/50 hover:shadow-md transition-shadow"
+                    >
+                      {skill.trim()}
+                    </span>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => navigate("/artisans/edit-profile")}
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:scale-105 transition-all"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Edit Profile
+                </button>
+              </div>
+            </div>
+
+            {/* Contact Info */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Contact Info</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Phone className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-900">Phone</p>
+                    <p className="text-gray-600">+234 904454667</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-900">Email</p>
+                    <p className="text-gray-600">{userData.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-900">Location</p>
+                    <p className="text-gray-600">{userData.location}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Building className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-900">Business</p>
+                    <p className="text-gray-600">{userData.businessName}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* History Section */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-600" />
+                <h3 className="text-xl font-bold text-gray-900">Booking History</h3>
+              </div>
+              <a 
+                href="/artisans/history" 
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                View All History
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+            <div className="text-gray-600 text-center py-8">
+              <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p>No recent bookings to display</p>
+            </div>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
-export default ArtisanDashboard;
+export default ModernProfile;
