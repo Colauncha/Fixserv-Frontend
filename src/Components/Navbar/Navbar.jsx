@@ -1,16 +1,19 @@
 import {useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getIdentity } from '../../Auth/tokenStorage';
+import useAuth from '../../Auth/useAuth';
 import { Bell, Globe, Folder, UserCircleIcon } from "lucide-react";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
+  const { state } = useAuth();
 
   useEffect(() => {
-    const storedUser = sessionStorage.getItem("userData");
+    const storedUser = getIdentity();
 
     if (storedUser) {
-      setUserData(JSON.parse(storedUser));
+      setUserData(storedUser);
     }
   }, []);
 
@@ -58,7 +61,7 @@ const Navbar = () => {
           </li>
         </ul>
 
-        {userData ?
+        {state.isAuthenticated && userData ?
           (<div className="flex items-center gap-8 mx-5">
             <div 
               className="relative w-6 h-6 cursor-pointer"

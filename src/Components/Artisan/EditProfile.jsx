@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getIdentity, setIdentity } from "../../Auth/tokenStorage";
+import useAuth from "../../Auth/useAuth";
 import { Camera, Save, ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Key, Edit3, CheckCircle, AlertCircle, Clock, Building } from "lucide-react";
 
 const ModernEditProfile = () => {
   const navigate = useNavigate();
+  const { state, logout } = useAuth();
   
   const [profile, setProfile] = useState({
     fullName: "",
@@ -34,11 +37,11 @@ const ModernEditProfile = () => {
   };
 
   useEffect(() => {
-    const user = JSON.parse(sessionStorage.getItem("userData"));
+    const user = getIdentity();
     if (!user) {
       setErrorMessage("User not found. Please log in again.");
       setShowError(true);
-      setTimeout(() => navigate("/"), 2000);
+      setTimeout(() => navigate("/auth/login"), 2000);
       return;
     }
     
@@ -56,13 +59,12 @@ const ModernEditProfile = () => {
     });
   }, [navigate]);
 
-  // Handle save profile
   const handleSave = async () => {
-    const user = JSON.parse(sessionStorage.getItem("userData"));
+    const user = getIdentity();
     if (!user) {
       setErrorMessage("User not found. Please log in again.");
       setShowError(true);
-      setTimeout(() => navigate("/"), 2000);
+      setTimeout(() => navigate("/auth/login"), 2000);
       return;
     }
     
@@ -70,7 +72,8 @@ const ModernEditProfile = () => {
     setShowError(false);
     
     try {
-      const token = localStorage.getItem("token"); 
+      const token = state.token
+      console.log(token);
       if (!token) {
         setErrorMessage("No token found. Please log in again.");
         setShowError(true);
@@ -86,8 +89,6 @@ const ModernEditProfile = () => {
         businessName: profile.businessName,
         businessHours: profile.businessHours,
       };
-
-      console.log("Sending to backend:", updatedProfile);
 
       const response = await fetch(
         `https://user-management-h4hg.onrender.com/api/admin/${user._id}`,
@@ -109,10 +110,10 @@ const ModernEditProfile = () => {
           ) {
          setErrorMessage("Your session has expired. Please log in again.");
          setShowError(true);
-         localStorage.removeItem("token");
+         logout();
          setTimeout(() => {
            window.location.href = "/auth/login";
-         }, 2000);
+         }, 500);
          return;
        }
 
@@ -120,18 +121,14 @@ const ModernEditProfile = () => {
         throw new Error("Failed to save profile");
       }
 
-      // Update frontend directly
       setProfile((prev) => ({ ...prev, ...updatedProfile }));
       
-      // Update sessionStorage with new data
       const updatedUser = { ...user, ...updatedProfile };
-      sessionStorage.setItem("userData", JSON.stringify(updatedUser));
+      setIdentity(updatedUser);
       const resp = await response.json();
       console.log("Profile updated successfully:", resp);
       
       setShowSuccess(true);
-      
-      // Hide success message after 3 seconds
       setTimeout(() => setShowSuccess(false), 3000);
 
     } catch (error) {

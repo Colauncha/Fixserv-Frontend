@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 // import Waiting from "./Pages/Waiting";
 import Landing from "./Pages/Home/Landing";
 import GenNavBar from "./Components/Navbar/GenNavBar";
@@ -17,11 +17,14 @@ import EditProfile from "./Components/Artisan/EditProfile";
 import ScrollToTop from "./Components/ScrollToTop";
 import Footer from "./Components/Footer";
 import AboutUsPage from "./Pages/Home/AboutUsPage";
+import { AuthProvider } from "./Context/AuthContext";
+import ProtectedRoute from "./Auth/ProtectedRoute";
 
 
 function App() {
   return (
     <div>
+      <AuthProvider>
       <GenNavBar />
       <Routes>
         {/* General / Shared */}
@@ -40,20 +43,41 @@ function App() {
         <Route path="/client">
           <Route path="home" element={<ClientHomePage />} />
           <Route path="selection" element={<TechSelection />} />
-          <Route path="profile" element={<ClientProfilePage />} />
-          <Route path="edit-profile" element={<EditProfile />} />
+          <Route path="profile" element={
+            <ProtectedRoute>
+              <ClientProfilePage />
+            </ProtectedRoute>
+          } />
+          <Route path="edit-profile" element={
+            <ProtectedRoute> 
+              <EditProfile />
+            </ProtectedRoute>
+            }/>
         </Route>
 
         {/* Artisan Routes */}
         <Route path="/artisans">
           <Route path="home" element={<ArtisanHomePage />} />
-          <Route path="dashboard" element={<ArtisanDashboard />} />
-          <Route path="history" element={<ArtisanHistory />} />
-          <Route path="edit-profile" element={<EditProfile />} />
+          <Route path="dashboard" element={
+            <ProtectedRoute>
+              <ArtisanDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="history" element={
+            <ProtectedRoute>
+              <ArtisanHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="edit-profile" element={
+            <ProtectedRoute>
+              <EditProfile />
+            </ProtectedRoute>
+          } />
         </Route>
       </Routes>
       <ScrollToTop />
       <Footer />
+      </AuthProvider>
     </div>
   );
 }
