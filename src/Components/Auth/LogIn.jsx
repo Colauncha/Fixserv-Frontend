@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import BackgroundImage from '../../assets/uploads/Welcome_bg.png';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from "../../Context/AuthContext";
+import useAuth from "../../Auth/useAuth";
+import { setIdentity } from '../../Auth/tokenStorage';
 
 const LogIn = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,10 +11,9 @@ const LogIn = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState(""); // "success" or "error"
-
-  const { setUserData, sessionStore } = useAuth()
+  const [messageType, setMessageType] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -42,10 +42,8 @@ const LogIn = () => {
       }
 
       const data = await response.json();
-      console.log(data)
-      localStorage.setItem('token', data?.data?.BearerToken);
-      setUserData(data?.data?.response)
-      sessionStore(data?.data?.response)
+      login(data?.data?.BearerToken);
+      setIdentity(data?.data?.response)
 
       setMessage("Login successful!");
       setMessageType("success");

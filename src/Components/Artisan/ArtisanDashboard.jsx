@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import useAuth from '../../Auth/useAuth';
+import { getIdentity, setIdentity } from '../../Auth/tokenStorage';
 import { Star, MapPin, Clock, Phone, Mail, Building, Edit3, Calendar, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 
-const ModernProfile = ({ artisanId = "1bfb6be0-093a-4c11-8000-4eb2950fc4a1" }) => {
+const ModernProfile = () => {
   const [availability, setAvailability] = useState("Available");
   const [businessHoursOpen, setBusinessHoursOpen] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -10,34 +12,33 @@ const ModernProfile = ({ artisanId = "1bfb6be0-093a-4c11-8000-4eb2950fc4a1" }) =
   const [error, setError] = useState(null);
   
   const navigateFunc = useNavigate();
+  const { state, logout } = useAuth();
 
   useEffect(() => {
-    const storedUser = JSON.parse(sessionStorage.getItem('userData'));
-    // if (storedUser.role !== 'ARTISAN') {
-    //   navigateFunc('/client/profile');
-    // }
-    console.log(storedUser);
+    const storedUser = getIdentity();
+    if (storedUser.role !== 'ARTISAN') {
+      navigateFunc('/client/profile');
+    }
+    console.log('stored user', storedUser);
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/artisan/${storedUser._id || artisanId}`);
+        const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/artisan/${storedUser.id || storedUser._id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch user data');
         }
         const data = await response.json();
         console.log(`Data`, data);
-        setUserData(data);
+        setIdentity(data);
+        setUserData(data)
       } catch (err) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-
-    if (artisanId) {
-      fetchUserData();
-    }
-  }, [artisanId, navigateFunc]);
+    fetchUserData();
+  }, [navigateFunc, state]);
 
   if (loading) {
     return (
@@ -331,6 +332,19 @@ const ModernProfile = ({ artisanId = "1bfb6be0-093a-4c11-8000-4eb2950fc4a1" }) =
               <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p>No recent bookings to display</p>
             </div>
+          </div>
+          <div>
+            <button
+              className={`flex-1 py-2 mt-6 px-4 rounded-lg font-medium transition-all bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:scale-105`}
+              onClick={() => {
+                navigateFunc('/');
+                setTimeout(() => {
+                  logout();
+                }, 500);
+              }}
+            >
+              Log Out
+            </button>
           </div>
         </div>
       </div>
