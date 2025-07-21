@@ -199,3 +199,101 @@ const ClientProfilePage = () => {
 };
 
 export default ClientProfilePage;
+
+
+
+// import React, { useEffect, useState } from "react";
+// import { useParams } from "react-router-dom";
+// import { Star, MapPin, PhoneCall } from "lucide-react";
+// import axios from "axios";
+
+// const ClientProfilePage = () => {
+//   const { artisanId } = useParams();
+//   const [artisan, setArtisan] = useState(null);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     const fetchArtisan = async () => {
+//       try {
+//         const res = await axios.get("https://user-management-h4hg.onrender.com/api/users/artisans");
+//         const artisanList = res.data;
+//         const found = artisanList.find((a) => a._id === artisanId);
+//         setArtisan(found);
+//       } catch (error) {
+//         console.error("Error fetching artisan:", error);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchArtisan();
+//   }, [artisanId]);
+
+//   if (loading) return <p className="text-center mt-10">Loading profile...</p>;
+//   if (!artisan) return <p className="text-center mt-10">Artisan not found.</p>;
+
+//   return (
+//     <div className="min-h-screen flex flex-col items-center px-6 py-12 mt-4 bg-gray-50">
+//       <div className="flex flex-col md:flex-row items-start gap-10 max-w-7xl w-full">
+//         {/* Profile Info */}
+//         <div className="flex-1 p-6">
+//           <div className="flex items-center gap-4 mb-4">
+//             <img
+//               src={artisan.artisanData?.image || "https://via.placeholder.com/150"}
+//               alt={artisan.fullName}
+//               className="w-54 h-54 rounded-full object-cover"
+//             />
+//             <div>
+//               <h2 className="text-2xl font-semibold">{artisan.fullName}</h2>
+//               <div className="flex items-center text-sm text-gray-600">
+//                 <Star fill="#000" size={16} />
+//                 <span className="ml-1">{artisan.artisanData?.rating ?? "N/A"}</span>
+//               </div>
+//               <div className="flex items-center text-sm text-gray-600">
+//                 <MapPin size={16} className="mr-1" />
+//                 <span>{artisan.artisanData?.location}</span>
+//               </div>
+//               <button className="bg-blue-400 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded mt-2">
+//                 Book Me
+//               </button>
+//             </div>
+//           </div>
+
+//           <div className="mb-4">
+//             <h3 className="font-semibold mb-1">About me</h3>
+//             <p className="text-sm text-gray-700">
+//               {artisan.artisanData?.bio || "No bio provided."}
+//             </p>
+//           </div>
+
+//           <div>
+//             <h3 className="font-semibold mb-1">Skills</h3>
+//             <p className="text-sm text-gray-700">
+//               {(artisan.artisanData?.skillSet || []).join(", ")}
+//             </p>
+//           </div>
+//         </div>
+
+//         {/* Contact Sidebar */}
+//         <div className="w-full md:w-1/3 bg-white p-6 rounded-lg shadow text-center mt-20">
+//           <img
+//             src={artisan.artisanData?.image || "https://via.placeholder.com/150"}
+//             alt={artisan.fullName}
+//             className="w-16 h-16 rounded-full mx-auto mb-2"
+//           />
+//           <h4 className="text-lg font-semibold">{artisan.fullName}</h4>
+//           <p className="text-sm text-gray-500 mb-4">
+//             {artisan.artisanData?.status === "available" ? "Available •" : "Unavailable"}
+//           </p>
+
+//           <button className="bg-blue-400 hover:bg-blue-500 text-white w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm shadow">
+//             <PhoneCall size={16} />
+//             Contact me
+//           </button>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default ClientProfilePage;

@@ -105,21 +105,7 @@ const ArtisanSignUp = () => {
       delete formData.rating;
       delete formData.location;
 
-  //     const submitData = { ...formData, artisanData };
-  //     const data = await runFetch(submitData);
-
-  //     setMessage("Registration successful! Redirecting to login...");
-  //     setMessageType("success");
-
-  //     setTimeout(() => navigate("/login"), 2000);
-  //   } catch (error) {
-  //     setMessage("An error occurred during registration.");
-  //     setMessageType("error");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
+  
   const submitData = { ...formData, artisanData };
     console.log("Submitting data:", submitData);
     const data = await runFetch(submitData);
@@ -340,7 +326,7 @@ const ArtisanSignUp = () => {
           <p className="text-sm mt-4 text-center">
             Already have an account?{" "}
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/auth/login")}
               className="text-blue-600 font-semibold cursor-pointer"
             >
               Log in
