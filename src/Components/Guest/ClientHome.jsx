@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 const art = [
   {
-    id: 1,
+    id: 'a1673fe9-0ed4-4cfc-9ff1-84e9b9c18aa5',
     name: "Abbas Akande",
     rating: 5.0,
     location: "Ikeja, Lagos State",
@@ -13,14 +13,14 @@ const art = [
     API_URL: ""
   },
   {
-    id: 2,
+    id: 'a1673fe9-0ed4-4cfc-9ff1-84e9b9c18aa5',
     name: "Abbas Akande",
     rating: 4.5,
     location: "Ikeja, Lagos State",
     image: "https://randomuser.me/api/portraits/men/32.jpg",
   },
   {
-    id: 3,
+    id: 'a1673fe9-0ed4-4cfc-9ff1-84e9b9c18aa5',
     name: "Abbas Akande",
     rating: 4.0,
     location: "Ikeja, Lagos State",
@@ -85,7 +85,7 @@ const ClientHome = () => {
             <h3 className="text-lg font-medium mb-4">{artisan.fullName}</h3>
             <button 
                             // key={index}
-            onClick={() => navigate("/client/profile")}
+            onClick={() => navigate("/client/selection" + `?artisanId=${artisan.id}`)}
             className="bg-blue-400 hover:bg-blue-500 text-white px-12 py-2 rounded-lg mt-6 transition cursor-pointer">
               Book Artisan
             </button>
