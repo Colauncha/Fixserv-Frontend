@@ -24,7 +24,6 @@ const GenNavBar = () => {
     } else if (path.startsWith("/client")) {
       setIsVisible(true);
       setNavbarComponent(<DashboardNavbar />);
-      path.split('/').includes("selection") && setNavbarComponent(<SelectionNavbar />);
     } else if (path.startsWith("/artisans")) {
       setIsVisible(true);
       setNavbarComponent(<DashboardNavbar />);
