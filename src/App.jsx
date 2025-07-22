@@ -19,6 +19,10 @@ import Footer from "./Components/Footer";
 import AboutUsPage from "./Pages/Home/AboutUsPage";
 import { AuthProvider } from "./Context/AuthContext";
 import ProtectedRoute from "./Auth/ProtectedRoute";
+import ContactUsPage from "./Pages/Home/ContactUsPage";
+
+import ClientDashboard from "./Components/Guest/ClientDashboard";
+import ClientEditProfile from "./Components/Guest/ClientEditProfile";
 
 
 function App() {
@@ -31,6 +35,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/welcome" element={<Home />} />
         <Route path="/about-us" element={<AboutUsPage />} />
+        <Route path="/contact-us" element={<ContactUsPage />} />
 
         {/* Auth Routes */}
         <Route path="/auth">
@@ -43,6 +48,7 @@ function App() {
         <Route path="/client">
           <Route path="home" element={<ClientHomePage />} />
           <Route path="selection" element={<TechSelection />} />
+          <Route path="dashboard" element={<ClientDashboard />} />
           <Route path="profile" element={
             <ProtectedRoute>
               <ClientProfilePage />
@@ -50,7 +56,7 @@ function App() {
           } />
           <Route path="edit-profile" element={
             <ProtectedRoute> 
-              <EditProfile />
+              <ClientEditProfile  />
             </ProtectedRoute>
             }/>
         </Route>

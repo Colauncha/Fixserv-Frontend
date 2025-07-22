@@ -4,7 +4,7 @@ import Footer from "../Footer";
 
 const ArtisanHistory = () => {
   const artisanId = "a118a5ff-39b0-4d76-86d0-b2de3dae9c16";
-  const HISTORY_API_URL = `https://your-api.com/api/bookings?artisanId=${artisanId}`;
+  const HISTORY_API_URL = `https://user-management-h4hg.onrender.com/api/admin/artisan/${artisanId}`;
 
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -13,13 +13,13 @@ const Footer = () => {
   const path = location.pathname;
 
   useEffect(() => {
-    if (path.startsWith('/auth')) {
+    if (path.startsWith('/auth') || path === '/contact' || path === '/contact-us') {
       setIsVisible(false);
     } else {
       setIsVisible(true);
     }
-
   }, [path]);
+  
     return (        
       (isVisible && <footer className="bg-[#7A9DF7] text-[#ECF1FC] px-10 py-10 mt-1">
          <div className="grid grid-cols-1 md:grid-cols-4 gap-24">
