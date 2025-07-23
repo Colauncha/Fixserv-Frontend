@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import PrivateBookingModal from "../Modals/PrivateBookingModal";
 import { Star, MapPin, Clock, Phone, Mail, Building, ChartNoAxesCombined, ChevronDown, ChevronUp } from 'lucide-react';
 
 const ClientSelection = () => {
@@ -8,15 +9,15 @@ const ClientSelection = () => {
   const [businessHoursOpen, setBusinessHoursOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [privateBookingOpen, setPrivateBookingOpen] = useState(false);
   const location = useLocation();
-  const navigateFunc = useNavigate();
   const artisanId = new URLSearchParams(location.search).get("artisanId");
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/artisan/${artisanId}`);
+        const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/user/${artisanId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch user data');
         }
@@ -69,63 +70,13 @@ const ClientSelection = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
+      {privateBookingOpen && (
+        <PrivateBookingModal artisanId={artisanId} closeModal={() => setPrivateBookingOpen(false)} />
+      )}
       {/* Header with subtle background pattern */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5"></div>
-
-    {/* <div className="p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 border p-4 rounded-md">
-          <div className="flex items-center gap-4">
-            <img
-              src={artisan?.profileImage}
-              alt={artisan?.fullName}
-              className="w-24 h-24 rounded-full object-cover"
-            />
-            <div>
-              <h2 className="text-xl font-bold">{artisan?.fullName}</h2>
-              <p className="text-[#110000C2]">★ {artisan?.rating} ({artisan?.reviewsCount})</p>
-              <p className="text-sm text-[#110000C2]">{artisan?.location}</p>
-              <button className="mt-2 px-4 py-1 bg-[#7A9DF7] text-[#110000C2] rounded hover:bg-blue-700">
-                Book Me
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <h3 className="font-semibold">About me</h3>
-            <p className="text-[#110000C2] mt-1">{artisan?.about}</p>
-            <h4 className="mt-2 font-semibold">Skills</h4>
-            <p className="text-sm text-blue-600">
-              {artisan?.skills.join(", ")}
-            </p>
-          </div>
-        </div>
-
-        <div className="w-full md:w-64 border shadow-md p-4 rounded-md">
-          <div className="flex items-center gap-3">
-            <img
-              src={artisan?.profileImage}
-              alt={artisan?.name}
-              className="w-10 h-10 rounded-full"
-            />
-            <div>
-              <p className="font-semibold">{artisan?.name}</p>
-              <span className="text-[#110000C2] text-sm">
-                {artisan?.available ? "Available" : "Unavailable"}
-              </span>
-            </div>
-          </div>
-
-          <img src={contactIcon} alt="Contact" className="inline-block w-5 h-5 mr-2" />
-          <button className="mt-4 w-full bg-[#7A9DF7] text-white py-2 rounded hover:bg-blue-700">
-            <img  />
-            Contact me
-          </button>
-        </div>
-      </div> */}
       <div className="relative max-w-7xl mx-auto px-6 py-12">
-          
           {/* Main Profile Section */}
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 mb-8">
             <div className="flex flex-col lg:flex-row gap-8">
@@ -178,6 +129,8 @@ const ClientSelection = () => {
                   <div className="absolute hidden lg:block lg:-bottom-30 lg:-left-40 ">
                     <button
                       className={`flex-1 py-2 mt-5 px-4 rounded-lg font-medium transition-all bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:scale-105`}
+                      onClick={() => setPrivateBookingOpen(true)}
+                      title="Book this artisan for a repair session"
                     >
                       Book Me
                     </button>
@@ -297,6 +250,7 @@ const ClientSelection = () => {
                 <div>
                   <button
                     className={`flex-1 py-2 mt-6 px-4 rounded-lg font-medium transition-all bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:scale-105`}
+                    onClick={() => setPrivateBookingOpen(true)}
                   >
                     Book Me
                   </button>
@@ -312,7 +266,7 @@ const ClientSelection = () => {
                   <Phone className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium text-gray-900">Phone</p>
-                    <p className="text-gray-600">+234 904454667</p>
+                    <p className="text-gray-600">{artisan.phone || 'Not provided'}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">

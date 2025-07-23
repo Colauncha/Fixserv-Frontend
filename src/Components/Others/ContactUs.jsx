@@ -1,26 +1,21 @@
 import React from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
-import ContactNavbar from "../Navbar/ContactNavbar";
 
 const ContactUs = () => {
   return (
     <div className="relative w-full min-h-screen">
-     <div className="relative z-20">
-       <ContactNavbar />
-     </div> 
-      {/* Blue Background */}
-      <div className="absolute top-0 left-0 w-full h-[435px] bg-[#D8E3FC] z-0" />
+      <div className="absolute top-0 left-0 w-full h-[435px] bg-[#D8E3FC] -z-1" />
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-5xl mx-auto pt-6 px-6 pb-16">
+      <div className="relative z-10 max-w-5xl mx-auto pt-16 px-6 pb-16">
         <h2 className="text-3xl font-bold text-center mb-2">Get In Touch</h2>
         <p className="text-center text-gray-600 mb-8">
           Contact us if you need any assistance and guidance with Fixserv, our team will always be on standby to assist you.
         </p>
 
-        <div className="rounded-xl shadow-md min-h-[550px] flex flex-col md:flex-row p-6 md:p-10 gap-6 bg-white">
+        <div className="rounded-3xl shadow-xl min-h-[550px] flex flex-col md:flex-row p-6 md:p-10 gap-10 bg-white">
           {/* Left: Contact Info */}
-          <div className="bg-[#779BE7] text-white rounded-lg p-6 flex flex-col gap-4 md:w-[35%]">
+          <div className="bg-[#779BE7] text-white shadow-2xl rounded-2xl p-6 flex flex-col gap-4 md:w-[35%]">
             <h3 className="text-lg font-semibold mt-4">Contact Information</h3>
             <p className="text-xs">
               Contact any of the following means<br />of communication
@@ -54,7 +49,7 @@ const ContactUs = () => {
                 <label className="text-sm text-gray-600">Your Name</label>
                 <input
                   type="text"
-                  defaultValue="John Akintade"
+                  placeholder="Enter your Name"
                   className="border-b border-gray-400 w-full focus:outline-none py-1 bg-transparent"
                 />
               </div>
@@ -62,7 +57,7 @@ const ContactUs = () => {
                 <label className="text-sm text-gray-600">Your Email</label>
                 <input
                   type="email"
-                  defaultValue="johnakintade23@gmail.com"
+                  placeholder="Enter your Email"
                   className="border-b border-gray-400 w-full focus:outline-none py-1 bg-transparent"
                 />
               </div>
@@ -72,7 +67,7 @@ const ContactUs = () => {
               <label className="text-sm text-gray-600">Your Subject</label>
               <input
                 type="text"
-                defaultValue="I have a television that needs to be fixed"
+                placeholder="Subject"
                 className="border-b border-gray-400 w-full focus:outline-none py-1 bg-transparent"
               />
             </div>
@@ -86,7 +81,7 @@ const ContactUs = () => {
             </div>
             <button
               type="submit"
-              className="bg-[#779BE7] text-white px-4 py-2 rounded-lg h-10 w-40"
+              className="bg-[#779BE7] hover:bg-[#779BE5dd] hover:shadow-gray-300 transition-all duration-300 text-white px-4 py-2 rounded-lg h-10 w-40 shadow-xl"
             >
               Send Message
             </button>

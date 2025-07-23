@@ -10,17 +10,19 @@ const GenNavBar = () => {
   const [isVisible, setIsVisible] = useState(true);
   const path = location.pathname;
 
-  const [NavbarComponent, setNavbarComponent] = useState(<Navbar />);
+  const [NavbarComponent, setNavbarComponent] = useState(<Navbar bg={'bg-white'} />);
   
   useEffect(() => {
     console.log("Current Path:", path);
     if (
     path === "/" ||
     path.startsWith("/about-us")
-    // || path.startsWith("/contact") 
-  ) {
+    ) {
       setIsVisible(true);
-      setNavbarComponent(<Navbar />)
+      setNavbarComponent(<Navbar bg={'bg-white'}/>)
+    } else if (path.startsWith("/contact-us")) {
+      setIsVisible(true);
+      setNavbarComponent(<Navbar bg={'bg-[#D8E3FC]'} userIconFill={'fill-[#D8E3FC]'} />)
     } else if (path.startsWith("/client")) {
       setIsVisible(true);
       setNavbarComponent(<DashboardNavbar />);

@@ -1,12 +1,41 @@
-import React from "react";
-import { Bell, Globe, Folder } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { getIdentity } from "../../Auth/tokenStorage";
+import { Bell, Globe, Folder, UserCircleIcon } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const DashboardNavbar = () => {
+  const [userData, setUserData] = useState(null);
+  const [isDashboard, setIsDashboard] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    const storedUser = getIdentity();
+
+    if (storedUser) {
+      setUserData(storedUser);
+    }
+
+    if (location.pathname.includes("dashboard")) {
+      setIsDashboard(true);
+    }
+  }, [location]);
+
   const navigate = useNavigate();
 
-  const goToArtisanHome = () => {
-    navigate("/artisan-home");
+  const handlePublicListing = () => {
+    if (userData.role === "CLIENT") {
+      navigate("/client/home");
+    } else if (userData.role === "ARTISAN") {
+      navigate("/artisans/home");
+    }
+  };
+
+  const handleUserDashboard = () => {
+    if (userData.role === "CLIENT") {
+      navigate("/client/dashboard");
+    } else if (userData.role === "ARTISAN") {
+      navigate("/artisans/dashboard");
+    }
   };
 
   return (
@@ -23,7 +52,7 @@ const DashboardNavbar = () => {
         </div>
       </div>
 
-      <div className="flex h-12 min-w-2xl bg-[#FFFFFF] border-1 border-[#94B0F8] rounded-full py-2 items-center justify-center">
+      <div className="flex h-12 min-w-2xl shadow-lg bg-[#FFFFFF] border-1 border-[#94b0f864] rounded-full py-2 items-center justify-center">
         <input
           type="text"
           placeholder="Service Names, Service Categories or Location"
@@ -38,7 +67,7 @@ const DashboardNavbar = () => {
       <div className="flex items-center gap-8 mx-5">
         <div 
           className="relative w-6 h-6 cursor-pointer"
-          onClick={goToArtisanHome}
+          onClick={handlePublicListing}
           title="View History">
 
           <Folder className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6 absolute" />
@@ -49,6 +78,13 @@ const DashboardNavbar = () => {
           <Bell className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6" />
           <span className="absolute top-3 right-0 bg-[#00FF9D] w-4 h-4 rounded-full" />
         </div> 
+
+        {!isDashboard && <div className="relative cursor-pointer" title="Profile">
+          <UserCircleIcon 
+            className={`w-6 h-6 text-[#7A9DF7] cursor-pointer fill-[#ffffff]`}
+            onClick={handleUserDashboard}
+          />
+        </div>}
       </div>
 
     </nav>
