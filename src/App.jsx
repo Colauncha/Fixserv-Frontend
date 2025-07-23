@@ -25,6 +25,7 @@ import ClientDashboard from "./Components/Guest/ClientDashboard";
 import ClientEditProfile from "./Components/Guest/ClientEditProfile";
 import ResetPassword from "./Components/Auth/ResetPassword";
 import TermsPage from "./Components/Others/TermsPage";
+import PrivacyPolicy from "./Components/Others/PrivacyPolicy";
 
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
         <Route path="/about-us" element={<AboutUsPage />} />
         <Route path="/contact-us" element={<ContactUsPage />} />
         <Route path="/terms-conditions" element={<TermsPage/>} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
         {/* Auth Routes */}
         <Route path="/auth">
