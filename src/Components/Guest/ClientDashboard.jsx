@@ -11,6 +11,16 @@ const ClientDashboard = () => {
   const [error, setError] = useState(null);
   const [publicBookingOpen, setPublicBookingOpen] = useState(false);
   const navigate = useNavigate();
+  
+  
+  // const [profile, setProfile] = useState({
+  //   profileImage: "",
+  //   fullName: "",
+  //   bio: "",
+  //   phone: "",
+  //   email: "",
+  // });
+
 
   const handleEditProfile = () => {
     navigate("/client/edit-profile");

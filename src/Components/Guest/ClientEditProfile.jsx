@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { ArrowLeft,User,FileText,Mail,Phone,Lock,Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -8,6 +8,22 @@ const ClientEditProfile = () => {
 
   const fileInputRef = useRef(null);
   const [profileImage, setProfileImage] = useState("https://randomuser.me/api/portraits/men/75.jpg");
+
+  const [fullName, setFullName] = useState("");
+  const [bio, setBio] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const storedData = JSON.parse(sessionStorage.getItem("clientData"));
+    if (storedData) {
+      setFullName(storedData.fullName || "");
+      setBio(storedData.bio || "");
+      setPhone(storedData.phone || "");
+      setEmail(storedData.email || "");
+      setProfileImage(storedData.profileImage || "https://randomuser.me/api/portraits/men/75.jpg");
+    }
+  }, []);
 
   const handleImageClick = () => {
     fileInputRef.current.click();
@@ -20,6 +36,60 @@ const ClientEditProfile = () => {
       setProfileImage(imageUrl);
     }
   };
+
+  //  const handleSaveChanges = () => {
+  //   const updatedData = {
+  //     fullName,
+  //     bio,
+  //     phone,
+  //     email,
+  //     profileImage
+  //   };
+  //   sessionStorage.setItem("clientData", JSON.stringify(updatedData));
+  //   navigate("/client/dashboard");
+  // };
+
+  const handleSaveChanges = async () => {
+  const stored = JSON.parse(sessionStorage.getItem("identity"));
+  if (!stored || !stored.token || !stored._id) {
+    alert("User not authenticated.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/user/${stored._id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${stored.token}`,
+      },
+      body: JSON.stringify({
+        fullName,
+        about: bio,
+        phone,
+        email,
+        image: profileImage,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update profile.");
+    }
+
+    const updatedUser = await response.json();
+
+    // Update sessionStorage
+    sessionStorage.setItem("identity", JSON.stringify({ ...stored, ...updatedUser }));
+
+    alert("Profile updated successfully!");
+    navigate("/client/dashboard");
+  } catch (err) {
+    console.error(err);
+    alert("Error updating profile.");
+  }
+};
+
+
 
   return (
     <div className="min-h-screen bg-[#f4f7fe] p-6">
@@ -70,6 +140,8 @@ const ClientEditProfile = () => {
           </h3>
           <input
             type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
             placeholder="Enter full name..."
             className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
@@ -80,7 +152,9 @@ const ClientEditProfile = () => {
           <h3 className="text-lg font-semibold mb-4 flex items-center">
             <FileText className="mr-2" size={18} /> Bio
           </h3>
-          <textarea
+         <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
             placeholder="Write a short bio..."
             rows={5}
             className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
@@ -97,6 +171,8 @@ const ClientEditProfile = () => {
             </label>
             <input
               type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               placeholder="Enter phone number..."
               className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
@@ -108,6 +184,8 @@ const ClientEditProfile = () => {
             </label>
             <input
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter email address..."
               className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
@@ -139,12 +217,14 @@ const ClientEditProfile = () => {
               className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
-        </div>
+        </div>  
       </div>
 
       {/* Save Button */}
       <div className="max-w-6xl mx-auto mt-8 text-center">
-        <button className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl text-sm shadow hover:opacity-90">
+        <button 
+        onClick={handleSaveChanges}
+        className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl text-sm shadow hover:opacity-90">
           Save Changes
         </button>
       </div>
