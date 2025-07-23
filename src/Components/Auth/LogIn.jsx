@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import BackgroundImage from '../../assets/uploads/Welcome_bg.png';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import useAuth from "../../Auth/useAuth";
 import { setIdentity } from '../../Auth/tokenStorage';
 
@@ -120,9 +120,9 @@ const LogIn = () => {
 
           <div className="text-sm mb-4">
             Forgot Password?{" "}
-            <a href="#" className="text-[#000000] font-semibold">
+            <Link to="/auth/reset-password" className="text-[#000000] font-semibold underline hover:text-blue-500">
               Reset Password
-            </a>
+            </Link>
           </div>
 
           <div className="flex relative w-48 h-12 mb-6">

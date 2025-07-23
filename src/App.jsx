@@ -23,6 +23,8 @@ import ContactUsPage from "./Pages/Home/ContactUsPage";
 
 import ClientDashboard from "./Components/Guest/ClientDashboard";
 import ClientEditProfile from "./Components/Guest/ClientEditProfile";
+import ResetPassword from "./Components/Auth/ResetPassword";
+import TermsPage from "./Components/Others/TermsPage";
 
 
 function App() {
@@ -36,12 +38,14 @@ function App() {
         <Route path="/welcome" element={<Home />} />
         <Route path="/about-us" element={<AboutUsPage />} />
         <Route path="/contact-us" element={<ContactUsPage />} />
+        <Route path="/terms-conditions" element={<TermsPage/>} />
 
         {/* Auth Routes */}
         <Route path="/auth">
           <Route path="login" element={<LogInPage />} />
           <Route path="artisan-signup" element={<BuilderSignUp />} />
           <Route path="client-signup" element={<UserSignUp />} />
+          <Route path="reset-password" element={<ResetPassword />} />
         </Route>
 
         {/* Client Routes */}
