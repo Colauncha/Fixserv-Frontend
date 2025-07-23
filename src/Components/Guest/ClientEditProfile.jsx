@@ -1,10 +1,13 @@
 import React, { useRef, useState, useEffect } from "react";
 import { ArrowLeft,User,FileText,Mail,Phone,Lock,Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import useAuth from "../../Auth/useAuth";
+import { getIdentity } from "../../Auth/tokenStorage";
 
 
 const ClientEditProfile = () => {
   const navigate = useNavigate();
+  const {state} = useAuth()
 
   const fileInputRef = useRef(null);
   const [profileImage, setProfileImage] = useState("https://randomuser.me/api/portraits/men/75.jpg");
@@ -50,18 +53,18 @@ const ClientEditProfile = () => {
   // };
 
   const handleSaveChanges = async () => {
-  const stored = JSON.parse(sessionStorage.getItem("identity"));
-  if (!stored || !stored.token || !stored._id) {
+  const stored = getIdentity()
+  if (!state.isAuthenticated) {
     alert("User not authenticated.");
     return;
   }
 
   try {
-    const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/user/${stored._id}`, {
-      method: "PUT",
+    const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/${stored._id || stored.id}`, {
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${stored.token}`,
+        Authorization: `Bearer ${state.token}`,
       },
       body: JSON.stringify({
         fullName,
