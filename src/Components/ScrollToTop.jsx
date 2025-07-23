@@ -22,7 +22,7 @@ const ScrollToTop = () => {
 
   return (
     <div
-      className={`fixed bottom-0 right-5 z-50 transition-transform duration-300 ${
+      className={`fixed bottom-0 right-5 z-50 shadow-2xl rounded-full transition-transform duration-300 ${
         isVisible ? '-translate-y-10' : 'translate-y-full'
       }`}
     >

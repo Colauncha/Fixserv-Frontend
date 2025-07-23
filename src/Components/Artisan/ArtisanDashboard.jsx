@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../Auth/useAuth';
 import { getIdentity, setIdentity } from '../../Auth/tokenStorage';
-import { Star, MapPin, Clock, Phone, Mail, Building, Edit3, Calendar, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { Star, MapPin, Clock, Phone, Mail, Building, Edit3, Calendar, ExternalLink, ChevronDown, ChevronUp, LogOutIcon } from 'lucide-react';
 
 const ModernProfile = () => {
   const [availability, setAvailability] = useState("Available");
@@ -23,7 +23,7 @@ const ModernProfile = () => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/artisan/${storedUser.id || storedUser._id}`);
+        const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/user/${storedUser.id || storedUser._id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch user data');
         }
@@ -343,6 +343,7 @@ const ModernProfile = () => {
                 }, 500);
               }}
             >
+              <LogOutIcon className="inline mr-2 w-5 h-5" />
               Log Out
             </button>
           </div>

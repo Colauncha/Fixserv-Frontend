@@ -11,7 +11,7 @@ const ModernEditProfile = () => {
   const [profile, setProfile] = useState({
     fullName: "",
     bio: "",
-    skillSet: "",
+    skills: "",
     phone: "",
     email: "",
     location: "",
@@ -49,7 +49,7 @@ const ModernEditProfile = () => {
     setProfile({
       fullName: user.fullName || "",
       bio: user.bio || "Professional artisan with years of experience in appliance repair and maintenance.",
-      skillSet: user.skillSet || "",
+      skills: user.skills || "",
       phone: user.phone || "",
       email: user.email || "",
       location: user.address || "",
@@ -82,7 +82,7 @@ const ModernEditProfile = () => {
 
       const updatedProfile = {
         fullName: profile.fullName,
-        skillSet: profile.skillSet,
+        skills: profile.skills,
         phone: profile.phone,
         email: profile.email,
         location: profile.location,
@@ -233,8 +233,8 @@ const ModernEditProfile = () => {
               <ModernInfoCard
                 icon={<Briefcase className="w-4 h-4" />}
                 title="Skills & Services"
-                value={profile.skillSet}
-                onChange={(val) => setProfile({ ...profile, skillSet: val })}
+                value={profile.skills}
+                onChange={(val) => setProfile({ ...profile, skills: val })}
                 multiline
               />
             </div>
