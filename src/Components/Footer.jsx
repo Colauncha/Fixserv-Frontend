@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import PhoneImage from '../assets/uploads/Phone_call.png';  
 import EmailImage from '../assets/uploads/Email.png';
 import Facebook from '../assets/icons/FB.png'; 
@@ -54,10 +54,10 @@ const Footer = () => {
           <div>
             
             <ul className="space-y-3 text-md">
-              <li>Home</li>
-              <li>About us</li>
-              <li>Contact us</li>
-              <li>Help and Support</li>
+              <li><Link to="/" className="hover:underline">Home</Link></li>
+              <li><Link to="/about-us" className="hover:underline">About us</Link></li>
+              <li><Link to="/contact-us" className="hover:underline">Contact us</Link></li>
+              <li><Link to="/support" className="hover:underline">Help and Support</Link></li>
             </ul>
           </div>
           <div>
