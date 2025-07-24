@@ -34,6 +34,8 @@ const GenNavBar = () => {
       setNavbarComponent(<HomeNavbar />);
     } else if (path.startsWith("/terms-conditions")) {
       setIsVisible(true);
+      } else if (path.startsWith("/privacy-policy")) {
+      setIsVisible(true);
     } else {
       setIsVisible(false);
     }
