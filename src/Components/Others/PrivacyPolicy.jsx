@@ -61,7 +61,7 @@ const PrivacyPolicy = () => {
            </span>
          </div> */}
 
-        <div className="bg-gradient-to-b from-purple-50 to-blue-50 rounded-full px-10 py-14 sm:px-14 sm:py-18 shadow-md transition-all duration-300">
+        <div className="bg-gradient-to-b from-purple-100 to-blue-100 rounded-full px-10 py-14 sm:px-14 sm:py-18 shadow-md transition-all duration-300">
           <h3 className="text-xl font-semibold mb-8">
             Welcome to our privacy policy!
           </h3>
