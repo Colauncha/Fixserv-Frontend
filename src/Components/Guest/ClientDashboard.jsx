@@ -98,7 +98,7 @@ const ClientDashboard = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5"></div>
         <div className="relative max-w-7xl mx-auto px-6 py-12">
         {/* Profile Header */}
-        <div className="max-w-6xl mx-auto bg-white px-10 py-8 rounded-2xl shadow-xl flex items-center space-x-6 min-h-[250px]">
+        <div className="max-w-6xl mx-auto bg-white px-10 py-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-center items-center space-x-6 min-h-[250px]">
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
             <img
@@ -107,11 +107,11 @@ const ClientDashboard = () => {
               className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
             />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left mt-6 md:mt-0">
             <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
               {client.fullName}
             </h1>
-            <div className="flex items-center gap-2 text-base text-gray-600 mt-2">
+            <div className="flex items-center gap-2 text-xs md:text-base text-gray-600 mt-2">
               <MapPin size={20} className="mr-2" />
               {client.deliveryAddress.country}, {client.deliveryAddress.state}, {client.deliveryAddress.city}.
             </div>

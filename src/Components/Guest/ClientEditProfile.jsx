@@ -40,18 +40,6 @@ const ClientEditProfile = () => {
     }
   };
 
-  //  const handleSaveChanges = () => {
-  //   const updatedData = {
-  //     fullName,
-  //     bio,
-  //     phone,
-  //     email,
-  //     profileImage
-  //   };
-  //   sessionStorage.setItem("clientData", JSON.stringify(updatedData));
-  //   navigate("/client/dashboard");
-  // };
-
   const handleSaveChanges = async () => {
   const stored = getIdentity()
   if (!state.isAuthenticated) {

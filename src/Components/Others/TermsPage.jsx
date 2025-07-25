@@ -74,7 +74,7 @@ const [selected, setSelected] = useState(null);
         <div className="mt-10 flex gap-4">
           <button
         onClick={() => setSelected("notNow")}
-        className={`px-4 py-2 border rounded text-sm cursor-pointer ${
+        className={`px-4 py-2 border rounded text-sm shadow-md cursor-pointer ${
           selected === "notNow"
             ? "bg-[#779BE7] text-white"
             : "text-gray-700 hover:bg-gray-100"
@@ -85,7 +85,7 @@ const [selected, setSelected] = useState(null);
 
           <button
         onClick={() => setSelected("agree")}
-        className={`px-4 py-2 rounded text-sm cursor-pointer ${
+        className={`px-4 py-2 rounded text-sm shadow-md cursor-pointer ${
           selected === "agree"
             ? "bg-[#779BE7] text-white"
             : "bg-[#2c55ac] text-gray-900 hover:bg-blue-600 hover:text-white"
