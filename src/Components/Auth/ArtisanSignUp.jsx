@@ -122,39 +122,40 @@ const ArtisanSignUp = () => {
   }
 };
 
-  return (
-    <div className="min-h-screen flex">
-      {/* Left Panel */}
-      <div className="w-1/3 bg-[#A1B7F2] flex flex-col justify-center items-center p-8">
-        <img
-          src={BackgroundImage}
-          alt="Background"
-          className="absolute inset-0 w-1/3 object-cover opacity-80"
-        />
-        <img src={ArtisanImage} alt="Artisan" className="h-4xl mt-10 ml-10" />
-      </div>
+return (
+  <div className="min-h-screen flex flex-col justify-center md:flex-row">
+    {/* Left Panel - Hidden on small/medium screens */}
+    <div className="hidden md:flex md:w-1/3 bg-[#A1B7F2] relative flex-col justify-center items-center p-8">
+      <img
+        src={BackgroundImage}
+        alt="Background"
+        className="absolute inset-0 w-full h-full object-cover opacity-80"
+      />
+      <img src={ArtisanImage} alt="Artisan" className="h-4xl mt-10 ml-10 z-10" />
+    </div>
 
-      {/* Right Panel */}
-      <div className="w-1/2 flex flex-col justify-center items-center">
-        <h2 className="text-2xl text-[#110000C2] font-semibold mb-4">
-          Artisan Registration
-        </h2>
+    {/* Right Panel */}
+    <div className="w-full md:w-2/3 flex flex-col justify-center items-center p-6">
+      <h2 className="text-2xl text-[#110000C2] font-semibold mb-4">
+        Artisan Registration
+      </h2>
 
-        {/* Feedback message */}
-        {message && (
-          <div
-            className={`mb-4 text-center px-4 py-2 rounded w-full max-w-sm ${
-              messageType === "success"
-                ? "bg-green-100 text-green-700 border border-green-400"
-                : "bg-red-100 text-red-700 border border-red-400"
-            }`}
-          >
-            {message}
-          </div>
-        )}
+      {/* Feedback message */}
+      {message && (
+        <div
+          className={`mb-4 text-center px-4 py-2 rounded w-full max-w-sm ${
+            messageType === "success"
+              ? "bg-green-100 text-green-700 border border-green-400"
+              : "bg-red-100 text-red-700 border border-red-400"
+          }`}
+        >
+          {message}
+        </div>
+      )}
 
-        <form className="w-full max-w-sm">
-          <label className="block mb-2 text-sm text-[#110000C2] font-medium">
+      <form className="w-full max-w-sm">
+        {/* Form Fields (same as before)... */}
+        <label className="block mb-2 text-sm text-[#110000C2] font-medium">
             First Name
           </label>
           <input
@@ -276,66 +277,66 @@ const ArtisanSignUp = () => {
             className="w-full p-2 mb-6 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
 
-          <div className="flex items-center justify-between mb-2">
-            <button
-              type="button"
-              onClick={handleArtisanSignUp}
-              disabled={loading}
-              className={`w-3/4 h-10 rounded-md font-medium text-xl transition-all flex justify-center items-center bg-[#A1B7F2] text-white ${
-                loading ? "opacity-60 cursor-not-allowed" : "hover:bg-[#90a4d4]"
-              }`}
-            >
-              {loading ? (
-                <svg
-                  className="animate-spin h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8z"
-                  ></path>
-                </svg>
-              ) : (
-                "Sign Up"
-              )}
-            </button>
+        {/* Bottom Actions */}
+        <div className="flex items-center justify-between mb-2">
+          <button
+            type="button"
+            onClick={handleArtisanSignUp}
+            disabled={loading}
+            className="w-3/4 h-10 bg-gradient-to-r from-[#7A9DF7] to-[#7A9Dd7] shadow-lg text-white px-8 py-2 rounded-lg text-lg font-medium cursor-pointer hover:shadow-md hover:from-[#7a9ed7d9] hover:to-[#7a9df7d9] transition duration-300 ease-in-out"
+          >
+            {loading ? (
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8z"
+                ></path>
+              </svg>
+            ) : (
+              "Sign Up"
+            )}
+          </button>
 
-            <button
-              type="button"
-              className="w-16 h-10 ml-4 flex items-center justify-center gap-2 rounded-md shadow hover:bg-red-200 transition"
-            >
-              <img
-                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                alt="Google"
-                className="w-6 h-6"
-              />
-            </button>
-          </div>
+          <button
+            type="button"
+            className="w-16 h-10 ml-4 flex items-center justify-center gap-2 rounded-md shadow hover:bg-red-200 transition"
+          >
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google"
+              className="w-6 h-6"
+            />
+          </button>
+        </div>
 
-          <p className="text-sm mt-4 text-center">
-            Already have an account?{" "}
-            <button
-              onClick={() => navigate("/auth/login")}
-              className="text-blue-600 font-semibold cursor-pointer"
-            >
-              Log in
-            </button>
-          </p>
-        </form>
-      </div>
+        <p className="text-sm mt-4 text-center">
+          Already have an account?{" "}
+          <button
+            onClick={() => navigate("/auth/login")}
+            className="text-blue-600 font-semibold cursor-pointer"
+          >
+            Log in
+          </button>
+        </p>
+      </form>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default ArtisanSignUp;

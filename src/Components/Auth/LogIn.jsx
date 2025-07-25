@@ -65,20 +65,22 @@ const LogIn = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Panel */}
-      <div className="w-1/3 bg-[#A1B7F2] flex flex-col justify-center items-center p-8">
-        <img src={BackgroundImage} alt="Background" className="absolute inset-0 w-1/3 object-cover opacity-80" />
-        <h1 className="text-7xl font-bold mb-4 px-10 text-[#110000C2]">Welcome Back!</h1>
-        <p className="text-xl py-3 text-[#110000C2]">
-          Get connected with professional<br /> artisans
-        </p>
+    <div className="min-h-screen flex flex-col justify-center lg:flex-row">
+      {/* Left Panel - hidden on small screens */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#A1B7F2] relative items-center justify-center p-8">
+        <img src={BackgroundImage} alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-80" />
+        <div className="relative z-10 text-center px-10">
+          <h1 className="text-4xl lg:text-7xl font-bold mb-4 text-[#110000C2]">Welcome Back!</h1>
+          <p className="text-lg lg:text-xl text-[#110000C2]">
+            Get connected with professional<br /> artisans
+          </p>
+        </div>
       </div>
-
+  
       {/* Right Panel */}
-      <div className="w-1/2 flex flex-col justify-center items-center">
-        <h2 className="text-2xl text-[#110000C2] font-semibold mb-6">Log in</h2>
-
+      <div className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 sm:p-10">
+        <h2 className="text-xl sm:text-2xl text-[#110000C2] font-semibold mb-6">Log in</h2>
+  
         {/* Feedback message */}
         {message && (
           <div
@@ -91,7 +93,7 @@ const LogIn = () => {
             {message}
           </div>
         )}
-
+  
         <form className="w-full max-w-sm">
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">Email</label>
           <input
@@ -100,7 +102,7 @@ const LogIn = () => {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
-
+  
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">Password</label>
           <div className="relative mb-4">
             <input
@@ -111,27 +113,27 @@ const LogIn = () => {
             />
             <button
               type="button"
-              className="absolute inset-y-0 right-3 flex items-center text-[#113ca8] cursor-pointer"
+              className="absolute inset-y-0 right-3 flex items-center text-[#113ca8]"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-
+  
           <div className="text-sm mb-4">
             Forgot Password?{" "}
             <Link to="/auth/reset-password" className="text-[#000000] font-semibold underline hover:text-blue-500">
               Reset Password
             </Link>
           </div>
-
-          <div className="flex relative w-48 h-12 mb-6">
+  
+          <div className="flex relative w-full justify-between mb-6">
             {/* Login Button with Spinner */}
             <button
               type="button"
               onClick={handleLogin}
               disabled={loading}
-              className={`flex items-center justify-center w-32 h-10 rounded-2xl px-4 py-2 transition cursor-pointer shadow-md ${
+              className={`flex items-center justify-center w-[70%] h-10 rounded-2xl px-4 py-2 transition cursor-pointer shadow-md ${
                 loading ? "bg-gray-300 text-gray-700 cursor-not-allowed" : "bg-[#ECF1FC] hover:bg-[#A1B7F2] text-black"
               }`}
             >
@@ -160,23 +162,23 @@ const LogIn = () => {
                 "Login"
               )}
             </button>
-
+  
             {/* Google Button */}
             <button
               type="button"
-              className="flex items-center justify-center w-16 h-10 rounded-md px-4 py-2 shadow-xl hover:bg-gray-300 transition cursor-pointer ml-2"
+              className="flex items-center justify-center w-10 h-10 rounded-md px-2 py-2 shadow-xl hover:bg-gray-300 transition cursor-pointer ml-2"
             >
               <img
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
                 alt="Google"
-                className="w-6 h-6 cursor-pointer"
+                className="w-6 h-6"
               />
             </button>
           </div>
         </form>
       </div>
     </div>
-  );
+  );  
 };
 
 export default LogIn;

@@ -3,12 +3,12 @@ const TopArtisans = () => {
     const artisans = new Array(3).fill({ name: 'Artisan Name', rating: 5 });
   
     return (
-      <section className="pt-24 ">
+      <section className="pt-24 h-fit">
         <h2 className="text-[#110000C2] px-6 text-5xl text-center font-semibold mb-12 ml-12 ">Top Artisans</h2>
 
-        <div className="flex items-center justify-center bg-[#ECF1FC] h-[450px] gap-12 flex-wrap">
+        <div className="flex items-center justify-center bg-[#ECF1FC] h-full py-10 gap-12 flex-col md:flex-row">
           {artisans.map((artisan, idx) => (
-            <div key={idx} className="bg-[#A1B7F2] h-[350px] w-[300px] py-6 text-white rounded-2xl items-center justify-items-center p-6 text-center">
+            <div key={idx} className="bg-[#A1B7F2] lg:h-[350px] w-[300px] py-6 text-white rounded-2xl items-center justify-items-center p-6 text-center">
               <div className="flex w-24 h-24 mx-auto items-center justify-center rounded-full mb-4">
                 <img
                   src="https://randomuser.me/api/portraits/men/32.jpg"

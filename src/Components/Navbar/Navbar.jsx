@@ -1,16 +1,18 @@
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getIdentity } from '../../Auth/tokenStorage';
 import useAuth from '../../Auth/useAuth';
-import { Bell, Globe, Folder, UserCircleIcon } from "lucide-react";
+import { Bell, Globe, Folder, UserCircleIcon, Menu, X } from "lucide-react";
 
-const Navbar = ({bg, userIconFill}) => {
+const Navbar = ({ bg, userIconFill }) => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const { state } = useAuth();
   const [navLocation, setNavLocation] = useState('Home');
+  const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const path = location.pathname;
+  const [showNavbar, setShowNavbar] = useState(false); // For slide-in animation
 
   useEffect(() => {
     const storedUser = getIdentity();
@@ -18,14 +20,16 @@ const Navbar = ({bg, userIconFill}) => {
     const pathMap = {
       "/": "Home",
       "/about-us": "About",
-      "/contact-us": "Contact"
-    }
+      "/contact-us": "Contact",
+    };
 
-    setNavLocation(pathMap[path])
+    setNavLocation(pathMap[path]);
+    if (storedUser) setUserData(storedUser);
 
-    if (storedUser) {
-      setUserData(storedUser);
-    }
+    // Trigger slide-in
+    setTimeout(() => {
+      setShowNavbar(true);
+    }, 50);
   }, [path]);
 
   const handleUserDashboard = () => {
@@ -47,76 +51,92 @@ const Navbar = ({bg, userIconFill}) => {
   const handleAuth = () => {
     navigate("/welcome");
   };
-  
-    return (
-      <div className="w-full flex justify-between z-100"> 
-      <nav className={`flex justify-between items-center pt-10 px-5 w-[100%] h-16 ${bg} rounded-md`}>
-        <div
-          className="flex items-center space-x-2 text-xl font-JejuMyeongjo text-[#7A9DF7] cursor-pointer"
-          onClick={() => navigate('/')}
-        >
-          <span className="bg-[#779BE7] font-JejuMyeongjo text-white w-15 h-15 items-center 
-           justify-center flex rounded-lg">FS</span>
-          <span>Fixserv</span>
-        </div>
-        <ul className="flex items-center space-x-4 text-md gap-10 text-[#7A9DF7]">
-          <li
-            className="hover:text-[#7A9DF7cc] transition-all duration-300 cursor-pointer relative group"
+
+  const toggleMenu = () => {
+    setMenuOpen((prev) => !prev);
+  };
+
+  return (
+    <div className={`w-full z-50 sticky top-0 bg-white shadow-md transition-all duration-500 ease-in-out transform ${showNavbar ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
+      <nav className={`flex flex-col md:flex-row justify-between items-center ${bg} px-5 py-4 md:h-16 rounded-md`}>
+        {/* Logo and Mobile Menu Toggle */}
+        <div className="flex items-center justify-between w-full md:w-auto">
+          <div
+            className="flex items-center space-x-2 text-xl font-JejuMyeongjo text-[#7A9DF7] cursor-pointer"
             onClick={() => navigate('/')}
           >
-            Home
-            <span className={`absolute -bottom-0.5 left-0 w-full h-1 rounded-4xl bg-[#7A9DF7cc] scale-x-0 group-hover:scale-x-105 ${navLocation === 'Home' && 'scale-x-105'} transition-transform duration-300`} />
-          </li>
-          <li
-            className="hover:text-[#7A9DF7cc] transition-all duration-300 cursor-pointer relative group"
-            onClick={() => navigate('/about-us')}
-          >
-            About Us
-            <span className={`absolute -bottom-0.5 left-0 w-full h-1 rounded-4xl bg-[#7A9DF7cc] scale-x-0 group-hover:scale-x-105 ${navLocation === 'About' && 'scale-x-105'} transition-transform duration-300`} />
-          </li>
-          <li
-            className="hover:text-[#7A9DF7cc] transition-all duration-300 cursor-pointer relative group"
-            onClick={() => navigate('/contact-us')}
-          >
-            Contact Us
-            <span className={`absolute -bottom-0.5 left-0 w-full h-1 rounded-4xl bg-[#7A9DF7cc] scale-x-0 group-hover:scale-x-105 ${navLocation === 'Contact' && 'scale-x-105'} transition-transform duration-300`} />
-          </li>
+            <span className="bg-[#779BE7] text-white w-10 h-10 flex items-center justify-center rounded-lg font-bold">FS</span>
+            <span>Fixserv</span>
+          </div>
+          <div className="md:hidden">
+            <button onClick={toggleMenu}>
+              {menuOpen ? <X className="w-6 h-6 text-[#7A9DF7]" /> : <Menu className="w-6 h-6 text-[#7A9DF7]" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Nav Links */}
+        <ul className={`flex-col md:flex-row md:flex md:items-center gap-6 text-md text-[#7A9DF7] mt-4 md:mt-0 ${menuOpen ? 'flex' : 'hidden'} md:flex`}>
+          {['Home', 'About Us', 'Contact Us'].map((label) => {
+            const route = label === 'Home' ? '/' : `/${label.toLowerCase().replace(/\s+/g, '-')}`;
+            return (
+              <li
+                key={label}
+                onClick={() => {
+                  setMenuOpen(false);
+                  navigate(route);
+                }}
+                className="hover:text-[#7A9DF7cc] drop-shadow-lg transition-all duration-300 cursor-pointer relative group"
+              >
+                {label}
+                {!menuOpen && (
+                  <span className={`absolute -bottom-0.5 left-0 w-full h-1 rounded-4xl bg-[#7A9DF7cc] scale-x-0 group-hover:scale-x-105 ${navLocation === label.split(' ')[0] && 'scale-x-105'} transition-transform duration-300`} />
+                )}
+              </li>
+            );
+          })}
         </ul>
 
-        {state.isAuthenticated && userData ?
-          (<div className="flex items-center gap-8 mx-5">
-            <div 
-              className="relative w-6 h-6 cursor-pointer"
-              onClick={handlePublicListing}
-              title="Public Listing">
-              <Folder className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6 absolute" />
-              <Globe className="text-[#00FF9D] w-4 h-4 absolute top-3 left-4" />
-            </div>
-    
-            <div className="relative cursor-pointer" title="Notifications">
-              <Bell className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6" />
-              <span className="absolute top-3 right-0 bg-[#00FF9D] w-4 h-4 rounded-full" />
-            </div>
+        {/* Auth Section */}
+        <div className={`flex-col md:flex-row md:flex md:items-center gap-4 mt-4 md:mt-0 ${menuOpen ? 'flex' : 'hidden'} md:flex`}>
+          {state.isAuthenticated && userData ? (
+            <div className={`flex items-center gap-6 ${menuOpen && 'mt-5'}`}>
+              <div
+                className="relative w-6 h-6 cursor-pointer"
+                onClick={handlePublicListing}
+                title="Public Listing"
+              >
+                <Folder className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6 absolute" />
+                <Globe className="text-[#00FF9D] w-4 h-4 absolute top-3 left-4" />
+              </div>
 
-            <div className="relative cursor-pointer" title="Profile">
-              <UserCircleIcon 
-                className={`w-6 h-6 text-[#7A9DF7] cursor-pointer ${userIconFill || 'fill-[#ffffff]'}`}
-                onClick={handleUserDashboard}
-              />
+              <div className="relative cursor-pointer" title="Notifications">
+                <Bell className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6" />
+                <span className="absolute top-3 right-0 bg-[#00FF9D] w-3 h-3 rounded-full" />
+              </div>
+
+              <div className="relative cursor-pointer" title="Profile">
+                <UserCircleIcon
+                  onClick={handleUserDashboard}
+                  className={`w-6 h-6 text-[#7A9DF7] ${userIconFill || 'fill-white'}`}
+                />
+              </div>
             </div>
-          </div>)
-        : (<div  className="flex items-center space-x-2">
-          <button
-            onClick={handleAuth}
-            className="bg-[#779BE7] hover:bg-[#779BE5dd] hover:shadow-gray-300 shadow-xl text-white px-4 py-1 h-10 w-44 text-md gap-20 rounded-xl cursor-pointer"
-          >
-            Get Started
-          </button>
-        </div>)}
+          ) : (
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                handleAuth();
+              }}
+              className={`bg-gradient-to-r from-[#7A9DF7] to-[#7A9Dd7] shadow-lg hover:shadow-md hover:from-[#7a9ed7d9] hover:to-[#7a9df7d9] transition duration-300 ease-in-out text-white px-4 py-2 rounded-xl text-md ${menuOpen && 'mt-5'}`}
+            >
+              Get Started
+            </button>
+          )}
+        </div>
       </nav>
-      </div>
-    );
-  };
-export default Navbar;  
+    </div>
+  );
+};
 
-
+export default Navbar;

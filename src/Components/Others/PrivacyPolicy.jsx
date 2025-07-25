@@ -2,8 +2,8 @@ import React from "react";
 
 const PrivacyPolicy = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-white text-black p-10 mt-10">
-      <div className="max-w-full mx-auto">
+    <div className="min-h-screen flex flex-col bg-gradient-to-r from-blue-100 to-blue-0 text-black p-10">
+      <div className="max-w-full mx-auto mt-10">
         <h2 className="text-3xl font-bold mb-9 text-blue-700 cursor-pointer">Privacy <span className="text-purple-700">Policy</span></h2>
         {/* <div className="flex gap-4 mb-6 border-b pb-2 text-gray-600">
           <span className="cursor-pointer hover:text-black">Terms</span>
