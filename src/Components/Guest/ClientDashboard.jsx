@@ -165,30 +165,33 @@ const ClientDashboard = () => {
           </div>
 
           {/* About and Contact Info */}
-          <div className="flex flex-col gap-5 backdrop-blur-sm max-w-6xl mx-auto mt-5 md:flex-row ">
+          <div className="flex flex-col md:flex-row gap-5 backdrop-blur-sm max-w-6xl mx-auto mt-6">
             {/* Contact Info */}
-            <div className="rounded-2xl bg-white shadow-xl px-10 py-10 min-h-[320px] md:w-full">
-              <h3 className="text:md md:text-xl font-semibold text-gray-800 mb-6">Contact Info</h3>
-              <div className="flex items-center text-sm md:text-base text-gray-700 mb-6">
-                <Phone className="mr-3 text-blue-600" size={20} /> {client.phone || 'Not provided'}
+            <div className="rounded-2xl bg-white shadow-xl px-8 py-8 min-h-[320px] w-full md:w-1/3">
+              <h3 className="text-md md:text-xl font-semibold text-gray-800 mb-6">Contact Info</h3>
+              <div className="flex items-center text-sm md:text-base text-gray-700 mb-4">
+                <Phone className="mr-3 text-blue-600" size={20} />
+                {client.phone || 'Not provided'}
               </div>
-              <div className="flex items-center text-sm md:text-base text-gray-700 mb-6">
-                <Mail className="mr-3 text-blue-600" size={20} /> {client.email}
+              <div className="flex items-center text-sm md:text-base text-gray-700 mb-4">
+                <Mail className="mr-3 text-blue-600" size={20} />
+                {client.email}
               </div>
-              <div className="flex items-center text-sm md:text-base text-gray-700 mb-6">
-                <MapPin className="mr-3 text-blue-600" size={20} /> {client.deliveryAddress.country}, {client.deliveryAddress.state}, {client.deliveryAddress.city}.
+              <div className="flex items-center text-sm md:text-base text-gray-700 mb-4">
+                <MapPin className="mr-3 text-blue-600" size={20} />
+                {client.deliveryAddress.country}, {client.deliveryAddress.state}, {client.deliveryAddress.city}.
               </div>
               <button
-              onClick={handleEditProfile} 
-              className="flex mt-6 py-2 px-4 gap-3 bg-gradient-to-r from-blue-500 to-purple-500
-                text-white rounded-xl text-sm font-light shadow-lg hover:opacity-80 hover:shadow-xl hover:scale-102 transition-all ease-linear cursor-pointer"
+                onClick={handleEditProfile}
+                className="flex items-center justify-center mt-6 py-2 px-4 gap-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl text-sm font-medium shadow-lg hover:opacity-90 hover:shadow-xl transition-all duration-200"
               >
-                <Edit3Icon className="inline mr-2 w-5 h-5" />
+                <Edit3Icon className="w-5 h-5" />
                 Edit Profile
               </button>
             </div>
+
             {/* Device section */}
-            <div className="rounded-2xl flex flex-col md:flex-row bg-white shadow-xl w-full p-8 min-h-[320px] gap-6">
+            <div className="rounded-2xl flex flex-col md:flex-row bg-white shadow-xl w-full md:w-2/3 p-6 min-h-[320px] gap-6">
               {/* Items Section */}
               <div className="flex-1 border-b md:border-b-0 md:border-r border-gray-200 pb-6 md:pb-0 md:pr-6">
                 <div className="flex items-center gap-2 mb-6">
@@ -202,28 +205,37 @@ const ClientDashboard = () => {
                 </div>
 
                 {uploadedProducts?.length ? (
-                  <div className="flex flex-wrap -mx-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {uploadedProducts.map((item, index) => (
-                      <div key={index} className="w-1/3 p-2 relative group">
-                        <div className="bg-white w-[84px] h-[96px] rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
-                          <img src={item.imageUrl} alt="Uploaded Item" className="w-full h-auto object-fill rounded mb-2" />
-                          <div className="absolute w-45 h-fit left-0 top-30 bg-gray-100 text-gray-700 text-xs rounded-lg p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                            <p className="text-xs font-extralight text-gray-400">Uploaded on: {new Date(item.uploadedAt).toLocaleDateString()}</p>
-                            <p className="text-xs text-gray-600 whitespace-break-spaces">{item.description}</p>
+                      <div key={index} className="p-1 relative group">
+                        <div className="bg-white w-full h-[120px] rounded-xl shadow-md p-2 hover:shadow-lg transition-shadow flex flex-col items-center justify-center">
+                          <img
+                            src={item.imageUrl}
+                            alt="Uploaded Item"
+                            className="w-16 h-16 object-cover rounded mb-1"
+                          />
+                          <div className="absolute w-44 top-[110px] left-0 bg-gray-100 text-gray-700 text-xs rounded-lg p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                            <p className="text-xs font-extralight text-gray-400">
+                              Uploaded on: {new Date(item.uploadedAt).toLocaleDateString()}
+                            </p>
+                            <p className="text-xs text-gray-600 whitespace-pre-wrap">
+                              {item.description}
+                            </p>
                           </div>
                         </div>
                       </div>
                     ))}
-                    <div className="w-1/2 lg:w-1/3 p-2 relative group">
-                      <div className="bg-white w-[84px] h-[96px] rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
-                          <PlusIcon
-                            className="w-full h-auto text-gray-500 my-1.5"
-                            onClick={() => setAddItemModalOpen(true)}
-                          />
-                          <div className="absolute left-0 top-30 bg-gray-100 text-gray-700 text-xs rounded-lg p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                            <p className="text-sm text-gray-600">Add Item</p>
-                          </div>
-                        </div>
+                    {/* Add Item */}
+                    <div className="w-20 h-[96px] p-1 relative group cursor-pointer">
+                      <div
+                        className="bg-gradient-to-br from-white to-purple-50 w-full h-full rounded-xl shadow-md p-2 hover:shadow-lg transition-all duration-300 hover:from-purple-50 hover:to-white ease-in-out flex items-center justify-center"
+                        onClick={() => setAddItemModalOpen(true)}
+                      >
+                        <PlusIcon className="text-gray-500 w-6 h-6" />
+                      </div>
+                      <div className="absolute w-32 top-24 left-0 bg-gray-100 text-gray-700 text-xs rounded-lg p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                        <p className="text-sm text-gray-600">Add Item</p>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -242,9 +254,9 @@ const ClientDashboard = () => {
               </div>
 
               {/* Service Preferences */}
-              <div className="w-full md:w-1/3">
-                <h3 className="text-sm md:text-md font-semibold text-gray-800 mb-4 px-0 md:px-4">Service Preference</h3>
-                <div className="flex flex-wrap gap-2 mb-6 px-0 md:px-4">
+              <div className="w-full md:w-1/4">
+                <h3 className="text-sm md:text-md font-semibold text-gray-800 mb-4">Service Preference</h3>
+                <div className="flex flex-wrap gap-2">
                   {client.servicePreferences.map((skill, index) => (
                     <span
                       key={index}
