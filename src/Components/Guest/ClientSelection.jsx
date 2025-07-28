@@ -112,7 +112,7 @@ const ClientSelection = () => {
                   </div>
                   
                   <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                    {artisan.skills.slice(0, 3).map((skill, index) => (
+                    {artisan.skillSet.slice(0, 3).map((skill, index) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 rounded-full text-sm font-medium border border-blue-200/50"
@@ -120,9 +120,9 @@ const ClientSelection = () => {
                         {skill.trim()}
                       </span>
                     ))}
-                    {artisan.skills.length > 3 && (
+                    {artisan.skillSet.length > 3 && (
                       <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
-                        +{artisan.skills.length - 3} more
+                        +{artisan.skillSet.length - 3} more
                       </span>
                     )}
                   </div>
@@ -232,13 +232,13 @@ const ClientSelection = () => {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">About me</h3>
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  Professional artisan specializing in {artisan.skills.join(", ").toLowerCase()}. 
+                  Professional artisan specializing in {artisan.skillSet.join(", ").toLowerCase()}. 
                   Based in {artisan.location}, I provide high-quality services through {artisan.businessName}.
                 </p>
                 
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Skills & Expertise</h3>
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {artisan.skills.map((skill, index) => (
+                  {artisan.skillSet.map((skill, index) => (
                     <span
                       key={index}
                       className="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 rounded-xl text-sm font-medium border border-blue-200/50 hover:shadow-md transition-shadow"

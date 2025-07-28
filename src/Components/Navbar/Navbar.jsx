@@ -90,7 +90,7 @@ const Navbar = ({ bg, userIconFill }) => {
               >
                 {label}
                 {!menuOpen && (
-                  <span className={`absolute -bottom-0.5 left-0 w-full h-1 rounded-4xl bg-[#7A9DF7cc] scale-x-0 group-hover:scale-x-105 ${navLocation === label.split(' ')[0] && 'scale-x-105'} transition-transform duration-300`} />
+                  <span className={`absolute -bottom-0.5 left-0 w-full h-1 rounded-4xl bg-[#7A9DF7cc] scale-x-0 group-hover:scale-x-105 ${navLocation === label.split(' ')[0] && 'scale-x-10 rounded-2xl'} transition-transform duration-300`} />
                 )}
               </li>
             );
