@@ -3,7 +3,7 @@ import { getIdentity } from '../../Auth/tokenStorage';
 import { ExternalLink, GitPullRequestCreateArrowIcon } from "lucide-react";
 import useAuth from '../../Auth/useAuth';
 
-const PrivateBookingModal = ({ closeModal, artisanId }) => {
+const PrivateBookingModal = ({ closeModal, artisanId, uploadedProducts }) => {
   const [user, setUser] = useState(null);
   const [services, setServices] = useState([]);
   const [submitData, setSubmitData] = useState({

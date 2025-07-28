@@ -138,7 +138,7 @@ const ModernProfile = () => {
                   </div>
                   
                   <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                    {userData.skills.slice(0, 3).map((skill, index) => (
+                    {userData.skillSet.slice(0, 3).map((skill, index) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 rounded-full text-sm font-medium border border-blue-200/50"
@@ -146,9 +146,9 @@ const ModernProfile = () => {
                         {skill.trim()}
                       </span>
                     ))}
-                    {userData.skills.length > 3 && (
+                    {userData.skillSet.length > 3 && (
                       <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
-                        +{userData.skills.length - 3} more
+                        +{userData.skillSet.length - 3} more
                       </span>
                     )}
                   </div>
@@ -251,13 +251,13 @@ const ModernProfile = () => {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">About me</h3>
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  Professional artisan specializing in {userData.skills.join(", ").toLowerCase()}. 
+                  Professional artisan specializing in {userData.skillSet.join(", ").toLowerCase()}. 
                   Based in {userData.location}, I provide high-quality services through {userData.businessName}.
                 </p>
                 
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Skills & Expertise</h3>
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {userData.skills.map((skill, index) => (
+                  {userData.skillSet.map((skill, index) => (
                     <span
                       key={index}
                       className="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 rounded-xl text-sm font-medium border border-blue-200/50 hover:shadow-md transition-shadow"
@@ -333,6 +333,8 @@ const ModernProfile = () => {
               <p>No recent bookings to display</p>
             </div>
           </div>
+
+          {/* Logout Button */}
           <div>
             <button
               className={`flex-1 py-2 mt-6 px-4 rounded-lg font-medium transition-all bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:scale-105`}
