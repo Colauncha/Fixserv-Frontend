@@ -61,7 +61,6 @@ const ClientEditProfile = () => {
         method: "POST",
         headers: {
           Authorization: `Bearer ${state.token}`,
-          'content-type': 'multipart/form-data',
         },
         body: formData,
       });
