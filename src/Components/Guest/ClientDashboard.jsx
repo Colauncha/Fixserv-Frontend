@@ -88,7 +88,7 @@ const ClientDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       {publicBookingOpen && (
-        <PublicBookingModal closeModal={() => setPublicBookingOpen(false)} uploadedProducts={uploadedProducts} />
+        <PublicBookingModal closeModal={() => setPublicBookingOpen(false)} />
       )}
       {addItemModalOpen && (
         <AddItemModal
