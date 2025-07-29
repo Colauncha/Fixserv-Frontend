@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { getIdentity } from '../../Auth/tokenStorage';
+import { getIdentity, setIdentity } from '../../Auth/tokenStorage';
 import { PackagePlus, PlusIcon, ExternalLink } from "lucide-react";
 import useAuth from '../../Auth/useAuth';
 
@@ -44,6 +44,7 @@ const AddItemModal = ({ closeModal }) => {
 
       const data = await response.json();
       console.log('Repair request submitted successfully:', data);
+      setIdentity(data.user)
       closeModal();
     } catch (error) {
       console.error('Error submitting repair request:', error);

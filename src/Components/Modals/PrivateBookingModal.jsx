@@ -1,27 +1,26 @@
 import { useState, useEffect} from 'react';
 import { getIdentity } from '../../Auth/tokenStorage';
-import { ExternalLink, GitPullRequestCreateArrowIcon } from "lucide-react";
+import { ExternalLink, GitPullRequestCreateArrowIcon, PlusIcon } from "lucide-react";
 import useAuth from '../../Auth/useAuth';
+import { useNavigate } from 'react-router-dom';
 
-const PrivateBookingModal = ({ closeModal, artisanId, uploadedProducts }) => {
-  const [user, setUser] = useState(null);
+const PrivateBookingModal = ({ closeModal, artisanId }) => {
+  const [items, setItems] = useState(null);
   const [services, setServices] = useState([]);
   const [submitData, setSubmitData] = useState({
-    clientId: "",
-    serviceId: ""
+    serviceId: "",
+    itemId: ""
   });
   const { state } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const storedUser = getIdentity();
+        console.log('Stored User:', storedUser);
         if (storedUser) {
-          setUser(storedUser);
-          setSubmitData(prevData => ({
-            ...prevData,
-            clientId: storedUser.id || storedUser._id
-          }))
+          setItems(storedUser.uploadedProducts || []);
         } else {
           console.error('No user data found');
         }
@@ -99,97 +98,73 @@ const PrivateBookingModal = ({ closeModal, artisanId, uploadedProducts }) => {
         </div>
 
         <div className="p-6 overflow-y-auto flex-1">
-          <form className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              {/* Name Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={user?.fullName || '—'}
-                  readOnly
-                  className="w-full px-4 py-2 bg-white border border-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Email Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={user?.email || '—'}
-                  readOnly
-                  className="w-full px-4 py-2 bg-white border border-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Phone Number Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={user?.phoneNumber || 'Not Provided'}
-                  readOnly
-                  className="w-full px-4 py-2 bg-white border border-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  value={user?.deliveryAddress?.country + ', ' + user?.deliveryAddress?.state  + ', ' +  user?.deliveryAddress?.city || '—'}
-                  readOnly
-                  className="w-full px-4 py-2 bg-white border border-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Description
-                </label>
-                <textarea
-                  rows={4}
-                  className="w-full px-4 py-2 bg-white border border-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Service Type
-                </label>
-                <select
-                  className="w-full px-4 py-2 bg-white border border-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={submitData.serviceId}
-                  onChange={(e) => setSubmitData({ ...submitData, serviceId: e.target.value })}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Service Type
+            </label>
+            <select
+              className="w-full px-4 py-2 bg-white border border-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={submitData.serviceId}
+              onChange={(e) => setSubmitData({ ...submitData, serviceId: e.target.value })}
+            >
+              <option value="">Select a service</option>
+              {services.map((service) => (
+                <option key={service.id} value={service.id}>
+                  {service.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className='my-6 bg-white p-4 rounded-lg drop-shadow-lg'>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Item to Repair
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {items?.map((item, index) => (
+                <div key={index} className="p-1 relative group">
+                  <div className="bg-white w-[120px] h-[120px] rounded-xl drop-shadow-md p-2 hover:drop-shadow-lg transition-shadow flex flex-col items-center justify-center">
+                    <img
+                      src={item.imageUrl}
+                      alt="Uploaded Item"
+                      className="w-16 h-16 object-cover rounded mb-1"
+                    />
+                    <div className="absolute w-44 top-[110px] left-0 bg-gray-100 text-gray-700 text-xs rounded-lg p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                      <p className="text-xs font-extralight text-gray-400">
+                        Uploaded on: {new Date(item.uploadedAt).toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-gray-600 whitespace-pre-wrap">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {/* Add Item */}
+              <div className="w-20 h-[96px] p-1 relative group cursor-pointer">
+                <div
+                  className="bg-gradient-to-br from-white to-purple-50 w-full h-full rounded-xl shadow-md p-2 hover:shadow-lg transition-all duration-300 hover:from-purple-50 hover:to-white ease-in-out flex items-center justify-center"
+                  onClick={() => navigate("/client/dashboard")}
                 >
-                  <option value="">Select a service</option>
-                  {services.map((service) => (
-                    <option key={service.id} value={service.id}>
-                      {service.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <button
-                  className="w-full flex items-center justify-center gap-4 mb-10 py-2 px-4 rounded-xl cursor-pointer text-sm font-light transition-all bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:scale-102"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleSubmit();
-                  }}
-                >
-                  <ExternalLink className="w-5 h-5" />
-                  Submit Repair Request
-                </button>
+                  <PlusIcon className="text-gray-500 w-6 h-6" />
+                </div>
+                <div className="absolute w-32 top-24 left-0 bg-gray-100 text-gray-700 text-xs rounded-lg p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                  <p className="text-sm text-gray-600">Add Item</p>
+                </div>
               </div>
             </div>
-          </form>
+          </div>
+          <div>
+            <button
+              className="w-full flex items-center justify-center gap-4 mb-10 py-2 px-4 rounded-xl cursor-pointer text-sm font-light transition-all bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:scale-102"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
+            >
+              <ExternalLink className="w-5 h-5" />
+              Submit Repair Request
+            </button>
+          </div>
         </div>
       </div>
     </div>
