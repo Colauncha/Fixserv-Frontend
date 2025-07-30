@@ -57,7 +57,7 @@ const ClientEditProfile = () => {
       const formData = new FormData();
       formData.append("profilePicture", file);
       try {
-        const resp = await fetch(`https://user-management-h4hg.onrender.com/api/upload/${storedData._id || storedData.id}/profile-picture`, {
+        const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/upload/${storedData._id || storedData.id}/profile-picture`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${state.token}`,
