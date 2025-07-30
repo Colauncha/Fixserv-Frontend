@@ -86,7 +86,7 @@ const ClientSelection = () => {
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
                   <img
-                    src="https://randomuser.me/api/portraits/men/32.jpg"
+                    src={artisan.profilePicture || "https://randomuser.me/api/portraits/men/32.jpg"}
                     alt="Artisan"
                     className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
                   />
@@ -143,7 +143,7 @@ const ClientSelection = () => {
                 <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <img
-                      src="https://randomuser.me/api/portraits/men/32.jpg"
+                      src={artisan.profilePicture || "https://randomuser.me/api/portraits/men/32.jpg"}
                       alt="Artisan"
                       className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
                     />

@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../Auth/useAuth';
+import Fetch from '../../util/Fetch';
 import { getIdentity, setIdentity } from '../../Auth/tokenStorage';
-import { Star, MapPin, Clock, Phone, Mail, Building, Edit3, Calendar, ExternalLink, ChevronDown, ChevronUp, LogOutIcon } from 'lucide-react';
+import AddServiceModal from '../Modals/AddServiceModal';
+import { Star, User, MapPin, Clock, Phone, Mail, Building, Edit3, Calendar, ExternalLink, ChevronDown, ChevronUp, LogOutIcon, Cog, Plus, Edit2, Trash2, ShoppingBagIcon } from 'lucide-react';
 
 const ModernProfile = () => {
   const [availability, setAvailability] = useState("Available");
   const [businessHoursOpen, setBusinessHoursOpen] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [serviceModalOpen, setServiceModalOpen] = useState(false);
   
   const navigateFunc = useNavigate();
   const { state, logout } = useAuth();
@@ -20,25 +24,48 @@ const ModernProfile = () => {
       navigateFunc('/client/profile');
     }
     console.log('stored user', storedUser);
-    const fetchUserData = async () => {
+  
+    const fetchAllData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/user/${storedUser.id || storedUser._id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
+  
+        // fetch user data using Fetch utility
+        const { data: userData, error: userError } = await Fetch({
+          url: `${import.meta.env.VITE_API_URL}/api/admin/user/${storedUser.id || storedUser._id}`,
+          token: state.token,
+        });
+  
+        if (userError) {
+          throw new Error(`Failed to fetch user data: ${userError.message}`);
         }
-        const data = await response.json();
-        console.log(`Data`, data);
-        setIdentity(data);
-        setUserData(data)
+        console.log('User Data:', userData);
+        setIdentity(userData);
+        setUserData(userData);
+  
+        // fetch artisan services
+        const { data: servicesData, error: servicesError } = await Fetch({
+          url: `${import.meta.env.VITE_API_SERVICE_URL}/service/artisan/${storedUser?.id || storedUser?._id}`,
+          token: state.token,
+        });
+  
+        if (servicesError) {
+          console.error('Error fetching services:', servicesError);
+        } else {
+          console.log('Services:', servicesData);
+          setServices(servicesData);
+        }
+  
       } catch (err) {
+        console.error('Fetch error:', err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-    fetchUserData();
+  
+    fetchAllData();
   }, [navigateFunc, state]);
+  
 
   if (loading) {
     return (
@@ -92,12 +119,30 @@ const ModernProfile = () => {
     }));
   };
 
+  const handleServiceUpdate = (service) => {
+    console.log('Update service:', service);
+  };
+
+  const handleServiceDelete = (id) => {
+    console.log('Delete service:', id);
+  };
+
   const navigate = (path) => {
     navigateFunc(path);
   };
 
+  const handleOpenServiceModal = () => {
+    setServiceModalOpen(true);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
+      {serviceModalOpen && (
+        <AddServiceModal
+          closeModal={() => setServiceModalOpen(false)}
+          updateParent={setServices}
+        />
+      )}
       {/* Header with subtle background pattern */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5"></div>
@@ -112,7 +157,7 @@ const ModernProfile = () => {
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
                   <img
-                    src="https://randomuser.me/api/portraits/men/32.jpg"
+                    src={userData.profilePicture || "https://randomuser.me/api/portraits/men/32.jpg"}
                     alt="Artisan"
                     className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
                   />
@@ -160,7 +205,7 @@ const ModernProfile = () => {
                 <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <img
-                      src="https://randomuser.me/api/portraits/men/32.jpg"
+                      src={userData.profilePicture || "https://randomuser.me/api/portraits/men/32.jpg"}
                       alt="Artisan"
                       className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
                     />
@@ -249,7 +294,12 @@ const ModernProfile = () => {
           <div className="grid lg:grid-cols-3 gap-8 mb-8">
             <div className="lg:col-span-2">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">About me</h3>
+                <span className="flex items-center gap-2 mb-4">
+                  <div className='p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100'>
+                    <User className="w-5 h-5 text-blue-600"/>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">About me</h3>
+                </span>
                 <p className="text-gray-700 leading-relaxed mb-6">
                   Professional artisan specializing in {userData.skillSet.join(", ").toLowerCase()}. 
                   Based in {userData.location}, I provide high-quality services through {userData.businessName}.
@@ -279,15 +329,13 @@ const ModernProfile = () => {
 
             {/* Contact Info */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Contact Info</h3>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Phone className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-900">Phone</p>
-                    <p className="text-gray-600">+234 904454667</p>
+              <span className="flex items-center gap-2 mb-4">
+                  <div className='p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100'>
+                    <Phone className="w-5 h-5 text-blue-600"/>
                   </div>
-                </div>
+                  <h3 className="text-2xl font-bold text-gray-900">Contact Info</h3>
+                </span>
+              <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <Mail className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
@@ -309,7 +357,121 @@ const ModernProfile = () => {
                     <p className="text-gray-600">{userData.businessName}</p>
                   </div>
                 </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-900">Phone</p>
+                    <p className="text-gray-600">+234 904454667</p>
+                  </div>
+                </div>
               </div>
+            </div>
+          </div>
+
+          {/* Services Section */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border mb-8 border-white/20 p-6">
+            <span className="flex items-center gap-2 mb-4">
+              <div className='p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100'>
+                <Cog className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">My Services</h3>
+            </span>
+
+            {/* Scrollable Grid */}
+            <div className="overflow-x-auto">
+              <div className="grid grid-flow-col auto-cols-[280px] gap-4 min-w-full">
+                {services?.length > 0 && services.map((service) => (
+                  <div
+                    key={service.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                  >
+                    {/* Header with Actions */}
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="text-base font-semibold text-gray-900 flex-1 pr-2">{service.title}</h4>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => handleServiceUpdate(service)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Update service"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleServiceDelete(service.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete service"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{service.description}</p>
+
+                    {/* Service Details */}
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Duration:</span>
+                        <span className="text-gray-700 font-medium">{service.estimatedDuration}</span>
+                      </div>
+                      
+                      <div className="flex justify-between text-sm items-center">
+                        <span className="text-gray-500">Status:</span>
+                        <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          service.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+                        }`}>
+                          {service.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Rating:</span>
+                        <span className="text-gray-700 font-medium">{service.rating ?? 0}/5</span>
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className="text-blue-600 font-bold text-lg">
+                      ₦{Number(service.price).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Add Service Card */}
+                <div 
+                  className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-dashed border-blue-200 p-4 hover:border-blue-300 transition-colors cursor-pointer group"
+                  onClick={handleOpenServiceModal}
+                >
+                  <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
+                    <div className="p-3 bg-white rounded-full shadow-sm group-hover:shadow-md transition-shadow mb-3">
+                      <Plus className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <h4 className="text-base font-semibold text-gray-700 mb-1">Add New Service</h4>
+                    <p className="text-sm text-gray-500">Create a new service offering</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Incoming Order Section */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border mb-8 border-white/20 p-6">
+            <span className="flex items-center gap-2 mb-4">
+              <div className='p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100'>
+                <ShoppingBagIcon className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Incoming Orders</h3>
+            </span>
+
+            <div className="flex flex-col items-center justify-center text-center text-gray-600 py-12 px-4 bg-white/70 rounded-2xl">
+              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 shadow-md mb-4">
+                <ShoppingBagIcon className="w-10 h-10 text-gray-400" />
+              </div>
+              <h4 className="text-lg font-semibold text-gray-800 mb-1">No Recent Orders</h4>
+              <p className="text-sm text-gray-500">
+                You haven't received any orders yet. When you do, they'll show up here.
+              </p>
             </div>
           </div>
 
@@ -317,7 +479,9 @@ const ModernProfile = () => {
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-600" />
+                <div className='p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100'>
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                </div>
                 <h3 className="text-xl font-bold text-gray-900">Booking History</h3>
               </div>
               <a 
@@ -328,9 +492,14 @@ const ModernProfile = () => {
                 <ExternalLink className="w-4 h-4" />
               </a>
             </div>
-            <div className="text-gray-600 text-center py-8">
-              <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p>No recent bookings to display</p>
+            <div className="flex flex-col items-center justify-center text-center text-gray-600 py-12 px-4 bg-white/70 rounded-2xl">
+              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 shadow-md mb-4">
+                <Calendar className="w-10 h-10 text-gray-400" />
+              </div>
+              <h4 className="text-lg font-semibold text-gray-800 mb-1">No recent bookings to display</h4>
+              <p className="text-sm text-gray-500">
+                You haven't received any orders yet. When you do, they'll show up here.
+              </p>
             </div>
           </div>
 
