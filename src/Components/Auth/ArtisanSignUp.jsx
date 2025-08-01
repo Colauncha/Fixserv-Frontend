@@ -3,11 +3,8 @@ import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BackgroundImage from "../../assets/uploads/Welcome_bg.png";
 import ArtisanImage from "../../assets/uploads/Artisan_Image.png";
-import { useUser } from "../../Context/UserContext";
 
 const ArtisanSignUp = () => {
-  const { setFullName, setTime, setLocation } = useUser();
-
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState(""); 
@@ -16,8 +13,8 @@ const ArtisanSignUp = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
-    firstName: "",
-    lastName: "",
+    fullName: "",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
     skillSet: [],
@@ -27,10 +24,6 @@ const ArtisanSignUp = () => {
     location: "",
     rating: 0,
   });
-
-  useEffect(() => {
-    setTime(formData.time);
-  }, []);
 
   const [businessHours, setBusinessHours] = useState({
     monday: { open: "09:00", close: "17:00" },
@@ -155,27 +148,26 @@ return (
 
       <form className="w-full max-w-sm">
         {/* Form Fields (same as before)... */}
-        <label className="block mb-2 text-sm text-[#110000C2] font-medium">
-            First Name
+          <label className="block mb-2 text-sm text-[#110000C2] font-medium">
+            Full Name
           </label>
           <input
             type="text"
-            value={formData.firstName}
+            value={formData.fullName}
             onChange={(e) => {
-              setFormData({ ...formData, firstName: e.target.value });
-              setFullName(e.target.value);
+              setFormData({ ...formData, fullName: e.target.value });
             }}
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:ring-2 focus:ring-blue-300 focus:outline-none"
           />
 
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
-            Last Name
+            Phone Number
           </label>
           <input
             type="text"
-            value={formData.lastName}
+            value={formData.phoneNumber}
             onChange={(e) =>
-              setFormData({ ...formData, lastName: e.target.value })
+              setFormData({ ...formData, phoneNumber: e.target.value })
             }
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:ring-2 focus:ring-blue-300 focus:outline-none"
           />
@@ -248,7 +240,7 @@ return (
                 skillSet: e.target.value.split(","),
               })
             }
-            placeholder="Enter skills separated by commas"
+            placeholder="Enter skillSet separated by commas"
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
 
@@ -272,7 +264,6 @@ return (
             value={formData.location}
             onChange={(e) => {
               setFormData({ ...formData, location: e.target.value });
-              setLocation(e.target.value);
             }}
             className="w-full p-2 mb-6 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />

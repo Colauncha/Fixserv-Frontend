@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getIdentity, setIdentity } from "../../Auth/tokenStorage";
 import useAuth from "../../Auth/useAuth";
 import Fetch from "../../util/Fetch";
-import { Camera, Save, ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Key, Edit3, CheckCircle, AlertCircle, Clock, Building } from "lucide-react";
+import CharProfilePic from "../CharProfilePic";
+import { Camera, Save, ArrowLeft, User, Users, Mail, Phone, MapPin, Briefcase, Key, Edit3, CheckCircle, AlertCircle, Clock, Building } from "lucide-react";
 
 const ModernEditProfile = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const ModernEditProfile = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [profileImage, setProfileImage] = useState({
-    image: storedData.profilePicture || "https://randomuser.me/api/portraits/men/75.jpg",
+    image: storedData.profilePicture,
     file: null,
   });
   const [saveImage, setSaveImage] = useState(false);
@@ -103,7 +104,7 @@ const ModernEditProfile = () => {
       };
 
       const response = await fetch(
-        `https://user-management-h4hg.onrender.com/api/admin/${user._id}`,
+        `https://user-management-h4hg.onrender.com/api/admin/${user._id || user.id}`,
         {
           method: "PATCH",
           headers: {
@@ -190,12 +191,15 @@ const ModernEditProfile = () => {
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 mb-8">
           <div className="flex flex-col items-center">
             <div className="relative group mb-6">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-              <img
-                src={profileImage.image}
-                alt="profile"
-                className="relative w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-              />
+            <div className={`absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur ${profileImage.image ? 'opacity-25 group-hover:opacity-40' : 'opacity-10 group-hover:opacity-15' }  transition duration-300`}></div>
+                  {profileImage.image ? 
+                    <img
+                      src={profileImage.image}
+                      alt="Artisan"
+                      className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
+                    /> : 
+                    <CharProfilePic size={'32'} username={profile.fullName} otherStyles='!text-4xl' />
+                  }
               <label
                 htmlFor="profileImageUpload"
                 className="absolute bottom-0 right-0 bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl hover:scale-105 transition-all group"

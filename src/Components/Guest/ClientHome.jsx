@@ -1,5 +1,6 @@
 import { MapPin, Star, ChevronLeft, ChevronRight, Award, Users, Calendar } from "lucide-react"; 
 import { useEffect, useState } from "react";
+import CharProfilePic from "../CharProfilePic";
 import { useNavigate } from "react-router-dom";
 
 const ClientHome = () => {
@@ -21,7 +22,7 @@ const ClientHome = () => {
 
   useEffect(() => {
     fetchArtisans();
-  }, [activeTab, currentPage]);
+  }, [activeTab, currentPage, perPage]);
 
   const fetchArtisans = async () => {
     setLoading(true);
@@ -162,11 +163,17 @@ const ClientHome = () => {
               {/* Card Header */}
               <div className="p-6 text-center bg-gradient-to-br from-blue-50 to-purple-50">
                 <div className="relative inline-block mb-4">
+                  {artisan.profilePicture ?
                   <img
-                    src={artisan.profilePicture || '/api/placeholder/80/80'}
+                    src={artisan.profilePicture}
                     alt={artisan.fullName}
                     className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
-                  />
+                  /> : 
+                  // <div className="p-3 rounded-full border-4 border-white shadow-lg">
+                  //   <Users className="w-20 h-20 text-gray-500" />
+                  // </div>
+                    <CharProfilePic username={artisan.fullName} size={'20'} />
+                  }
                   {activeTab === 'top' && (
                     <div className="absolute -top-2 -right-2 bg-yellow-500 text-white rounded-full p-1">
                       <Award className="w-4 h-4" />
@@ -248,54 +255,73 @@ const ClientHome = () => {
         </div>
       )}
 
-      {/* Pagination */}
-      {!loading && totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Page {currentPage} of {totalPages}
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            
-            {/* Page Numbers */}
-            <div className="flex gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = Math.max(1, currentPage - 2) + i;
-                if (pageNum > totalPages) return null;
-                
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => handlePageChange(pageNum)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === pageNum
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
+        {/* Pagination */}
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages}
+            </div>
+
+            <div className="flex gap-3 text-sm text-gray-700">
+              <label htmlFor="perPage">Per Page</label>
+              <select
+                name="perPage"
+                value={perPage}
+                onChange={(e) => {
+                  setPerPage(Number(e.target.value));
+                  setCurrentPage(1); // Reset to first page when perPage changes
+                }}
+              >
+                <option value={3}>3</option>
+                <option value={6}>6</option>
+                <option value={9}>9</option>
+                <option value={12}>12</option>
+                <option value={15}>15</option>
+                <option value={18}>18</option>
+              </select>
             </div>
             
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              
+              {/* Page Numbers */}
+              <div className="flex gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = Math.max(1, currentPage - 2) + i;
+                  if (pageNum > totalPages) return null;
+                  
+                  return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === pageNum
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+                  );
+                })}
+              </div>
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };

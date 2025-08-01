@@ -1,8 +1,10 @@
 import { useRef, useState, useEffect } from "react";
-import { ArrowLeft,User,Mail,Phone,Lock,Camera, Globe2, Building2, Map, MapPinHouse, LocateFixed, Wallet, ServerCog} from "lucide-react";
+import { ArrowLeft,User, Users, Mail,Phone,Lock,Camera, Globe2, Building2, Map, MapPinHouse, LocateFixed, Wallet, ServerCog} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../../Auth/useAuth";
 import { getIdentity, setIdentity } from "../../Auth/tokenStorage";
+import CharProfilePic from "../CharProfilePic";
+import Loader from "../../assets/Loaders/Loader";
 
 
 const ClientEditProfile = () => {
@@ -10,14 +12,14 @@ const ClientEditProfile = () => {
   const {state} = useAuth()
   const storedData = getIdentity()
   const fileInputRef = useRef(null);
-  const [profileImage, setProfileImage] = useState(storedData.profilePicture || "https://randomuser.me/api/portraits/men/75.jpg");
+  const [profileImage, setProfileImage] = useState(storedData.profilePicture);
   const [userData, setUserData] = useState({
     fullName: storedData.fullName || "",
-    phone: storedData.phone || "",
+    phoneNumber: storedData.phoneNumber || "",
     email: storedData.email || "",
     servicePreference: storedData.servicePreferences || [],
     deliveryAddress: {
-      country: storedData.deliveryAddress?.country || "",
+      country: storedData.deliveryAddress?.country || "Nigeria",
       state: storedData.deliveryAddress?.state || "",
       city: storedData.deliveryAddress?.city || "",
       street: storedData.deliveryAddress?.street || "",
@@ -26,6 +28,7 @@ const ClientEditProfile = () => {
   });
   const [states, setStates] = useState(null);
   const [cities, setCities] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchStates = async () => {
@@ -78,77 +81,80 @@ const ClientEditProfile = () => {
   };
 
   const handleSaveChanges = async () => {
-  const stored = getIdentity()
-  if (!state.isAuthenticated) {
-    alert("User not authenticated.");
-    return;
-  }
-
-  try {
-    const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/${stored._id || stored.id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${state.token}`,
-      },
-      body: JSON.stringify(userData),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to update profile.");
+    const stored = getIdentity()
+    if (!state.isAuthenticated) {
+      alert("User not authenticated.");
+      return;
     }
+    setLoading(true);
 
-    const updatedUser = await response.json();
+    try {
+      const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/${stored._id || stored.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${state.token}`,
+        },
+        body: JSON.stringify(userData),
+      });
 
-    // Update sessionStorage
-    sessionStorage.setItem("identity", JSON.stringify({ ...stored, ...updatedUser }));
+      if (!response.ok) {
+        throw new Error("Failed to update profile.");
+      }
 
-    alert("Profile updated successfully!");
-    navigate("/client/dashboard");
-  } catch (err) {
-    console.error(err);
-    alert("Error updating profile.");
-  }
-};
+      const updatedUser = await response.json();
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (name !== 'deliveryAddress' || name !== 'servicePreference') {
-    setUserData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  } else if (name === "deliveryAddress") {
-    setUserData((prevData) => ({
-      ...prevData,
-      deliveryAddress: {
-        ...prevData.deliveryAddress,
-        [name]: value,
-      },
-    }));
-  }
-}
+      // Update sessionStorage
+      sessionStorage.setItem("identity", JSON.stringify({ ...stored, ...updatedUser }));
 
-const handleServicePreferenceChange = (e) => {
-  if (e.key === "," || e.key === "Enter") {
-    const value = e.target.value.replace(",", "").trim();
-    if (value && !userData.servicePreference.includes(value)) {
+      alert("Profile updated successfully!");
+      setLoading(false);
+      navigate("/client/dashboard");
+    } catch (err) {
+      console.error(err);
+      alert("Error updating profile.");
+      setLoading(false);
+    }
+  };
+
+    const handleInputChange = (e) => {
+      const { name, value } = e.target;
+      if (name !== 'deliveryAddress' || name !== 'servicePreference') {
       setUserData((prevData) => ({
         ...prevData,
-        servicePreference: [...prevData.servicePreference, value],
+        [name]: value,
+      }));
+    } else if (name === "deliveryAddress") {
+      setUserData((prevData) => ({
+        ...prevData,
+        deliveryAddress: {
+          ...prevData.deliveryAddress,
+          [name]: value,
+        },
       }));
     }
-  e.preventDefault(); // Prevent default comma behavior
-  e.target.value = ""; // Clear the input after adding
   }
-};
 
-const removeServicePreference = (index) => {
-  setUserData((prevData) => ({
-    ...prevData,
-    servicePreference: prevData.servicePreference.filter((_, i) => i !== index),
-  }));
-};
+  const handleServicePreferenceChange = (e) => {
+    if (e.key === "," || e.key === "Enter") {
+      const value = e.target.value.replace(",", "").trim();
+      if (value && !userData.servicePreference.includes(value)) {
+        setUserData((prevData) => ({
+          ...prevData,
+          servicePreference: [...prevData.servicePreference, value],
+        }));
+      }
+    e.preventDefault(); // Prevent default comma behavior
+    e.target.value = ""; // Clear the input after adding
+    }
+  };
+
+  const removeServicePreference = (index) => {
+    setUserData((prevData) => ({
+      ...prevData,
+      servicePreference: prevData.servicePreference.filter((_, i) => i !== index),
+    }));
+  };
 
   const handlePassChanges = () => {
     alert("Password change functionality is not implemented yet.");
@@ -185,11 +191,14 @@ const removeServicePreference = (index) => {
       {/* Profile Picture */}
       <div className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-md text-center mb-6 relative">
         <div className="relative inline-block">
-          <img
-            src={profileImage}
-            alt="profile"
-            className="w-28 h-28 rounded-full object-cover border-4 border-white shadow"
-          />
+          <div className={`absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur ${profileImage ? 'opacity-25 group-hover:opacity-40' : 'opacity-10 group-hover:opacity-15' }  transition duration-300`}></div>
+            {profileImage ? <img
+              src={profileImage}
+              alt="Artisan"
+              className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
+            /> : 
+            <CharProfilePic size={'32'} username={userData.fullName} otherStyles='!text-4xl' />
+            }
           <button
             onClick={handleImageClick}
             className="absolute bottom-1 right-1 bg-blue-500 p-1 rounded-full shadow text-white hover:bg-blue-600"
@@ -218,6 +227,7 @@ const removeServicePreference = (index) => {
             </h3>
             <input
               type="text"
+              name="fullName"
               onChange={handleInputChange}
               placeholder="Enter full name..."
               className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -259,6 +269,7 @@ const removeServicePreference = (index) => {
             <input
               type="text"
               value={userData.phone}
+              name="phoneNumber"
               onChange={handleInputChange}
               placeholder="Enter phone number..."
               className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -271,6 +282,7 @@ const removeServicePreference = (index) => {
             </label>
             <input
               type="email"
+              name="email"
               value={userData.email}
               onChange={handleInputChange}
               placeholder="Enter email address..."
@@ -384,7 +396,16 @@ const removeServicePreference = (index) => {
               <input
                 type="text"
                 // value={userData.deliveryAddress.street}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  const selectedStreet = e.target.value;
+                  setUserData((prev) => ({
+                    ...prev,
+                    deliveryAddress: {
+                      ...prev.deliveryAddress,
+                      street: selectedStreet,
+                    },
+                  }));
+                }}
                 name="street"
                 placeholder="Enter street name..."
                 className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -398,7 +419,16 @@ const removeServicePreference = (index) => {
               <input
                 type="text"
                 // value={userData.deliveryAddress.postalCode}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  const selectedPostal = e.target.value;
+                  setUserData((prev) => ({
+                    ...prev,
+                    deliveryAddress: {
+                      ...prev.deliveryAddress,
+                      postalCode: selectedPostal,
+                    },
+                  }));
+                }}
                 name="postalCode"
                 placeholder="Enter postal code..."
                 className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -459,7 +489,7 @@ const removeServicePreference = (index) => {
         <button 
         onClick={handleSaveChanges}
         className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl text-sm shadow hover:opacity-90">
-          Save Changes
+          {loading ? <Loader size={'5'} otherStyles={'text-white'} /> : 'Save Changes'}
         </button>
       </div>
     </div>

@@ -9,8 +9,8 @@ const GuestSignUp = () => {
 
   const [formData, setFormData] = useState({
     email: "",
-    firstName: "",
-    lastName: "",
+    fullName: "",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
     role: "CLIENT",
@@ -74,7 +74,7 @@ const GuestSignUp = () => {
 
       const data = await runFetch(submitData);
       console.log("Guest Sign Up Data:", data);
-      navigate("/login");
+      navigate("/auth/login");
     } catch (error) {
       console.error("Error during guest sign up:", error);
     }
@@ -96,23 +96,23 @@ const GuestSignUp = () => {
         <form className="w-full max-w-md">
           {/* First Name */}
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
-            First Name
+            Full Name
           </label>
           <input
             type="text"
-            value={formData.firstName}
-            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+            value={formData.fullName}
+            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
   
           {/* Last Name */}
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
-            Last Name
+            Phone Number
           </label>
           <input
             type="text"
-            value={formData.lastName || ""}
-            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+            value={formData.phoneNumber || ""}
+            onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
           />
   

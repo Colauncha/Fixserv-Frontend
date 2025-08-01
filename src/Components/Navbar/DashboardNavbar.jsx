@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getIdentity } from "../../Auth/tokenStorage";
 import { Bell, Globe, Folder, UserCircleIcon, Menu, X } from "lucide-react";
+import CharProfilePic from "../CharProfilePic";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const DashboardNavbar = () => {
@@ -12,15 +13,10 @@ const DashboardNavbar = () => {
 
   useEffect(() => {
     const storedUser = getIdentity();
-
-    if (storedUser) {
-      setUserData(storedUser);
-    }
-
-    if (location.pathname.includes("dashboard")) {
-      setIsDashboard(true);
-    }
-  }, [location]);
+    setUserData(storedUser || null); // ensures null if no user
+  
+    setIsDashboard(location.pathname.includes("dashboard"));
+  }, [location.pathname]);
 
   const handlePublicListing = () => {
     if (userData?.role === "CLIENT") {
@@ -95,11 +91,17 @@ const DashboardNavbar = () => {
           </div>
 
           {!isDashboard && (
-            <UserCircleIcon
-              className="w-6 h-6 text-[#7A9DF7] cursor-pointer fill-white"
-              onClick={handleUserDashboard}
-              title="Profile"
-            />
+            userData?.profilePicture ? (
+              <img
+                src={userData.profilePicture}
+                onClick={handleUserDashboard}
+                title="Profile"
+                alt={userData.fullName || "User Profile"}
+                className="w-8 h-8 rounded-full object-cover cursor-pointer"
+              />
+            ) : (
+              <CharProfilePic onClick={handleUserDashboard} size={'8'} username={userData?.fullName} otherStyles={`cursor-pointer`} />
+            )
           )}
         </div>
 
@@ -112,7 +114,7 @@ const DashboardNavbar = () => {
               placeholder="Search services or location"
               className="flex-1 px-5 text-[#a5a5a5] outline-none rounded-l-full"
             />
-            <button className="bg-[#94B0F8] w-24 h-12 text-white font-semibold rounded-r-full hover:bg-[#94B0F855] hover:text-gray-800 transition-colors duration-300">
+            <button className="bg-gradient-to-r  -[#94B0F8] w-24 h-12 text-white font-semibold rounded-r-full hover:bg-[#94B0F855] hover:text-gray-800 transition-colors duration-300">
               Enter
             </button>
           </div>
@@ -134,13 +136,20 @@ const DashboardNavbar = () => {
             </div>
 
             {!isDashboard && (
-              <UserCircleIcon
-                className="w-6 h-6 text-[#7A9DF7] cursor-pointer fill-white"
-                onClick={handleUserDashboard}
-                title="Profile"
-              />
+              userData?.profilePicture ? (
+                <img
+                  src={userData.profilePicture}
+                  onClick={handleUserDashboard}
+                  title="Profile"
+                  alt={userData.fullName || "User Profile"}
+                  className="w-8 h-8 rounded-full object-cover cursor-pointer"
+                />
+              ) : (
+                <CharProfilePic onClick={handleUserDashboard} size={'8'} username={userData?.fullName} otherStyles={`cursor-pointer`} />
+              )
             )}
           </div>
+
         </div>
       </nav>
     </header>

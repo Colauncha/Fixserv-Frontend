@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PublicBookingModal from "../Modals/PublicBookingModal";
 import AddItemModal from '../Modals/AddItemModal';
+import FundWalletModal from '../Modals/FundWalletModal';
 import { getIdentity, setIdentity } from '../../Auth/tokenStorage';
+import Fetch from '../../util/Fetch'
 import { 
   Calendar, 
   Edit3Icon, 
@@ -18,11 +20,11 @@ import {
   Edit2, 
   Trash2, 
   Plus,
-  Settings,
   Package,
   History,
   Star
 } from "lucide-react";
+import CharProfilePic from '../CharProfilePic';
 
 const ClientDashboard = () => {
   const [client, setClient] = useState(null);
@@ -30,8 +32,13 @@ const ClientDashboard = () => {
   const [error, setError] = useState(null);
   const [publicBookingOpen, setPublicBookingOpen] = useState(false);
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
+  const [fundWalletModalOpen, setFundWalletModalOpen] = useState(false);
   const [profileImage, setProfileImage] = useState("");
   const [uploadedProducts, setUploadedProducts] = useState(null);
+  const [wallet, setWallet] = useState({
+    balance: 0,
+    lockedBalance: 0,
+  })
   const update = useRef(false);
   const navigate = useNavigate();
 
@@ -49,16 +56,23 @@ const ClientDashboard = () => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/user/${storedUser.id || storedUser._id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
+        const { data, error, success } = await Fetch({
+          url: `${import.meta.env.VITE_API_URL}/api/admin/user/${storedUser.id || storedUser._id}`
+        });
+        if (!success) {
+          throw new Error(error);
         }
-        const data = await response.json();
         console.log(`Data`, data);
         setIdentity(data);
         setClient(data);
         setProfileImage(data.profilePicture || "");
         setUploadedProducts(data.uploadedProducts || null);
+
+        const {data: walletResp} = await Fetch({
+          url: `${import.meta.env.VITE_API_WALLET_URL}/wallet/get-balance/${storedUser.id || storedUser._id}`,
+        });
+
+        setWallet(walletResp.data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -118,6 +132,11 @@ const ClientDashboard = () => {
           updateParent={setUploadedProducts}
         />
       )}
+      {fundWalletModalOpen && (
+        <FundWalletModal
+          closeModal={() => setFundWalletModalOpen(false)}
+        />
+      )}
       
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5"></div>
@@ -129,12 +148,14 @@ const ClientDashboard = () => {
             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-8">
               {/* Profile Image */}
               <div className="relative group flex-shrink-0">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-                <img
-                  src={profileImage || "https://via.placeholder.com/150"}
-                  alt="profile"
-                  className="relative w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
-                />
+                <div className={`absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur ${profileImage ? 'opacity-25 group-hover:opacity-40' : 'opacity-10 group-hover:opacity-15' }  transition duration-300`}></div>
+                {profileImage ? <img
+                  src={profileImage}
+                  alt="Artisan"
+                  className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
+                /> : 
+                <CharProfilePic size={'32'} username={client.fullName} otherStyles='!text-4xl' />
+              }
               </div>
 
               {/* Profile Details */}
@@ -167,7 +188,13 @@ const ClientDashboard = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Balance</span>
                       <span className="text-lg sm:text-xl font-bold text-gray-900">
-                        {client.walletBalance ? `$${client.walletBalance.toFixed(2)}` : 'N0.00'}
+                        {wallet?.balance ? `₦${wallet?.balance.toFixed(2)}` : '₦0.00'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-gray-600">Locked Balance</span>
+                      <span className="text-md sm:text-lg font-bold text-gray-900">
+                        {wallet?.lockedBalance ? `₦${wallet?.lockedBalance.toFixed(2)}` : '₦0.00'}
                       </span>
                     </div>
                   </div>
@@ -176,7 +203,10 @@ const ClientDashboard = () => {
                     <button className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all">
                       Withdraw
                     </button>
-                    <button className="flex-1 py-2 px-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+                    <button 
+                      className="flex-1 py-2 px-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                      onClick={() => setFundWalletModalOpen(true)}
+                    >
                       Fund
                     </button>
                   </div>
