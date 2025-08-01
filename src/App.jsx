@@ -20,6 +20,7 @@ import AboutUsPage from "./Pages/Home/AboutUsPage";
 import { AuthProvider } from "./Context/AuthContext";
 import ProtectedRoute from "./Auth/ProtectedRoute";
 import ContactUsPage from "./Pages/Home/ContactUsPage";
+import AutoScrollToTop from "./Components/AutoScrollToTop";
 
 import ClientDashboard from "./Components/Guest/ClientDashboard";
 import ClientEditProfile from "./Components/Guest/ClientEditProfile";
@@ -33,60 +34,62 @@ function App() {
     <div>
       <AuthProvider>
       <GenNavBar />
-      <Routes>
-        {/* General / Shared */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/welcome" element={<Home />} />
-        <Route path="/about-us" element={<AboutUsPage />} />
-        <Route path="/contact-us" element={<ContactUsPage />} />
-        <Route path="/terms-conditions" element={<TermsPage/>} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <AutoScrollToTop>
+        <Routes>
+          {/* General / Shared */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/welcome" element={<Home />} />
+          <Route path="/about-us" element={<AboutUsPage />} />
+          <Route path="/contact-us" element={<ContactUsPage />} />
+          <Route path="/terms-conditions" element={<TermsPage/>} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-        {/* Auth Routes */}
-        <Route path="/auth">
-          <Route path="login" element={<LogInPage />} />
-          <Route path="artisan-signup" element={<BuilderSignUp />} />
-          <Route path="client-signup" element={<UserSignUp />} />
-          <Route path="reset-password" element={<ResetPassword />} />
-        </Route>
+          {/* Auth Routes */}
+          <Route path="/auth">
+            <Route path="login" element={<LogInPage />} />
+            <Route path="artisan-signup" element={<BuilderSignUp />} />
+            <Route path="client-signup" element={<UserSignUp />} />
+            <Route path="reset-password" element={<ResetPassword />} />
+          </Route>
 
-        {/* Client Routes */}
-        <Route path="/client">
-          <Route path="home" element={<ClientHomePage />} />
-          <Route path="selection" element={<TechSelection />} />
-          <Route path="dashboard" element={<ClientDashboard />} />
-          <Route path="profile" element={
-            <ProtectedRoute>
-              <ClientProfilePage />
-            </ProtectedRoute>
-          } />
-          <Route path="edit-profile" element={
-            <ProtectedRoute> 
-              <ClientEditProfile  />
-            </ProtectedRoute>
-            }/>
-        </Route>
+          {/* Client Routes */}
+          <Route path="/client">
+            <Route path="home" element={<ClientHomePage />} />
+            <Route path="selection" element={<TechSelection />} />
+            <Route path="dashboard" element={<ClientDashboard />} />
+            <Route path="profile" element={
+              <ProtectedRoute>
+                <ClientProfilePage />
+              </ProtectedRoute>
+            } />
+            <Route path="edit-profile" element={
+              <ProtectedRoute> 
+                <ClientEditProfile  />
+              </ProtectedRoute>
+              }/>
+          </Route>
 
-        {/* Artisan Routes */}
-        <Route path="/artisans">
-          <Route path="home" element={<ArtisanHomePage />} />
-          <Route path="dashboard" element={
-            <ProtectedRoute>
-              <ArtisanDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="history" element={
-            <ProtectedRoute>
-              <ArtisanHistory />
-            </ProtectedRoute>
-          } />
-          <Route path="edit-profile" element={
-            <ProtectedRoute>
-              <EditProfile />
-            </ProtectedRoute>
-          } />
-        </Route>
-      </Routes>
+          {/* Artisan Routes */}
+          <Route path="/artisans">
+            <Route path="home" element={<ArtisanHomePage />} />
+            <Route path="dashboard" element={
+              <ProtectedRoute>
+                <ArtisanDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="history" element={
+              <ProtectedRoute>
+                <ArtisanHistory />
+              </ProtectedRoute>
+            } />
+            <Route path="edit-profile" element={
+              <ProtectedRoute>
+                <EditProfile />
+              </ProtectedRoute>
+            } />
+          </Route>
+        </Routes>
+      </AutoScrollToTop>
       <ScrollToTop />
       <Footer />
       </AuthProvider>
