@@ -1,17 +1,18 @@
 import { useState, useEffect} from 'react';
 import { getIdentity } from '../../Auth/tokenStorage';
-import { ExternalLink, GitPullRequestCreateArrow, Plus, X, Cog, Package, Check, Edit2, Trash2 } from "lucide-react";
+import { ExternalLink, GitPullRequestCreateArrow, Plus, X, Cog, Package, Check } from "lucide-react";
 import useAuth from '../../Auth/useAuth';
+import Fetch from '../../util/Fetch';
 import { useNavigate } from 'react-router-dom';
 
-const PrivateBookingModal = ({ closeModal, artisanId }) => {
+const PrivateBookingModal = ({ closeModal, artisanId, rootPageSelectedService }) => {
   const [items, setItems] = useState([]);
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [submitData, setSubmitData] = useState({
     serviceId: "",
-    itemId: ""
+    uploadedProductId: ""
   });
   const { state } = useAuth();
   const navigate = useNavigate();
@@ -57,6 +58,14 @@ const PrivateBookingModal = ({ closeModal, artisanId }) => {
     fetchServices();
   }, [artisanId, state]);
 
+  useEffect(() => {
+    console.log(rootPageSelectedService)
+    if (rootPageSelectedService) {
+      setSelectedService(rootPageSelectedService);
+      return
+    }
+  }, [rootPageSelectedService])
+
   const handleServiceSelect = (service) => {
     setSelectedService(service);
     setSubmitData({ ...submitData, serviceId: service.id });
@@ -64,30 +73,28 @@ const PrivateBookingModal = ({ closeModal, artisanId }) => {
 
   const handleItemSelect = (item, index) => {
     setSelectedItem(index);
-    setSubmitData({ ...submitData, itemId: item.id });
+    setSubmitData({ ...submitData, uploadedProductId: item.id });
   };
 
   const handleSubmit = async () => {
-    if (!submitData.serviceId || !submitData.itemId) {
+    console.log(submitData)
+    if (!submitData.serviceId || !submitData.uploadedProductId) {
       alert('Please select both a service and an item');
       return;
     }
 
     try {
-      const response = await fetch(`https://order-management-hm08.onrender.com/api/orders/create`, {
+      const {data, success, error} = await Fetch({
+        url: `${import.meta.env.VITE_API_ORDER_URL}/orders/create`,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.token}`,
-        },
-        body: JSON.stringify(submitData),
+        token: state.token,
+        requestData: submitData
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to submit repair request');
+      if (!success) {
+        throw new Error(error);
       }
 
-      const data = await response.json();
       console.log('Repair request submitted successfully:', data);
       closeModal();
     } catch (error) {

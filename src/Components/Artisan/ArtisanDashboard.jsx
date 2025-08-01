@@ -4,13 +4,15 @@ import useAuth from '../../Auth/useAuth';
 import Fetch from '../../util/Fetch';
 import { getIdentity, setIdentity } from '../../Auth/tokenStorage';
 import AddServiceModal from '../Modals/AddServiceModal';
-import { Star, User, MapPin, Clock, Phone, Mail, Building, Edit3, Calendar, ExternalLink, ChevronDown, ChevronUp, LogOutIcon, Cog, Plus, Edit2, Trash2, ShoppingBagIcon } from 'lucide-react';
+import { Star, User, Users, MapPin, Clock, Phone, Mail, Building, Edit3, Calendar, ExternalLink, ChevronDown, ChevronUp, LogOutIcon, Cog, Plus, Edit2, Trash2, ShoppingBagIcon, CheckCircle, AlertCircle, XCircle, Eye, Package } from 'lucide-react';
+import CharProfilePic from '../CharProfilePic';
 
 const ModernProfile = () => {
   const [availability, setAvailability] = useState("Available");
   const [businessHoursOpen, setBusinessHoursOpen] = useState(false);
   const [userData, setUserData] = useState(null);
   const [services, setServices] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
@@ -52,7 +54,19 @@ const ModernProfile = () => {
           console.error('Error fetching services:', servicesError);
         } else {
           console.log('Services:', servicesData);
-          setServices(servicesData);
+          setServices(servicesData || []);
+        }
+
+        // fetch artisan orders
+        const { data: orderData, error: orderError } = await Fetch({
+          url: `${import.meta.env.VITE_API_ORDER_URL}/orders/public`,
+        });
+  
+        if (orderError) {
+          console.error('Error fetching order:', orderError);
+        } else {
+          console.log('Orders:', orderData);
+          setOrders(orderData || []);
         }
   
       } catch (err) {
@@ -106,6 +120,54 @@ const ModernProfile = () => {
     setAvailability(status);
   };
 
+  const getStatusDisplay = (status) => {
+    const statusConfig = {
+      'COMPLETED': {
+        color: 'text-green-600 bg-green-50 border-green-200',
+        icon: <CheckCircle className="w-4 h-4" />,
+        text: 'Completed'
+      },
+      'PENDING': {
+        color: 'text-yellow-600 bg-yellow-50 border-yellow-200',
+        icon: <AlertCircle className="w-4 h-4" />,
+        text: 'Pending'
+      },
+      'IN_PROGRESS': {
+        color: 'text-blue-600 bg-blue-50 border-blue-200',
+        icon: <Clock className="w-4 h-4" />,
+        text: 'In Progress'
+      },
+      'CANCELLED': {
+        color: 'text-red-600 bg-red-50 border-red-200',
+        icon: <XCircle className="w-4 h-4" />,
+        text: 'Cancelled'
+      }
+    };
+
+    return statusConfig[status] || statusConfig['PENDING'];
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0
+    }).format(price);
+  };
+
+  // Fixed filtering logic - ensure orders is an array and filter properly
+  const filteredOrders = Array.isArray(orders) ? orders.filter(order => order.artisanId === userData.id) : [];
+
   const handleHourChange = (day, type, value) => {
     setUserData(prev => ({
       ...prev,
@@ -135,6 +197,16 @@ const ModernProfile = () => {
     setServiceModalOpen(true);
   }
 
+  const handleAcceptOrder = (orderId) => {
+    console.log('Accepting order:', orderId);
+    // Add your order acceptance logic here
+  };
+
+  const handleViewOrderDetails = (orderId) => {
+    console.log('Viewing order details:', orderId);
+    // Add navigation to order details page
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       {serviceModalOpen && (
@@ -155,12 +227,14 @@ const ModernProfile = () => {
               {/* Profile Image & Info */}
               <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6 flex-1">
                 <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-                  <img
-                    src={userData.profilePicture || "https://randomuser.me/api/portraits/men/32.jpg"}
+                  <div className={`absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur ${userData.profilePicture ? 'opacity-25 group-hover:opacity-40' : 'opacity-10 group-hover:opacity-15' }  transition duration-300`}></div>
+                  {userData.profilePicture ? <img
+                    src={userData.profilePicture}
                     alt="Artisan"
                     className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
-                  />
+                  /> : 
+                  <CharProfilePic size={'32'} username={userData.fullName} otherStyles='!text-4xl' />
+                  }
                   <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
                 </div>
 
@@ -183,7 +257,7 @@ const ModernProfile = () => {
                   </div>
                   
                   <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                    {userData.skillSet.slice(0, 3).map((skill, index) => (
+                    {userData.skillSet?.slice(0, 3).map((skill, index) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 rounded-full text-sm font-medium border border-blue-200/50"
@@ -191,7 +265,7 @@ const ModernProfile = () => {
                         {skill.trim()}
                       </span>
                     ))}
-                    {userData.skillSet.length > 3 && (
+                    {userData.skillSet?.length > 3 && (
                       <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
                         +{userData.skillSet.length - 3} more
                       </span>
@@ -204,11 +278,13 @@ const ModernProfile = () => {
               <div className="lg:w-80 xl:w-96">
                 <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                   <div className="flex items-center gap-3 mb-6">
-                    <img
-                      src={userData.profilePicture || "https://randomuser.me/api/portraits/men/32.jpg"}
+                    {userData.profilePicture ? <img
+                      src={userData.profilePicture}
                       alt="Artisan"
                       className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
-                    />
+                    /> : 
+                    <CharProfilePic size={'12'} username={userData.fullName} />
+                    }
                     <div>
                       <p className="font-semibold text-gray-900">{userData.fullName}</p>
                       <div className="flex items-center gap-2 text-sm">
@@ -257,7 +333,7 @@ const ModernProfile = () => {
                       )}
                     </button>
                     
-                    {businessHoursOpen && (
+                    {businessHoursOpen && userData.businessHours && (
                       <div className="space-y-3 pl-6">
                         {Object.entries(userData.businessHours).map(([day, hours]) => (
                           <div key={day} className="flex justify-between items-center">
@@ -301,13 +377,13 @@ const ModernProfile = () => {
                   <h3 className="text-2xl font-bold text-gray-900">About me</h3>
                 </span>
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  Professional artisan specializing in {userData.skillSet.join(", ").toLowerCase()}. 
+                  Professional artisan specializing in {userData.skillSet?.join(", ").toLowerCase()}. 
                   Based in {userData.location}, I provide high-quality services through {userData.businessName}.
                 </p>
                 
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Skills & Expertise</h3>
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {userData.skillSet.map((skill, index) => (
+                  {userData.skillSet?.map((skill, index) => (
                     <span
                       key={index}
                       className="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 rounded-xl text-sm font-medium border border-blue-200/50 hover:shadow-md transition-shadow"
@@ -361,7 +437,7 @@ const ModernProfile = () => {
                   <Phone className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium text-gray-900">Phone</p>
-                    <p className="text-gray-600">+234 904454667</p>
+                    <p className="text-gray-600">{userData.phoneNumber || '+234 904454667'}</p>
                   </div>
                 </div>
               </div>
@@ -379,7 +455,7 @@ const ModernProfile = () => {
 
             {/* Scrollable Grid */}
             <div className="overflow-x-auto">
-              <div className="grid grid-flow-col auto-cols-[280px] gap-4 min-w-full">
+              <div className="grid grid-flow-col my-4 auto-cols-[280px] gap-4 min-w-full">
                 {services?.length > 0 && services.map((service) => (
                   <div
                     key={service.id}
@@ -455,24 +531,136 @@ const ModernProfile = () => {
             </div>
           </div>
 
-          {/* Incoming Order Section */}
+          {/* Incoming Orders Section - FIXED */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border mb-8 border-white/20 p-6">
-            <span className="flex items-center gap-2 mb-4">
+            <span className="flex items-center gap-2 mb-6">
               <div className='p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100'>
                 <ShoppingBagIcon className="w-5 h-5 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900">Incoming Orders</h3>
             </span>
 
-            <div className="flex flex-col items-center justify-center text-center text-gray-600 py-12 px-4 bg-white/70 rounded-2xl">
-              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 shadow-md mb-4">
-                <ShoppingBagIcon className="w-10 h-10 text-gray-400" />
+            {/* Check if there are filtered orders */}
+            {filteredOrders && filteredOrders.length > 0 ? (
+              <div className="grid gap-6">
+                {filteredOrders.map((order) => {
+                  const statusDisplay = getStatusDisplay(order.status);
+                  
+                  return (
+                    <div key={order.id} className="border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-white to-gray-50/50">
+                      <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+                        
+                        {/* Order Images */}
+                        <div className="flex-shrink-0">
+                          {order.uploadedProducts?.length > 0 ? (
+                            <div className="flex flex-wrap gap-3">
+                              {order.uploadedProducts.slice(0, 3).map((product, idx) => (
+                                <div key={idx} className="relative group">
+                                  <img
+                                    src={product.imageUrl}
+                                    alt={product.description || 'Order item'}
+                                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl border-2 border-gray-200 group-hover:border-blue-300 transition-colors"
+                                  />
+                                  {idx === 2 && order.uploadedProducts.length > 3 && (
+                                    <div className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center">
+                                      <span className="text-white font-semibold text-sm">
+                                        +{order.uploadedProducts.length - 3}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="w-24 h-24 bg-gray-100 rounded-xl flex items-center justify-center">
+                              <Package className="w-8 h-8 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+  
+                        {/* Order Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                            <div>
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  Order #{order.id.toString().slice(0, 8)}...
+                                </h3>
+                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${statusDisplay.color}`}>
+                                  {statusDisplay.icon}
+                                  {statusDisplay.text}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                                <Calendar className="w-4 h-4" />
+                                {formatDate(order.createdAt)}
+                              </div>
+                            </div>
+                            
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-green-600 mb-1">
+                                {formatPrice(order.price)}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                Escrow: {order.escrowStatus?.replace('_', ' ') || 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+  
+                          {/* Problem Description */}
+                          {order.uploadedProducts?.length > 0 && order.uploadedProducts[0].description && (
+                            <div className="mb-4">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-2">Problem Description:</h4>
+                              <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                                {order.uploadedProducts[0].description}
+                              </p>
+                            </div>
+                          )}
+  
+                          {/* Location & Actions */}
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <MapPin className="w-4 h-4" />
+                              <span>
+                                {order.clientAddress?.city}, {order.clientAddress?.state}, {order.clientAddress?.country}
+                              </span>
+                            </div>
+                            
+                            <div className="flex gap-3">
+                              <button 
+                                onClick={() => handleViewOrderDetails(order.id)}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-sm font-medium"
+                              >
+                                <Eye className="w-4 h-4" />
+                                View Details
+                              </button>
+                              {order.status === 'PENDING' && (
+                                <button 
+                                  onClick={() => handleAcceptOrder(order.id)}
+                                  className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors text-sm font-medium"
+                                >
+                                  Accept Order
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-1">No Recent Orders</h4>
-              <p className="text-sm text-gray-500">
-                You haven't received any orders yet. When you do, they'll show up here.
-              </p>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center text-gray-600 py-12 px-4 bg-white/70 rounded-2xl">
+                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 shadow-md mb-4">
+                  <ShoppingBagIcon className="w-10 h-10 text-gray-400" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-800 mb-1">No Recent Orders</h4>
+                <p className="text-sm text-gray-500">
+                  You haven't received any orders yet. When you do, they'll show up here.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* History Section */}
@@ -506,7 +694,7 @@ const ModernProfile = () => {
           {/* Logout Button */}
           <div>
             <button
-              className={`flex-1 py-2 mt-6 px-4 rounded-lg font-medium transition-all bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:scale-105`}
+              className="flex-1 py-2 mt-6 px-4 rounded-lg font-medium transition-all bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:scale-105"
               onClick={() => {
                 navigateFunc('/');
                 setTimeout(() => {
