@@ -21,6 +21,8 @@ import { AuthProvider } from "./Context/AuthContext";
 import ProtectedRoute from "./Auth/ProtectedRoute";
 import ContactUsPage from "./Pages/Home/ContactUsPage";
 import AutoScrollToTop from "./Components/AutoScrollToTop";
+import JobDetails from "./Components/Artisan/JobDetails";
+import OrderDetails from "./Components/Guest/OrderDetails";
 
 import ClientDashboard from "./Components/Guest/ClientDashboard";
 import ClientEditProfile from "./Components/Guest/ClientEditProfile";
@@ -62,6 +64,11 @@ function App() {
                 <ClientProfilePage />
               </ProtectedRoute>
             } />
+            <Route path="order/:id" element={
+              <ProtectedRoute>
+                <OrderDetails />
+              </ProtectedRoute>
+            } />
             <Route path="edit-profile" element={
               <ProtectedRoute> 
                 <ClientEditProfile  />
@@ -80,6 +87,11 @@ function App() {
             <Route path="history" element={
               <ProtectedRoute>
                 <ArtisanHistory />
+              </ProtectedRoute>
+            } />
+            <Route path="job/:id" element={
+              <ProtectedRoute>
+                <JobDetails />
               </ProtectedRoute>
             } />
             <Route path="edit-profile" element={

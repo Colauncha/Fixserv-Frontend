@@ -199,12 +199,11 @@ const ModernProfile = () => {
 
   const handleAcceptOrder = (orderId) => {
     console.log('Accepting order:', orderId);
-    // Add your order acceptance logic here
   };
 
   const handleViewOrderDetails = (orderId) => {
     console.log('Viewing order details:', orderId);
-    // Add navigation to order details page
+    navigate(`/artisans/job/${orderId}`);
   };
 
   return (
