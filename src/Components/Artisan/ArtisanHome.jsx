@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getIdentity } from '../../Auth/tokenStorage';
+import { useNavigate } from 'react-router-dom';
 import Fetch from '../../util/Fetch';
 import { 
   MapPin, 
@@ -23,6 +24,7 @@ function ArtisanHome() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [retryCount, setRetryCount] = useState(0);
+  const navigate = useNavigate();
 
   // Load artisan data from localStorage
   useEffect(() => {
@@ -136,6 +138,11 @@ function ArtisanHome() {
 
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
+  };
+
+  const handleViewOrderDetails = (orderId) => {
+    console.log('Viewing order details:', orderId);
+    navigate(`/artisans/job/${orderId}`);
   };
 
   return (
@@ -311,7 +318,10 @@ function ArtisanHome() {
                           </div>
                           
                           <div className="flex gap-3">
-                            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-sm font-medium">
+                            <button 
+                              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-sm font-medium"
+                              onClick={() => handleViewOrderDetails(order.id)}
+                            >
                               <Eye className="w-4 h-4" />
                               View Details
                             </button>
