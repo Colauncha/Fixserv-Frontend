@@ -24,65 +24,89 @@ const DashboardNavbar = () => {
     setIsDashboard(location.pathname.includes("dashboard"));
   }, [location.pathname]);
 
-  // useEffect(() => {
-  //   const delayDebounce = setTimeout(() => {
-  //     const keyword = searchTerm.trim();
-  //     if (keyword.length > 0) {
-  //       setLoading(true);
-  //       setShowSuggestions(true);
+//   useEffect(() => {
+//   const delayDebounce = setTimeout(() => {
+//     const keyword = searchTerm.trim();
+//     if (keyword.length > 0) {
+//       setLoading(true);
+//       setShowSuggestions(true);
 
-  //       fetch(`https://search-and-discovery.onrender.com/api/search?keyword=${keyword}&isAvailableNow=true`)
-  //         .then(res => res.json())
-  //         .then(data => {
-  //           if (data.success) {
-  //             setSuggestions({
-  //               artisans: data.data.artisans?.data || [],
-  //               services: data.data.services?.data || []
-  //             });
-  //           } else {
-  //             setSuggestions({ artisans: [], services: [] });
-  //           }
-  //         })
-  //         .catch(err => {
-  //           console.error("Search error:", err);
-  //           setSuggestions({ artisans: [], services: [] });
-  //         })
-  //         .finally(() => setLoading(false));
-  //     } else {
-  //       setShowSuggestions(false);
-  //     }
-  //   }, 300);
+//       fetch(`https://search-and-discovery.onrender.com/api/search?keyword=${keyword}`)  
+//         .then(res => res.json())
+//         .then(data => {
+//           console.log("Search API response:", data); 
+          
+//           if (data.success && data.data) {
+//             const artisansList = data.data.artisans?.data || [];
+//             const servicesList = data.data.services?.data || [];
 
-  //   return () => clearTimeout(delayDebounce);
-  // }, [searchTerm]);
+//             //  checking on data existence
+//             setSuggestions({
+//               artisans: artisansList,
+//               services: servicesList
+//             });
+//           } else {
+//             console.warn("Unexpected data structure:", data);
+//             setSuggestions({ artisans: [], services: [] });
+//           }
+//         })
+//         .catch(err => {
+//           console.error("Search error:", err);
+//           setSuggestions({ artisans: [], services: [] });
+//         })
+//         .finally(() => setLoading(false));
+//     } else {
+//       setShowSuggestions(false);
+//     }
+//   }, 300);
 
-  // Click outside dropdown
-  
-  useEffect(() => {
+//   return () => clearTimeout(delayDebounce);
+// }, [searchTerm]);
+
+useEffect(() => {
   const delayDebounce = setTimeout(() => {
     const keyword = searchTerm.trim();
     if (keyword.length > 0) {
       setLoading(true);
       setShowSuggestions(true);
 
-      fetch(`https://search-and-discovery.onrender.com/api/search?keyword=${keyword}`)  // Removed isAvailableNow=true
-        .then(res => res.json())
-        .then(data => {
-          console.log("Search API response:", data);  // Debug response
-          
-          if (data.success && data.data) {
-            const artisansList = data.data.artisans?.data || [];
-            const servicesList = data.data.services?.data || [];
-
-            // Sanity check on data existence
-            setSuggestions({
-              artisans: artisansList,
-              services: servicesList
-            });
-          } else {
-            console.warn("Unexpected data structure:", data);
-            setSuggestions({ artisans: [], services: [] });
+      fetch(`https://search-and-discovery.onrender.com/api/search?keyword=${keyword}`)  
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Network response was not ok');
           }
+          return res.json();
+        })
+        .then(data => {
+          console.log("Search API response:", data);
+          
+          // More flexible response handling
+          let artisansList = [];
+          let servicesList = [];
+          
+          if (data.success) {
+            // Handle different possible response structures
+            if (data.data?.artisans?.data) {
+              artisansList = data.data.artisans.data;
+            } else if (data.data?.artisans) {
+              artisansList = data.data.artisans;
+            } else if (data.artisans) {
+              artisansList = data.artisans;
+            }
+            
+            if (data.data?.services?.data) {
+              servicesList = data.data.services.data;
+            } else if (data.data?.services) {
+              servicesList = data.data.services;
+            } else if (data.services) {
+              servicesList = data.services;
+            }
+          }
+          
+          setSuggestions({
+            artisans: Array.isArray(artisansList) ? artisansList : [],
+            services: Array.isArray(servicesList) ? servicesList : []
+          });
         })
         .catch(err => {
           console.error("Search error:", err);
@@ -90,14 +114,17 @@ const DashboardNavbar = () => {
         })
         .finally(() => setLoading(false));
     } else {
+      setSuggestions({ artisans: [], services: [] });
       setShowSuggestions(false);
     }
   }, 300);
 
   return () => clearTimeout(delayDebounce);
-}, [searchTerm]);
+}, [searchTerm]);  
 
-  
+
+
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -127,59 +154,65 @@ const DashboardNavbar = () => {
   const toggleMenu = () => setMenuOpen(prev => !prev);
 
   const renderSuggestions = () => (
-    <div className="absolute top-14 w-full bg-white shadow-md rounded-lg border border-gray-200 z-50 max-h-64 overflow-auto">
-      {loading && (
-        <div className="text-sm text-center py-4 text-gray-500">Searching...</div>
-      )}
+  <div className="absolute top-14 w-full bg-white shadow-md rounded-lg border border-gray-200 z-50 max-h-64 overflow-auto">
+    {loading && (
+      <div className="text-sm text-center py-4 text-gray-500">Searching...</div>
+    )}
 
-      <div className="p-2">
-        <h4 className="text-xs text-gray-400 font-semibold uppercase mb-1">Artisans</h4>
-        {suggestions.artisans.length > 0 ? (
-          suggestions.artisans.map((artisan) => (
-            <div
-              key={artisan._id}
-              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-              onClick={() => {
-                navigate(`/artisan/${artisan._id}`);
-                setShowSuggestions(false);
-              }}
-            >
-              👤 {artisan.fullName || artisan.businessName || "Unnamed"}{" "}
-              <span className="text-gray-400 text-xs">({artisan.category || "No category"})</span>
-            </div>
-          ))
-        ) : (
-          !loading && <div className="text-gray-400 text-sm px-3 py-2">No artisans found</div>
-        )}
-      </div>
+    {suggestions.error ? (
+      <div className="text-red-500 text-sm p-3">{suggestions.error}</div>
+    ) : (
+      <>
+        <div className="p-2">
+          <h4 className="text-xs text-gray-400 font-semibold uppercase mb-1">Artisans</h4>
+          {suggestions.artisans.length > 0 ? (
+            suggestions.artisans.map((artisan) => (
+              <div
+                key={artisan._id}
+                className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                onClick={() => {
+                  navigate(`/artisan/${artisan._id}`);
+                  setShowSuggestions(false);
+                }}
+              >
+                👤 {artisan.fullName || artisan.businessName || "Unnamed"}{" "}
+                <span className="text-gray-400 text-xs">({artisan.category || "No category"})</span>
+              </div>
+            ))
+          ) : (
+            !loading && <div className="text-gray-400 text-sm px-3 py-2">No artisans found</div>
+          )}
+        </div>
 
-      <div className="border-t border-gray-100 p-2">
-        <h4 className="text-xs text-gray-400 font-semibold uppercase mb-1">Services</h4>
-        {suggestions.services.length > 0 ? (
-          suggestions.services.map((service) => (
-            <div
-              key={service._id}
-              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-              onClick={() => {
-                navigate(`/service/${service._id}`);
-                setShowSuggestions(false);
-              }}
-            >
-              🛠️ {service.title || "Untitled Service"}{" "}
-              <span className="text-gray-400 text-xs">({service.description?.slice(0, 30)}...)</span>
-            </div>
-          ))
-        ) : (
-          !loading && <div className="text-gray-400 text-sm px-3 py-2">No services found</div>
-        )}
-      </div>
-    </div>
-  );
+        <div className="border-t border-gray-100 p-2">
+          <h4 className="text-xs text-gray-400 font-semibold uppercase mb-1">Services</h4>
+          {suggestions.services.length > 0 ? (
+            suggestions.services.map((service) => (
+              <div
+                key={service._id}
+                className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                onClick={() => {
+                  navigate(`/service/${service._id}`);
+                  setShowSuggestions(false);
+                }}
+              >
+                🛠️ {service.title || "Untitled Service"}{" "}
+                <span className="text-gray-400 text-xs">({service.description?.slice(0, 30)}...)</span>
+              </div>
+            ))
+          ) : (
+            !loading && <div className="text-gray-400 text-sm px-3 py-2">No services found</div>
+          )}
+        </div>
+      </>
+    )}
+  </div>
+);
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-[#94B0F855] shadow-md">
       <nav className="flex flex-wrap items-center justify-between p-4">
-        {/* Logo */}
+        
         <div className="flex justify-between items-center w-full md:w-auto">
           <div
             className="flex items-center space-x-2 text-xl font-JejuMyeongjo text-[#7A9DF7] cursor-pointer"
@@ -233,7 +266,7 @@ const DashboardNavbar = () => {
           )}
         </div>
 
-        {/* Mobile Menu + Search */}
+        {/* Mobile Menu Search Part */}
         <div className={`w-full md:hidden transition-all duration-300 ease-in-out overflow-hidden ${menuOpen ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <div ref={searchRef} className="relative mt-10 mb-10 h-12 shadow-md bg-white border border-[#94b0f864] rounded-full flex items-center">
             <input
