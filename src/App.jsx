@@ -37,15 +37,6 @@ function App() {
     <div>
       <AuthProvider>
       <GenNavBar />
-      <AutoScrollToTop>
-        <Routes>
-          {/* General / Shared */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/welcome" element={<Home />} />
-          <Route path="/about-us" element={<AboutUsPage />} />
-          <Route path="/contact-us" element={<ContactUsPage />} />
-          <Route path="/terms-conditions" element={<TermsPage/>} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Routes>
         {/* General / Shared */}
         <Route path="/" element={<Landing />} />
