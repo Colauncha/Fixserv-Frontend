@@ -61,12 +61,12 @@ const Notification = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // If your endpoint requires auth
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         title: "Test Notification",
         message: "This is a sample notification for testing.",
-        recipient: "client", // or "artisan" depending on your logic
+        recipient: "client",
       }),
     });
 
