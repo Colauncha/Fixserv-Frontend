@@ -37,6 +37,7 @@ function App() {
     <div>
       <AuthProvider>
       <GenNavBar />
+      <AutoScrollToTop>
       <Routes>
         {/* General / Shared */}
         <Route path="/" element={<Landing />} />
