@@ -12,7 +12,7 @@ const [selected, setSelected] = useState(null);
       <h1 className="text-3xl font-semibold mb-4 mt-10 text-blue-700 cursor-pointer">Terms of <span className="text-purple-700">Service</span></h1>
       <div className="px-4 py-6 text-md text-gray-800">
         {/* Tabs */}
-        {/* <div className="flex gap-4 mb-4 border-b border-gray-300">
+         {/* <div className="flex gap-4 mb-4 border-b border-gray-300">
           <button
             onClick={() => setActiveTab("terms")}
             className={`pb-2 font-medium ${activeTab === "terms" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-500"}`}

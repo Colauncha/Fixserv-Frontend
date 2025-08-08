@@ -14,28 +14,60 @@ const PrivacyPolicy = () => {
 
         <h3 className="text-xl flex justify-center font-semibold mb-8">Welcome to our privacy policy!</h3>
         <p className="mb-4">
-          We value your privacy and are committed to protecting your personal information. This policy outlines the data we collect, how we use it, and your rights regarding your data.
+          At FixServ, we value your privacy. This policy explains how we collect, use, and protect your personal information.
         </p>
         <p className="mb-4">
           We collect your personal data only when necessary and for legitimate purposes, such as account registration and customer support. We never sell your data.
         </p>
-        <p className="mb-4">
-          By using our services, you consent to the practices described in this policy. Please read it carefully and contact us if you have any questions.
+        
+        <h3 className="text-xl font-semibold mt-10 mb-4">1. Informations We Collect</h3>
+        <ul className="list-disc pl-6 space-y-2 mb-6">
+          <li>Create an account (name, email, phone number, password)</li>
+          <li>Book or offer a service (location, device details, payment info)</li>
+          <li>Contact support or engage with the platform</li>
+        </ul>
+
+        <h3 className="text-xl font-semibold mt-10 mb-4">2. How We Use Your Information</h3>
+        <ul className="list-disc pl-6 space-y-2 mb-4">
+          <li>Provide and improve our services</li>
+          <li>Match clients with verified artisans</li>
+          <li>Process secure payments through escrow</li>
+          <li>Send service updates, reminders, and promotional content</li>
+        </ul>
+        <p className="mb-6">
+          We never sell your information to third parties.
         </p>
 
-        <h3 className="text-xl font-semibold mt-10 mb-8">Data Collection</h3>
+        <h3 className="text-xl font-semibold mt-10 mb-4">3. Sharing Information</h3>
+        <ul className="list-disc pl-6 space-y-2 mb-6">
+          <li>Verified artisans (if you're a client)</li>
+          <li>Clients (if you're an artisan)</li>
+          <li>Payment processors (for secure transactions)</li>
+          <li>Legal authorities if required by law</li>
+        </ul>
 
-        <ol className="list-decimal pl-6 space-y-4">
-          <li>
-            <span className="font-semibold">Personal Information:</span> We collect your full name, email address, phone number, and location during registration to create your user profile.
-          </li>
-          <li>
-            <span className="font-semibold">Usage Data:</span> We collect information on how you use the platform (pages visited, features used) to improve our services and user experience.
-          </li>
-          <li>
-            <span className="font-semibold">Device Information:</span> Your device type, browser, and operating system may be collected to ensure compatibility and troubleshoot issues.
-          </li>
-        </ol>
+        <h3 className="text-xl font-semibold mt-10 mb-4">4. Data Security</h3>
+        <p className="mb-6">
+          We protect your data using SSL encryption, secure password hashing, and role-based access control. Your privacy is a top priority.
+        </p>
+
+        <h3 className="text-xl font-semibold mt-10 mb-4">5. Your Rights</h3>
+        <ul className="list-disc pl-6 space-y-2 mb-4">
+          <li>Update or delete your profile</li>
+          <li>Request a copy of your data</li>
+          <li>Opt-out of promotional emails at any time</li>
+        </ul>
+        <p className="mb-6">
+          To make any privacy requests, email us at:{" "}
+          <a href="mailto:support@fixserv.com" className="text-blue-600 underline">
+            support@fixserv.com
+          </a>
+        </p>
+
+        <h3 className="text-xl font-semibold mt-10 mb-4">6. Changes to This Policy</h3>
+        <p>
+          We may update this policy occasionally. Changes will be posted here with a new "Effective Date."
+        </p>
       </div>
 
     </div>
@@ -43,59 +75,3 @@ const PrivacyPolicy = () => {
 };
 
 export default PrivacyPolicy;
-
-
-// import React from "react";
-
-// const PrivacyPolicy = () => {
-//   return (
-//     <div className="min-h-screen flex flex-col items-center justify-start bg-white text-black px-4 py-10">
-//       <div className="max-w-4xl w-full text-center">
-//         <h2 className="text-3xl font-bold mb-9 text-blue-700 cursor-pointer">
-//           Privacy <span className="text-purple-700">Policy</span>
-//         </h2>
-//         {/* <div className="flex gap-4 mb-6 border-b pb-2 text-gray-600">
-//            <span className="cursor-pointer hover:text-black">Terms</span>
-//            <span className="font-semibold text-black border-b-2 border-black cursor-pointer">
-//              Privacy Policy
-//            </span>
-//          </div> */}
-
-//         <div className="bg-gradient-to-b from-purple-100 to-blue-100 rounded-full px-10 py-14 sm:px-14 sm:py-18 shadow-md transition-all duration-300">
-//           <h3 className="text-xl font-semibold mb-8">
-//             Welcome to our privacy policy!
-//           </h3>
-
-//           <div className="space-y-4 text-left text-gray-700 leading-relaxed">
-//             <p>
-//               We value your privacy and are committed to protecting your personal information. This policy outlines the data we collect, how we use it, and your rights regarding your data.
-//             </p>
-//             <p>
-//               We collect your personal data only when necessary and for legitimate purposes, such as account registration and customer support. We never sell your data.
-//             </p>
-//             <p>
-//               By using our services, you consent to the practices described in this policy. Please read it carefully and contact us if you have any questions.
-//             </p>
-
-//             <h3 className="text-xl font-semibold mt-10 mb-4 text-center">Data Collection</h3>
-
-//             <ol className="list-decimal pl-6 space-y-4">
-//               <li>
-//                 <span className="font-semibold">Personal Information:</span> We collect your full name, email address, phone number, and location during registration to create your user profile.
-//               </li>
-//               <li>
-//                 <span className="font-semibold">Usage Data:</span> We collect information on how you use the platform (pages visited, features used) to improve our services and user experience.
-//               </li>
-//               <li>
-//                 <span className="font-semibold">Device Information:</span> Your device type, browser, and operating system may be collected to ensure compatibility and troubleshoot issues.
-//               </li>
-//             </ol>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default PrivacyPolicy;
-

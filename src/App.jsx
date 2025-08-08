@@ -29,6 +29,7 @@ import ClientEditProfile from "./Components/Guest/ClientEditProfile";
 import ResetPassword from "./Components/Auth/ResetPassword";
 import TermsPage from "./Components/Others/TermsPage";
 import PrivacyPolicy from "./Components/Others/PrivacyPolicy";
+import Notification from "./Components/Others/Notification";
 
 
 function App() {
@@ -37,14 +38,15 @@ function App() {
       <AuthProvider>
       <GenNavBar />
       <AutoScrollToTop>
-        <Routes>
-          {/* General / Shared */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/welcome" element={<Home />} />
-          <Route path="/about-us" element={<AboutUsPage />} />
-          <Route path="/contact-us" element={<ContactUsPage />} />
-          <Route path="/terms-conditions" element={<TermsPage/>} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Routes>
+        {/* General / Shared */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/welcome" element={<Home />} />
+        <Route path="/about-us" element={<AboutUsPage />} />
+        <Route path="/contact-us" element={<ContactUsPage />} />
+        <Route path="/terms-conditions" element={<TermsPage/>} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/notify" element={<Notification/>} />
 
           {/* Auth Routes */}
           <Route path="/auth">
