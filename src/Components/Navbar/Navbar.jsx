@@ -111,7 +111,10 @@ const Navbar = ({ bg, userIconFill }) => {
                 <Globe className="text-[#00FF9D] w-4 h-4 absolute top-3 left-4" />
               </div>
 
-              <div className="relative cursor-pointer" title="Notifications">
+              <div 
+              className="relative cursor-pointer"
+              onClick={() => navigate('/notify')}
+              title="Notifications">
                 <Bell className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6" />
                 <span className="absolute top-3 right-0 bg-[#00FF9D] w-3 h-3 rounded-full" />
               </div>

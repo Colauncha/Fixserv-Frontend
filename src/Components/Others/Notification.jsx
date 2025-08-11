@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
+import useAuth from "../../Auth/useAuth";
+
+const tabs = ['All', 'Unread'];
 
 const Notification = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('All');
 
-  const token = sessionStorage.getItem("token");
+  const {state} = useAuth()
+
+  const token = state.token
+
+
 
   // Fetch all notifications
   const fetchNotifications = async () => {
@@ -51,33 +58,39 @@ const Notification = () => {
     fetchUnreadCount();
   }, []);
 
-  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
+  // const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
 
   return (
-    <div className="relative">
-      <div 
-        onClick={toggleDropdown} 
-        className="cursor-pointer relative"
-      >
-        <Bell className="w-6 h-6 text-gray-700" />
-        {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full transform translate-x-1/2 -translate-y-1/2">
-            {unreadCount}
-          </span>
-        )}
-      </div>
-
-      {dropdownOpen && (
-        <div className="absolute right-0 mt-2 w-80 max-w-xs bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="py-2 px-4 border-b bg-gray-100 font-semibold text-gray-700">
-            Notifications
+    <div className="">
+        <div className="max-w-full h-[100dvh] bg-white drop-shadow-xl overflow-hidden">
+          <div className="flex items-center justify-between py-5 px-4 bg-gray-100 font-semibold text-gray-700">
+            <span>Notification Center</span>
+            <span className="font-light text-sm">Mark all as read</span>
           </div>
-          <div className="max-h-72 overflow-y-auto">
+          {/* Tabs */}
+          <div className="flex px-10 space-x-6 items-center gap-4 bg-gray-100 ">
+            {tabs.map(tab => ( 
+              <span 
+                key={tab}
+                className={`pb-2 text-sm ${
+                  activeTab === tab
+                  ? "border-b-2 border-black font-medium"
+                  : "text-gray-500"
+                }`}
+                onClick={() => setActiveTab(tab)}
+                >
+                  {tab}
+              </span>
+            ))}
+          </div>
+
+          <div className="max-h-72 space-y-4 overflow-y-auto">
             {notifications.length > 0 ? (
               notifications.map((note) => (
                 <div
                   key={note._id}
-                  className="flex items-start px-4 py-3 hover:bg-gray-50 transition"
+                  // className="flex items-start px-4 py-3 hover:bg-gray-50 transition"
+                  className="bg-blue-50 p-4 rounded-md flex items-start gap-4"
                 >
                   <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm mr-3">
                     {note.sender?.charAt(0) || "N"}
@@ -93,8 +106,15 @@ const Notification = () => {
               <div className="px-4 py-4 text-sm text-gray-500">No notifications found.</div>
             )}
           </div>
+
+          {/* See all activity button */}
+          <div className="mt-6 flex justify-center">
+            <button className="px-4 py-2 border rounded text-sm text-gray-700 hover:bg-gray-100">
+              See all activity
+            </button>
+          </div>  
+
         </div>
-      )}
     </div>
   );
 };
