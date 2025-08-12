@@ -139,10 +139,34 @@ const Footer = () => {
 
             <h4 className="mt-5 mb-2 text-md font-semibold">Follow us</h4>
             <div className="flex space-x-3">
-              <img src={Facebook} alt="Facebook" className="w-5 h-5" />
-              <img src={Instagram} alt="Instagram" className="w-5 h-5" />
-              <img src={LinkedIn} alt="LinkedIn" className="w-5 h-5" />
-              <img src={Twitter} alt="Twitter/X" className="w-5 h-5" />
+              <a
+               href="https://www.facebook.com/share/19ENk1Gmtf/"
+               target="_blank"
+               rel="noopener noreferrer"
+              >
+                <img src={Facebook} alt="Facebook" className="w-5 h-5" />
+              </a> 
+              <a
+                href="https://instagram.com/fix_serv"
+                target="_blank"
+                rel="noopener noreferrer"
+              >  
+                <img src={Instagram} alt="Instagram" className="w-5 h-5" />
+              </a>
+              <a
+                href="https://www.linkedin.com/company/fixserv/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                 <img src={LinkedIn} alt="LinkedIn" className="w-5 h-5" />
+              </a>
+              <a
+                href="https://x.com/Fixserv_?t=PjM_qOSUYNKKK7vYsYtY0g&s=09"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img src={Twitter} alt="Twitter/X" className="w-5 h-5" />
+              </a>
             </div>
           </div>
 

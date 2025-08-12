@@ -30,6 +30,7 @@ import ResetPassword from "./Components/Auth/ResetPassword";
 import TermsPage from "./Components/Others/TermsPage";
 import PrivacyPolicy from "./Components/Others/PrivacyPolicy";
 import Notification from "./Components/Others/Notification";
+import KYC_Client from "./Components/Others/KYC_Client";
 
 
 function App() {
@@ -47,6 +48,7 @@ function App() {
         <Route path="/terms-conditions" element={<TermsPage/>} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/notify" element={<Notification/>} />
+        <Route path="/kyc_client" element={<KYC_Client />} />
 
           {/* Auth Routes */}
           <Route path="/auth">
