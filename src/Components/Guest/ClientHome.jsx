@@ -1,4 +1,4 @@
-import { MapPin, Star, ChevronLeft, ChevronRight, Award, Users, Calendar, Cog } from "lucide-react"; 
+import { MapPin, Star, ChevronLeft, ChevronRight, Award, Users, Calendar, Cog, Edit2, Trash2 } from "lucide-react"; 
 import { useEffect, useState, useCallback } from "react";
 import CharProfilePic from "../CharProfilePic";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,7 @@ const ClientHome = () => {
   const [perPage, setPerPage] = useState(9);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [resultType, setResultType] = useState('artisans'); // 'artisans' or 'services'
+  const [resultType, setResultType] = useState('artisan'); // 'artisan' or 'service'
 
   const tabs = [
     { id: 'top', label: 'Top Artisans', icon: Award, color: 'text-yellow-600' },
@@ -78,24 +78,25 @@ const ClientHome = () => {
       if (!success) {
         throw new Error(data.message || 'Failed to fetch services');
       }
-      setServices(data.services || []);
+      setServices(data || []);
       setCurrentPage(data.currentPage || 1);
       setTotalPages(data.totalPages || 1);
-      setTotal(data.total || 0);
+      setTotal(data.length || 0);
     } catch (error) {
       console.error('Error fetching services:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [currentPage, perPage]);
 
   useEffect(() => {
     if (activeTab !== 'services') {
       fetchArtisans();
-      setResultType('artisans');
+      setResultType('artisan');
     }
     else {
       fetchServices();
-      setResultType('services');
+      setResultType('services'); // Fixed: changed from 'services' to 'service'
     }
   }, [activeTab, currentPage, perPage, fetchArtisans, fetchServices]);
 
@@ -174,7 +175,7 @@ const ClientHome = () => {
       {/* Results Summary */}
       <div className="mb-6">
         <p className="text-gray-600">
-          Showing {resultType === 'artisan' ? getCurrentArtisans().length : services.length} of {total} {resultType === 'artisans' ? 'artisans' : 'services'} found
+          Showing {resultType === 'artisan' ? getCurrentArtisans().length : services.length} of {total} {resultType === 'artisan' ? 'artisans' : 'services'} found
         </p>
       </div>
 
@@ -185,97 +186,166 @@ const ClientHome = () => {
         </div>
       )}
 
-      {/* Artisans Grid */}
+      {/* Artisans/services Grid */}
       {!loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {getCurrentArtisans().map((artisan) => (
-            <div
-              key={artisan.id}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105"
-            >
-              {/* Card Header */}
-              <div className="p-6 text-center bg-gradient-to-br from-blue-50 to-purple-50">
-                <div className="relative inline-block mb-4">
-                  {artisan.profilePicture ?
-                  <img
-                    src={artisan.profilePicture}
-                    alt={artisan.fullName}
-                    className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
-                  /> : 
-                    <CharProfilePic username={artisan.fullName} size={'20'} />
-                  }
-                  {activeTab === 'top' && (
-                    <div className="absolute -top-2 -right-2 bg-yellow-500 text-white rounded-full p-1">
-                      <Award className="w-4 h-4" />
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {artisan.fullName}
-                </h3>
-                
-                {/* Rating */}
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-medium text-gray-700">
-                    {artisan.rating || '4.5'}
-                  </span>
-                  <span className="text-xs text-gray-500">(24 reviews)</span>
-                </div>
-
-                {/* Location */}
-                <div className="flex items-center justify-center gap-1 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4" />
-                  <span>{artisan.location || 'Lagos, Nigeria'}</span>
-                </div>
-              </div>
-
-              {/* Card Footer */}
-              <div className="p-6 pt-4">
-                {activeTab === 'top' && (
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-500 text-center">
-                      ⭐ Top rated professional
-                    </p>
-                  </div>
-                )}
-                
-                {activeTab === 'booked' && (
-                  <div className="mb-4 p-2 bg-blue-50 rounded-lg">
-                    <p className="text-xs text-blue-700 text-center font-medium">
-                      Booking confirmed for Dec 15, 2024
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  onClick={() => {
-                    if (activeTab !== 'booked') {
-                      navigate(`/client/selection?artisanId=${artisan.id}`);
-                    }
-                  }}
-                  className={`w-full py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 ${
-                    activeTab === 'booked'
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 hover:shadow-lg transform hover:scale-105'
-                  }`}
+          {resultType === 'artisan'
+            ? getCurrentArtisans().map((artisan) => (
+                <div
+                  key={artisan.id}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
-                  {getButtonText(activeTab)}
-                </button>
-              </div>
-            </div>
-          ))}
+                  {/* Card Header */}
+                  <div className="p-6 text-center bg-gradient-to-br from-blue-50 to-purple-50">
+                    <div className="relative inline-block mb-4">
+                      {artisan.profilePicture ? (
+                        <img
+                          src={artisan.profilePicture}
+                          alt={artisan.fullName}
+                          className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
+                        />
+                      ) : (
+                        <CharProfilePic username={artisan.fullName} size={'20'} />
+                      )}
+                      {activeTab === 'top' && (
+                        <div className="absolute -top-2 -right-2 bg-yellow-500 text-white rounded-full p-1">
+                          <Award className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {artisan.fullName}
+                    </h3>
+
+                    {/* Rating */}
+                    <div className="flex items-center justify-center gap-1 mb-2">
+                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium text-gray-700">
+                        {artisan.rating || '4.5'}
+                      </span>
+                      <span className="text-xs text-gray-500">(24 reviews)</span>
+                    </div>
+
+                    {/* Location */}
+                    <div className="flex items-center justify-center gap-1 text-sm text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span>{artisan.location || 'Lagos, Nigeria'}</span>
+                    </div>
+                  </div>
+
+                  {/* Card Footer */}
+                  <div className="p-6 pt-4">
+                    {activeTab === 'top' && (
+                      <div className="mb-4">
+                        <p className="text-xs text-gray-500 text-center">
+                          ⭐ Top rated professional
+                        </p>
+                      </div>
+                    )}
+
+                    {activeTab === 'booked' && (
+                      <div className="mb-4 p-2 bg-blue-50 rounded-lg">
+                        <p className="text-xs text-blue-700 text-center font-medium">
+                          Booking confirmed for Dec 15, 2024
+                        </p>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        if (activeTab !== 'booked') {
+                          navigate(`/client/selection?artisanId=${artisan.id}`);
+                        }
+                      }}
+                      className={`w-full py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 ${
+                        activeTab === 'booked'
+                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 hover:shadow-lg transform hover:scale-105'
+                      }`}
+                    >
+                      {getButtonText(activeTab)}
+                    </button>
+                  </div>
+                </div>
+              ))
+            : services.map((service) => (
+                <div
+                  key={service.id}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                >
+                  {/* Header with Actions */}
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="text-base font-semibold text-gray-900 flex-1 pr-2">
+                      {service.title}
+                    </h4>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                    {service.description}
+                  </p>
+
+                  {/* Service Details */}
+                  <div className="space-y-2 mb-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Duration:</span>
+                      <span className="text-gray-700 font-medium">
+                        {service.estimatedDuration}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between text-sm items-center">
+                      <span className="text-gray-500">Status:</span>
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          service.isActive
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-600'
+                        }`}
+                      >
+                        {service.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Rating:</span>
+                      <span className="text-gray-700 font-medium">
+                        {service.rating ?? 0}/5
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div className="text-blue-600 font-bold text-lg mb-3">
+                    ₦{Number(service.price).toLocaleString()}
+                  </div>
+
+                  {/* Book Service Button */}
+                  <button
+                    onClick={() => {
+                      // Navigate to service booking page
+                      navigate(`/client/book-service?serviceId=${service.id}`);
+                    }}
+                    className="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium text-sm hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
+                  >
+                    Book Service
+                  </button>
+                </div>
+              ))}
         </div>
       )}
 
       {/* Empty State */}
-      {!loading && getCurrentArtisans().length === 0 && (
+      {!loading && (
+        (resultType === 'artisan' && getCurrentArtisans().length === 0) ||
+        (resultType === 'service' && services.length === 0)
+        ) && (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">
-            {resultType === 'artisans' ? <Users className="w-16 h-16 mx-auto" /> : <Cog className="w-16 h-16 mx-auto" />}
+            {resultType === 'artisan' ? <Users className="w-16 h-16 mx-auto" /> : <Cog className="w-16 h-16 mx-auto" />}
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {resultType === 'artisans' ? 'No artisans found' : 'No services available'}
+            {resultType === 'artisan' ? 'No artisans found' : 'No services available'}
           </h3>
           <p className="text-gray-600">
             {activeTab === 'booked' 

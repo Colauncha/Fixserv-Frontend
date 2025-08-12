@@ -83,61 +83,6 @@ const DashboardNavbar = () => {
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
   
-  // useEffect(() => {
-  //   const delayDebounce = setTimeout(() => {
-  //     const keyword = searchTerm.trim();
-  
-  //     if (keyword.length === 0) {
-  //       setSuggestions({ artisans: [], services: [] });
-  //       setShowSuggestions(false);
-  //       return;
-  //     }
-  
-  //     setLoading(true);
-  
-  //     fetch(`https://search-and-discovery.onrender.com/api/search?keyword=${keyword}`)
-  //       .then(res => {
-  //         if (!res.ok) throw new Error('Network response was not ok');
-  //         return res.json();
-  //       })
-  //       .then(data => {
-  //         let artisansList = [];
-  //         let servicesList = [];
-  
-  //         if (data.success) {
-  //           artisansList = data.data?.artisans?.data || data.data?.artisans || data.artisans || [];
-  //           servicesList = data.data?.services?.data || data.data?.services || data.services || [];
-  //         }
-  
-  //         const parsedSuggestions = {
-  //           artisans: Array.isArray(artisansList) ? artisansList : [],
-  //           services: Array.isArray(servicesList) ? servicesList : []
-  //         };
-  
-  //         setSuggestions(parsedSuggestions);
-  
-  //         // Only show if results exist or loading is true
-  //         if (
-  //           parsedSuggestions.artisans.length > 0 ||
-  //           parsedSuggestions.services.length > 0 ||
-  //           loading
-  //         ) {
-  //           setShowSuggestions(true);
-  //         } else {
-  //           setShowSuggestions(false);
-  //         }
-  //       })
-  //       .catch(err => {
-  //         console.error("Search error:", err);
-  //         setSuggestions({ artisans: [], services: [] });
-  //         setShowSuggestions(false);
-  //       })
-  //       .finally(() => setLoading(false));
-  //   }, 300);
-  
-  //   return () => clearTimeout(delayDebounce);
-  // }, [searchTerm, loading]);  
-
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (showSuggestions && searchRef.current && !searchRef.current.contains(e.target)) {

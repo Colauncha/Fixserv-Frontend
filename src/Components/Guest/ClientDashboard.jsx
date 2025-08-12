@@ -28,13 +28,16 @@ import CharProfilePic from '../CharProfilePic';
 
 const ClientDashboard = () => {
   const [client, setClient] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [publicBookingOpen, setPublicBookingOpen] = useState(false);
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
   const [fundWalletModalOpen, setFundWalletModalOpen] = useState(false);
   const [profileImage, setProfileImage] = useState("");
   const [uploadedProducts, setUploadedProducts] = useState(null);
+  const [loading, setLoading] = useState({
+    user: true,
+    wallet: true,
+  });
   const [wallet, setWallet] = useState({
     balance: 0,
     lockedBalance: 0,
@@ -55,7 +58,10 @@ const ClientDashboard = () => {
     }
     const fetchUserData = async () => {
       try {
-        setLoading(true);
+        setLoading({
+          user: true,
+          wallet: true,
+        });
         const { data, error, success } = await Fetch({
           url: `${import.meta.env.VITE_API_URL}/api/admin/user/${storedUser.id || storedUser._id}`
         });
@@ -67,16 +73,26 @@ const ClientDashboard = () => {
         setClient(data);
         setProfileImage(data.profilePicture || "");
         setUploadedProducts(data.uploadedProducts || null);
+        setLoading(prev => ({...prev,
+          user: false,
+        }));
 
         const {data: walletResp} = await Fetch({
           url: `${import.meta.env.VITE_API_WALLET_URL}/wallet/get-balance/${storedUser.id || storedUser._id}`,
         });
 
         setWallet(walletResp.data);
+        setLoading(prev => ({...prev,
+          wallet: false,
+        }));
+
       } catch (err) {
         setError(err.message);
       } finally {
-        setLoading(false);
+        setLoading({
+          user: false,
+          wallet: false,
+        });
       }
     };
     fetchUserData();
@@ -86,7 +102,7 @@ const ClientDashboard = () => {
     }
   }, [navigate, state, update]);
 
-  if (loading) {
+  if (loading.user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
         <div className="text-center">
@@ -115,8 +131,14 @@ const ClientDashboard = () => {
 
   if (!client) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex flex-col gap-3 items-center justify-center">
         <p className="text-gray-600">No user data available</p>
+        <button
+          onClick={() => navigate('/welcome')}
+          className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Sign In
+        </button>
       </div>
     );
   }
@@ -261,14 +283,13 @@ const ClientDashboard = () => {
                       <Package className="w-6 h-6 text-blue-600" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Repair Items</h3>
-                  </span>
-                  
-                  <div className="relative group">
-                    <HelpCircle className="w-4 h-4 text-gray-500 cursor-help" />
-                    <div className="absolute left-0 top-6 w-64 bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-                      These are the devices, gadgets, appliances, or items you need repaired.
+                    <div className="relative group">
+                      <HelpCircle className="w-4 h-4 text-gray-500 cursor-help" />
+                      <div className="absolute left-0 top-6 w-64 bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                        These are the devices, gadgets, appliances, or items you need repaired.
+                      </div>
                     </div>
-                  </div>
+                  </span>
                 </div>
               </div>
 

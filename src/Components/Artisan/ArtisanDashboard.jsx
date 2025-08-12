@@ -6,6 +6,7 @@ import { getIdentity, setIdentity } from '../../Auth/tokenStorage';
 import AddServiceModal from '../Modals/AddServiceModal';
 import { Star, User, Users, MapPin, Clock, Phone, Mail, Building, Edit3, Calendar, ExternalLink, ChevronDown, ChevronUp, LogOutIcon, Cog, Plus, Edit2, Trash2, ShoppingBagIcon, CheckCircle, AlertCircle, XCircle, Eye, Package } from 'lucide-react';
 import CharProfilePic from '../CharProfilePic';
+import Loader from '../../assets/Loaders/Loader';
 
 const ModernProfile = () => {
   const [availability, setAvailability] = useState("Available");
@@ -13,7 +14,11 @@ const ModernProfile = () => {
   const [userData, setUserData] = useState(null);
   const [services, setServices] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({
+    user: true,
+    orders: true,
+    services: true,
+  });
   const [error, setError] = useState(null);
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   
@@ -22,14 +27,20 @@ const ModernProfile = () => {
 
   useEffect(() => {
     const storedUser = getIdentity();
-    if (storedUser.role !== 'ARTISAN') {
-      navigateFunc('/client/profile');
+    if (!storedUser) {
+      navigateFunc('/welcome');
+    } else if (storedUser && storedUser.role !== 'ARTISAN') {
+      navigateFunc('/client/dashboard');
     }
     console.log('stored user', storedUser);
   
     const fetchAllData = async () => {
       try {
-        setLoading(true);
+        setLoading({
+          user: true,
+          orders: true,
+          services: true,
+        });
   
         // fetch user data using Fetch utility
         const { data: userData, error: userError } = await Fetch({
@@ -43,6 +54,9 @@ const ModernProfile = () => {
         console.log('User Data:', userData);
         setIdentity(userData);
         setUserData(userData);
+        setLoading(prev => ({...prev,
+          user: false,
+        }));
   
         // fetch artisan services
         const { data: servicesData, error: servicesError } = await Fetch({
@@ -55,6 +69,9 @@ const ModernProfile = () => {
         } else {
           console.log('Services:', servicesData);
           setServices(servicesData || []);
+          setLoading(prev => ({...prev,
+            services: false,
+          }));
         }
 
         // fetch artisan orders
@@ -67,13 +84,20 @@ const ModernProfile = () => {
         } else {
           console.log('Orders:', orderData);
           setOrders(orderData || []);
+          setLoading(prev => ({...prev,
+            orders: false,
+          }));
         }
   
       } catch (err) {
         console.error('Fetch error:', err);
         setError(err.message);
       } finally {
-        setLoading(false);
+        setLoading({
+          user: false,
+          orders: false,
+          services: false,
+        });
       }
     };
   
@@ -81,7 +105,7 @@ const ModernProfile = () => {
   }, [navigateFunc, state]);
   
 
-  if (loading) {
+  if (loading.user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
         <div className="text-center">
@@ -453,6 +477,13 @@ const ModernProfile = () => {
             </span>
 
             {/* Scrollable Grid */}
+            {loading.services ? 
+            (
+              <div className='flex flex-col gap-3 items-center justify-center h-64'>
+                <Loader size={'10'} otherStyles={'text-center'}/>
+                <span className='font-light text-md text-gray-600'>Loading Services...</span>
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <div className="grid grid-flow-col my-4 auto-cols-[280px] gap-4 min-w-full">
                 {services?.length > 0 && services.map((service) => (
@@ -528,6 +559,7 @@ const ModernProfile = () => {
                 </div>
               </div>
             </div>
+          )}
           </div>
 
           {/* Incoming Orders Section - FIXED */}
@@ -540,7 +572,14 @@ const ModernProfile = () => {
             </span>
 
             {/* Check if there are filtered orders */}
-            {filteredOrders && filteredOrders.length > 0 ? (
+            {loading.orders ? 
+              (
+                <div className='flex flex-col gap-3 items-center justify-center h-64'>
+                  <Loader size={'10'} otherStyles={'text-center'}/>
+                  <span className='font-light text-md text-gray-600'>Loading Services...</span>
+                </div>
+              ) : (
+              filteredOrders && filteredOrders.length > 0 ? (
               <div className="grid gap-6">
                 {filteredOrders.map((order) => {
                   const statusDisplay = getStatusDisplay(order.status);
@@ -649,16 +688,17 @@ const ModernProfile = () => {
                   );
                 })}
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center text-gray-600 py-12 px-4 bg-white/70 rounded-2xl">
-                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 shadow-md mb-4">
-                  <ShoppingBagIcon className="w-10 h-10 text-gray-400" />
+                ) : (
+                <div className="flex flex-col items-center justify-center text-center text-gray-600 py-12 px-4 bg-white/70 rounded-2xl">
+                  <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 shadow-md mb-4">
+                    <ShoppingBagIcon className="w-10 h-10 text-gray-400" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-1">No Recent Orders</h4>
+                  <p className="text-sm text-gray-500">
+                    You haven't received any orders yet. When you do, they'll show up here.
+                  </p>
                 </div>
-                <h4 className="text-lg font-semibold text-gray-800 mb-1">No Recent Orders</h4>
-                <p className="text-sm text-gray-500">
-                  You haven't received any orders yet. When you do, they'll show up here.
-                </p>
-              </div>
+              )
             )}
           </div>
 
