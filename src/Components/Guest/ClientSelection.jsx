@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import {  useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PrivateBookingModal from "../Modals/PrivateBookingModal";
 import Fetch from "../../util/Fetch";
@@ -17,6 +17,17 @@ const ClientSelection = () => {
   const location = useLocation();
   const { state } = useAuth();
   const artisanId = new URLSearchParams(location.search).get("artisanId");
+
+  useEffect(() => {
+    const serviceId = new URLSearchParams(location.search).get("serviceId");
+    if (serviceId) {
+      const foundService = services.find(service => service.id === serviceId);
+      if (foundService) {
+        setSelectedServices(foundService);
+        setPrivateBookingOpen(true);
+      }
+    }
+  }, [location, services]);
 
   useEffect(() => {
   
