@@ -1,30 +1,30 @@
-import { MapPin, Star, ChevronLeft, ChevronRight, Award, Users, Calendar } from "lucide-react"; 
-import { useEffect, useState } from "react";
+import { MapPin, Star, ChevronLeft, ChevronRight, Award, Users, Calendar, Cog } from "lucide-react"; 
+import { useEffect, useState, useCallback } from "react";
 import CharProfilePic from "../CharProfilePic";
 import { useNavigate } from "react-router-dom";
+import Fetch from "../../util/Fetch";
 
 const ClientHome = () => {
   const [artisans, setArtisans] = useState([]);
   const [bookedArtisans, setBookedArtisans] = useState([]);
   const [topArtisans, setTopArtisans] = useState([]);
+  const [services, setServices] = useState([]);
   const [activeTab, setActiveTab] = useState('top');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [perPage, setPerPage] = useState(9);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [resultType, setResultType] = useState('artisans'); // 'artisans' or 'services'
 
   const tabs = [
     { id: 'top', label: 'Top Artisans', icon: Award, color: 'text-yellow-600' },
     { id: 'available', label: 'Available', icon: Users, color: 'text-green-600' },
-    { id: 'booked', label: 'Booked', icon: Calendar, color: 'text-blue-600' }
+    { id: 'booked', label: 'Booked', icon: Calendar, color: 'text-blue-600' },
+    { id: 'services', label: 'Services', icon: Cog, color: 'text-stone-600' }
   ];
 
-  useEffect(() => {
-    fetchArtisans();
-  }, [activeTab, currentPage, perPage]);
-
-  const fetchArtisans = async () => {
+  const fetchArtisans = useCallback(async () => {
     setLoading(true);
     const endpoint = `${import.meta.env.VITE_API_URL}/api/admin/getAll?role=ARTISAN&page=${currentPage}&limit=${perPage}`;
     
@@ -64,7 +64,40 @@ const ClientHome = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, currentPage, perPage]);
+
+  const fetchServices = useCallback(async () => {
+    setLoading(true);
+    const endpoint = `${import.meta.env.VITE_API_SERVICE_URL}/service/services?page=${currentPage}&limit=${perPage}`;
+    try {
+      const {data, success} = await Fetch({
+        url: endpoint,
+        method: 'GET',
+        contentType: 'application/json',
+      })
+      if (!success) {
+        throw new Error(data.message || 'Failed to fetch services');
+      }
+      setServices(data.services || []);
+      setCurrentPage(data.currentPage || 1);
+      setTotalPages(data.totalPages || 1);
+      setTotal(data.total || 0);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    }
+    setLoading(false);
+  }, [currentPage, perPage]);
+
+  useEffect(() => {
+    if (activeTab !== 'services') {
+      fetchArtisans();
+      setResultType('artisans');
+    }
+    else {
+      fetchServices();
+      setResultType('services');
+    }
+  }, [activeTab, currentPage, perPage, fetchArtisans, fetchServices]);
 
   const getCurrentArtisans = () => {
     switch (activeTab) {
@@ -109,8 +142,8 @@ const ClientHome = () => {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Artisans</h1>
-        <p className="text-gray-600">Discover and book skilled professionals for your needs</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Artisans/Services</h1>
+        <p className="text-gray-600">Discover and book skilled professionals and services for your needs</p>
       </div>
 
       {/* Tab Navigation */}
@@ -141,7 +174,7 @@ const ClientHome = () => {
       {/* Results Summary */}
       <div className="mb-6">
         <p className="text-gray-600">
-          Showing {getCurrentArtisans().length} of {total} artisans
+          Showing {resultType === 'artisan' ? getCurrentArtisans().length : services.length} of {total} {resultType === 'artisans' ? 'artisans' : 'services'} found
         </p>
       </div>
 
@@ -169,9 +202,6 @@ const ClientHome = () => {
                     alt={artisan.fullName}
                     className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
                   /> : 
-                  // <div className="p-3 rounded-full border-4 border-white shadow-lg">
-                  //   <Users className="w-20 h-20 text-gray-500" />
-                  // </div>
                     <CharProfilePic username={artisan.fullName} size={'20'} />
                   }
                   {activeTab === 'top' && (
@@ -242,15 +272,15 @@ const ClientHome = () => {
       {!loading && getCurrentArtisans().length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">
-            <Users className="w-16 h-16 mx-auto" />
+            {resultType === 'artisans' ? <Users className="w-16 h-16 mx-auto" /> : <Cog className="w-16 h-16 mx-auto" />}
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No artisans found
+            {resultType === 'artisans' ? 'No artisans found' : 'No services available'}
           </h3>
           <p className="text-gray-600">
             {activeTab === 'booked' 
               ? "You haven't booked any artisans yet."
-              : "No artisans available at the moment."}
+              : "No artisans/services available at the moment."}
           </p>
         </div>
       )}

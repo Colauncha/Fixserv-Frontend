@@ -49,6 +49,10 @@ const Navbar = ({ bg, userIconFill }) => {
     }
   };
 
+  const handleNotify = () => {
+    navigate("/notify");
+  };
+
   const handleAuth = () => {
     navigate("/welcome");
   };
@@ -113,9 +117,12 @@ const Navbar = ({ bg, userIconFill }) => {
 
               <div 
               className="relative cursor-pointer"
-              onClick={() => navigate('/notify')}
+              onClick={handleNotify}
               title="Notifications">
-                <Bell className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6" />
+                <Bell
+                  className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6"
+                  onClick={handleNotify}
+                />
                 <span className="absolute top-3 right-0 bg-[#00FF9D] w-3 h-3 rounded-full" />
               </div>
 

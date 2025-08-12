@@ -34,7 +34,7 @@ const GenNavBar = () => {
       setNavbarComponent(<HomeNavbar />);
     } else if (path.startsWith("/notify")) {
       setIsVisible(true);
-      setNavbarComponent(<HomeNavbar />);
+      setNavbarComponent(<Navbar />);
     } else if (path.startsWith("/terms-conditions")) {
       setIsVisible(true);
       setNavbarComponent(<Navbar bg={'bg-gradient-to-r from-blue-100 to-blue-0'} userIconFill={'fill-[#D8E3FC]'} />)
