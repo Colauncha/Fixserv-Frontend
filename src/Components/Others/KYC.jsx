@@ -1,12 +1,19 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { getIdentity } from "../../Auth/tokenStorage";
 
 const KYC_Client = () => {
+  const [role, setRole] = useState("CLIENT");
   const [formData, setFormData] = useState({
-    kycReferenceId: "",
-    emailOrPhone: "",
-    // dob: "",
-    // otpMethod: "Email",
+    documentType: "",
+    documentId: "",
   });
+
+  useEffect(() => {
+    const identity = getIdentity();
+    if (identity) {
+      setRole(identity.role || "client");
+    }
+  }, [])
 
   const handleChange = (e) => {
     setFormData({
@@ -46,7 +53,7 @@ const KYC_Client = () => {
 
         {/* Heading */}
         <h2 className="text-4xl font-bold text-center mb-4">
-          Resume Your KYC Verification
+          {role} KYC Verification
         </h2>
         <p className="text-gray-700 text-center text-lg mb-6">
           Enter the details below to retrieve your KYC session or check <br/> your
@@ -62,8 +69,8 @@ const KYC_Client = () => {
              Document type
             </label>
             <select
-              name="kycReferenceId"
-              value={formData.kycReferenceId}
+              name="documentType"
+              value={formData.documentType}
               onChange={handleChange}
             //   placeholder="Select KYC option"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-4 focus:ring-blue-500 focus:border-blue-500"
@@ -83,8 +90,8 @@ const KYC_Client = () => {
             </label>
             <input
               type="text"
-              name="emailOrPhone"
-              value={formData.emailOrPhone}
+              name="documentId"
+              value={formData.documentId}
               onChange={handleChange}
               placeholder="Enter your registered email or phone number"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-4 focus:ring-blue-500 focus:border-blue-500"
@@ -92,59 +99,13 @@ const KYC_Client = () => {
             />
           </div>
 
-          {/* Date of Birth */}
-          {/* <div className="text-gray-400">
-            <label className="block text-md font-medium text-gray-700">
-              Date of Birth
-            </label>
-            <input
-              type="date"
-              name="dob"
-              value={formData.dob}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-4 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-          </div> */}
-
-          {/* OTP Method */}
-          {/* <div className="flex items-center mt-10 space-x-15" >
-            <label className="block text-md font-medium text-black">
-              Receive OTP via
-            </label>
-            <div className="flex items-center mt-1 space-x-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="otpMethod"
-                  value="SMS"
-                  checked={formData.otpMethod === "SMS"}
-                  onChange={handleChange}
-                  className="mr-2 text-gray-700"
-                />
-                SMS
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="otpMethod"
-                  value="Email"
-                  checked={formData.otpMethod === "Email"}
-                  onChange={handleChange}
-                  className="mr-2 text-gray-700"
-                />
-                Email
-              </label>
-            </div>
-          </div> */}
-
           {/* Submit Button */}
           <div className="flex justify-center text-md">
             <button
             type="submit"
             className="w-70 items-center justify-center text-center bg-[#7A9DF7] text-white py-3 px-6 mt-10 rounded-md hover:bg-blue-500 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            Retrieve KYC
+            Submit Document
           </button>
           </div>
         </form>
