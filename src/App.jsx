@@ -19,6 +19,7 @@ import Footer from "./Components/Footer";
 import AboutUsPage from "./Pages/Home/AboutUsPage";
 import { AuthProvider } from "./Context/AuthContext";
 import ProtectedRoute from "./Auth/ProtectedRoute";
+import AdminProtectedRoute from "./Auth/AdminProtectedRoute";
 import ContactUsPage from "./Pages/Home/ContactUsPage";
 import AutoScrollToTop from "./Components/AutoScrollToTop";
 import JobDetails from "./Components/Artisan/JobDetails";
@@ -32,6 +33,9 @@ import PrivacyPolicy from "./Components/Others/PrivacyPolicy";
 import Notification from "./Components/Others/Notification";
 import KYC from "./Components/Others/KYC";
 
+// Admins
+import AdminAuth from "./Components/Admin/Auth";
+import AdminDashboard from "./Components/Admin/Dashboard";
 
 function App() {
   return (
@@ -50,72 +54,83 @@ function App() {
         <Route path="/notify" element={<Notification/>} />
         {/* <Route path="/kyc_client" element={<KYC_Client />} /> */}
 
-          {/* Auth Routes */}
-          <Route path="/auth">
-            <Route path="login" element={<LogInPage />} />
-            <Route path="artisan-signup" element={<BuilderSignUp />} />
-            <Route path="client-signup" element={<UserSignUp />} />
-            <Route path="reset-password" element={<ResetPassword />} />
-          </Route>
+        {/* Auth Routes */}
+        <Route path="/auth">
+          <Route path="login" element={<LogInPage />} />
+          <Route path="artisan-signup" element={<BuilderSignUp />} />
+          <Route path="client-signup" element={<UserSignUp />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+        </Route>
 
-          {/* Client Routes */}
-          <Route path="/client">
-            <Route path="home" element={<ClientHomePage />} />
-            <Route path="selection" element={<TechSelection />} />
-            <Route path="dashboard" element={<ClientDashboard />} />
-            <Route path="profile" element={
-              <ProtectedRoute>
-                <ClientProfilePage />
-              </ProtectedRoute>
-            } />
-            <Route path="order/:id" element={
-              <ProtectedRoute>
-                <OrderDetails />
-              </ProtectedRoute>
-            } />
-            <Route path="edit-profile" element={
-              <ProtectedRoute> 
-                <ClientEditProfile  />
-              </ProtectedRoute>
-            }/>
-            <Route path="kyc" element={
-              <ProtectedRoute> 
-                <KYC />
-              </ProtectedRoute>
-            }/>
+        {/* Client Routes */}
+        <Route path="/client">
+          <Route path="home" element={<ClientHomePage />} />
+          <Route path="selection" element={<TechSelection />} />
+          <Route path="dashboard" element={<ClientDashboard />} />
+          <Route path="profile" element={
+            <ProtectedRoute>
+              <ClientProfilePage />
+            </ProtectedRoute>
+          } />
+          <Route path="order/:id" element={
+            <ProtectedRoute>
+              <OrderDetails />
+            </ProtectedRoute>
+          } />
+          <Route path="edit-profile" element={
+            <ProtectedRoute> 
+              <ClientEditProfile  />
+            </ProtectedRoute>
+          }/>
+          <Route path="kyc" element={
+            <ProtectedRoute> 
+              <KYC />
+            </ProtectedRoute>
+          }/>
 
-          </Route>
+        </Route>
 
-          {/* Artisan Routes */}
-          <Route path="/artisans">
-            <Route path="home" element={<ArtisanHomePage />} />
-            <Route path="dashboard" element={
-              <ProtectedRoute>
-                <ArtisanDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="history" element={
-              <ProtectedRoute>
-                <ArtisanHistory />
-              </ProtectedRoute>
-            } />
-            <Route path="job/:id" element={
-              <ProtectedRoute>
-                <JobDetails />
-              </ProtectedRoute>
-            } />
-            <Route path="edit-profile" element={
-              <ProtectedRoute>
-                <EditProfile />
-              </ProtectedRoute>
-            } />
-            <Route path="kyc" element={
-              <ProtectedRoute> 
-                <KYC />
-              </ProtectedRoute>
-            }/>
-          </Route>
-        </Routes>
+        {/* Artisan Routes */}
+        <Route path="/artisans">
+          <Route path="home" element={<ArtisanHomePage />} />
+          <Route path="dashboard" element={
+            <ProtectedRoute>
+              <ArtisanDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="history" element={
+            <ProtectedRoute>
+              <ArtisanHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="job/:id" element={
+            <ProtectedRoute>
+              <JobDetails />
+            </ProtectedRoute>
+          } />
+          <Route path="edit-profile" element={
+            <ProtectedRoute>
+              <EditProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="kyc" element={
+            <ProtectedRoute> 
+              <KYC />
+            </ProtectedRoute>
+          }/>
+        </Route>
+
+        {/* Admin routes */}
+        <Route path="/admin">
+          <Route path="login" element={<AdminAuth />} />
+          <Route path="dashboard" element={
+            <AdminProtectedRoute>
+              <AdminDashboard />
+            </AdminProtectedRoute>
+          } />
+        </Route>
+
+      </Routes>
       </AutoScrollToTop>
       <ScrollToTop />
       <Footer />
