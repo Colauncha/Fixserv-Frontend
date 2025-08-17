@@ -3,6 +3,7 @@ import { Users, Briefcase, Settings, UserPlus, ShoppingBag, MailSearch, LogOut }
 import Services from './Tabs/Services'
 import CreateAdmin from "./Tabs/CreateAdmin";
 import Orders from "./Tabs/Orders";
+import CampaignSubs from "./Tabs/CampainSubs";
 import { getIdentity } from "../../Auth/tokenStorage";
 import useAuth from "../../Auth/useAuth";
 
@@ -77,7 +78,10 @@ const Dashboard = () => {
           {activeTab === "Orders" && <div className="text-gray-700">📦 Orders list...
               <Orders />
             </div>}
-          {activeTab === "Mail list" && <div className="text-gray-700">📨 Mail subscriber list goes here...</div>}
+          {activeTab === "Mail list" && <div className="text-gray-700">
+            📨 Mail subscriber list...
+            <CampaignSubs />
+          </div>}
         </main>
       </div>
     </div>
