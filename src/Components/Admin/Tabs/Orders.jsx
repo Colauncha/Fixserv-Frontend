@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import useAuth from "../../../Auth/useAuth";
 
 const Orders = () => {
@@ -29,13 +29,8 @@ const Orders = () => {
   const statusOptions = ["pending", "in-progress", "completed", "cancelled"];
   const escrowStatusOptions = ["pending", "held", "released", "refunded"];
 
-  // Fetch all orders on component mount
-  useEffect(() => {
-    fetchAllOrders();
-  }, []);
-
   // Fetch all orders
-  const fetchAllOrders = async () => {
+  const fetchAllOrders = useCallback(async () => {
     setLoadingOrders(true);
     setError("");
     try {
@@ -58,7 +53,12 @@ const Orders = () => {
     } finally {
       setLoadingOrders(false);
     }
-  };
+  }, [token]);
+
+  // Fetch all orders on component mount
+  useEffect(() => {
+    fetchAllOrders();
+  }, [fetchAllOrders]);
 
   // Search orders
   const handleSearch = async () => {
