@@ -4,6 +4,8 @@ import Services from './Tabs/Services'
 import CreateAdmin from "./Tabs/CreateAdmin";
 import Orders from "./Tabs/Orders";
 import CampaignSubs from "./Tabs/CampainSubs";
+import Artisan from "./Tabs/Artisans";
+import Clients from "./Tabs/Clients";
 import { getIdentity } from "../../Auth/tokenStorage";
 import useAuth from "../../Auth/useAuth";
 
@@ -68,20 +70,33 @@ const Dashboard = () => {
 
         {/* Content area */}
         <main className="flex-1 p-6">
-          {activeTab === "Client" && <div className="text-gray-700">📋 Client content goes here...</div>}
-          {activeTab === "Artisans" && <div className="text-gray-700">🛠 Artisans content goes here...</div>}
-          {activeTab === "Services" && <div className="text-gray-700"><Services /></div>}
+          {activeTab === "Client" && <div className="text-gray-700">
+              📋 Client content...
+              <Clients />
+            </div>
+          }
+          {activeTab === "Artisans" && <div className="text-gray-700">
+              🛠 Artisans content...
+              <Artisan />
+            </div>
+          }
+          {activeTab === "Services" && <div className="text-gray-700">
+              <Services />
+            </div>
+          }
           {activeTab === "Create Admin" && <div className="text-gray-700">👤 Create Admin form...
               <CreateAdmin />
             </div>
           }
           {activeTab === "Orders" && <div className="text-gray-700">📦 Orders list...
               <Orders />
-            </div>}
+            </div>
+          }
           {activeTab === "Mail list" && <div className="text-gray-700">
-            📨 Mail subscriber list...
-            <CampaignSubs />
-          </div>}
+              📨 Mail subscriber list...
+              <CampaignSubs />
+            </div>
+          }
         </main>
       </div>
     </div>
