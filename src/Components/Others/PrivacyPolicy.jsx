@@ -5,12 +5,6 @@ const PrivacyPolicy = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-r from-blue-100 to-blue-0 text-black p-10">
       <div className="max-w-full mx-auto mt-10">
         <h2 className="text-3xl font-bold mb-9 text-blue-700 cursor-pointer">Privacy <span className="text-purple-700">Policy</span></h2>
-        {/* <div className="flex gap-4 mb-6 border-b pb-2 text-gray-600">
-          <span className="cursor-pointer hover:text-black">Terms</span>
-          <span className="font-semibold text-black border-b-2 border-black cursor-pointer">
-            Privacy Policy
-          </span>
-        </div> */}
 
         <h3 className="text-xl flex justify-center font-semibold mb-8">Welcome to our privacy policy!</h3>
         <p className="mb-4">
@@ -59,8 +53,8 @@ const PrivacyPolicy = () => {
         </ul>
         <p className="mb-6">
           To make any privacy requests, email us at:{" "}
-          <a href="mailto:support@fixserv.com" className="text-blue-600 underline">
-            support@fixserv.com
+          <a href="mailto:support@fixserv.co" className="text-blue-600 underline">
+            support@fixserv.co
           </a>
         </p>
 
