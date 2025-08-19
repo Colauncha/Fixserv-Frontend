@@ -7,6 +7,7 @@ import AddServiceModal from '../Modals/AddServiceModal';
 import { Star, User, Users, MapPin, Clock, Phone, Mail, Building, Edit3, Calendar, ExternalLink, ChevronDown, ChevronUp, LogOutIcon, Cog, Plus, Edit2, Trash2, ShoppingBagIcon, CheckCircle, AlertCircle, XCircle, Eye, Package } from 'lucide-react';
 import CharProfilePic from '../CharProfilePic';
 import Loader from '../../assets/Loaders/Loader';
+import { toast } from 'react-toastify';
 
 const ModernProfile = () => {
   const [availability, setAvailability] = useState("Available");
@@ -19,7 +20,6 @@ const ModernProfile = () => {
     orders: true,
     services: true,
   });
-  const [error, setError] = useState(null);
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   
   const navigateFunc = useNavigate();
@@ -81,6 +81,7 @@ const ModernProfile = () => {
   
         if (orderError) {
           console.error('Error fetching order:', orderError);
+          throw new Error(orderError);
         } else {
           console.log('Orders:', orderData);
           setOrders(orderData || []);
@@ -91,7 +92,7 @@ const ModernProfile = () => {
   
       } catch (err) {
         console.error('Fetch error:', err);
-        setError(err.message);
+        toast.error(`Error: ${err.message}`)
       } finally {
         setLoading({
           user: false,
@@ -111,22 +112,6 @@ const ModernProfile = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error: {error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Try Again
-          </button>
         </div>
       </div>
     );

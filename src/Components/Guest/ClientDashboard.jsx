@@ -25,10 +25,11 @@ import {
   Star
 } from "lucide-react";
 import CharProfilePic from '../CharProfilePic';
+import { toast } from 'react-toastify';
 
 const ClientDashboard = () => {
   const [client, setClient] = useState(null);
-  const [error, setError] = useState(null);
+  // const [error, setError] = useState(null);
   const [publicBookingOpen, setPublicBookingOpen] = useState(false);
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
   const [fundWalletModalOpen, setFundWalletModalOpen] = useState(false);
@@ -77,9 +78,11 @@ const ClientDashboard = () => {
           user: false,
         }));
 
-        const {data: walletResp} = await Fetch({
+        const {data: walletResp, error: walletErr} = await Fetch({
           url: `${import.meta.env.VITE_API_WALLET_URL}/wallet/get-balance/${storedUser.id || storedUser._id}`,
         });
+
+        if (error) throw new Error(walletErr);
 
         setWallet(walletResp.data);
         setLoading(prev => ({...prev,
@@ -87,7 +90,7 @@ const ClientDashboard = () => {
         }));
 
       } catch (err) {
-        setError(err.message);
+        toast.error(`Error fetching user data: ${err.message}`);
       } finally {
         setLoading({
           user: false,
@@ -113,21 +116,21 @@ const ClientDashboard = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error: {error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
+  //       <div className="text-center">
+  //         <p className="text-red-600 mb-4">Error: {error}</p>
+  //         <button 
+  //           onClick={() => window.location.reload()} 
+  //           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+  //         >
+  //           Try Again
+  //         </button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (!client) {
     return (

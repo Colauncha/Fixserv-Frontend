@@ -37,12 +37,25 @@ import KYC from "./Components/Others/KYC";
 import AdminAuth from "./Components/Admin/Auth";
 import AdminDashboard from "./Components/Admin/Dashboard";
 
+// toastify
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 function App() {
   return (
     <div>
       <AuthProvider>
       <GenNavBar />
       <AutoScrollToTop>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <Routes>
         {/* General / Shared */}
         <Route path="/" element={<Landing />} />
