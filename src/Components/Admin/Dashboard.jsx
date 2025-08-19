@@ -1,20 +1,22 @@
 import { useState } from "react";
-import { Users, Briefcase, Settings, UserPlus, ShoppingBag, MailSearch, LogOut } from "lucide-react"; // Lucide icons
+import { Users, Briefcase, Settings, UserPlus, ShoppingBag, MailSearch, LogOut, Blocks } from "lucide-react"; // Lucide icons
 import Services from './Tabs/Services'
 import CreateAdmin from "./Tabs/CreateAdmin";
 import Orders from "./Tabs/Orders";
 import CampaignSubs from "./Tabs/CampainSubs";
 import Artisan from "./Tabs/Artisans";
 import Clients from "./Tabs/Clients";
+import Overview from "./Tabs/Overview";
 import { getIdentity } from "../../Auth/tokenStorage";
 import useAuth from "../../Auth/useAuth";
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState("Client");
+  const [activeTab, setActiveTab] = useState("Overview");
   const identity = getIdentity();
   const { logout } = useAuth();
 
   const tabs = [
+    { label: "Overview", icon: Blocks },
     { label: "Client", icon: Users },
     { label: "Artisans", icon: Briefcase },
     { label: "Services", icon: Settings },
@@ -70,6 +72,11 @@ const Dashboard = () => {
 
         {/* Content area */}
         <main className="flex-1 p-6">
+          {activeTab === "Overview" && <div className="text-gray-700">
+            🗂 Overview content...
+              <Overview />
+            </div>
+          }
           {activeTab === "Client" && <div className="text-gray-700">
               📋 Client content...
               <Clients />
