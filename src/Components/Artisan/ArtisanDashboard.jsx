@@ -561,7 +561,7 @@ const ModernProfile = () => {
               (
                 <div className='flex flex-col gap-3 items-center justify-center h-64'>
                   <Loader size={'10'} otherStyles={'text-center'}/>
-                  <span className='font-light text-md text-gray-600'>Loading Services...</span>
+                  <span className='font-light text-md text-gray-600'>Loading Orders...</span>
                 </div>
               ) : (
               filteredOrders && filteredOrders.length > 0 ? (
