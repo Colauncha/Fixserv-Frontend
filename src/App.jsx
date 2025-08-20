@@ -82,13 +82,13 @@ function App() {
           <Route path="/client">
             <Route path="home" element={<ClientHomePage />} />
             <Route path="selection" element={<TechSelection />} />
-            <Route path="dashboard" element={<ClientDashboard />} />
-            <Route path="profile" element={
+            {/* <Route path="dashboard" element={<ClientDashboard />} /> */}
+            <Route path="dashboard" element={
               <ProtectedRoute>
-                <ClientProfilePage />
+                <ClientDashboard />
               </ProtectedRoute>
             } />
-            <Route path="order/:id" element={
+            <Route path="orders/:id" element={
               <ProtectedRoute>
                 <OrderDetails />
               </ProtectedRoute>

@@ -22,14 +22,20 @@ import {
   Plus,
   Package,
   History,
-  Star
+  Star,
+  ShoppingBagIcon,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  XCircle,
+  Eye
 } from "lucide-react";
 import CharProfilePic from '../CharProfilePic';
 import { toast } from 'react-toastify';
+import Loader from '../../assets/Loaders/Loader';
 
 const ClientDashboard = () => {
   const [client, setClient] = useState(null);
-  // const [error, setError] = useState(null);
   const [publicBookingOpen, setPublicBookingOpen] = useState(false);
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
   const [fundWalletModalOpen, setFundWalletModalOpen] = useState(false);
@@ -38,7 +44,9 @@ const ClientDashboard = () => {
   const [loading, setLoading] = useState({
     user: true,
     wallet: true,
+    orders: true,
   });
+  const [orders, setOrders] = useState([]);
   const [wallet, setWallet] = useState({
     balance: 0,
     lockedBalance: 0,
@@ -78,17 +86,33 @@ const ClientDashboard = () => {
           user: false,
         }));
 
+        // Fetch wallet balance
         const {data: walletResp, error: walletErr} = await Fetch({
           url: `${import.meta.env.VITE_API_WALLET_URL}/wallet/get-balance/${storedUser.id || storedUser._id}`,
         });
 
-        if (error) throw new Error(walletErr);
+        if (walletErr) throw new Error(walletErr);
 
         setWallet(walletResp.data);
         setLoading(prev => ({...prev,
           wallet: false,
         }));
 
+        // Fetch Orders
+        const { data: orderData, error: orderError } = await Fetch({
+          url: `${import.meta.env.VITE_API_ORDER_URL}/orders/public`,
+        });
+  
+        if (orderError) {
+          console.error('Error fetching order:', orderError);
+          throw new Error(orderError);
+        } else {
+          console.log('Orders:', orderData);
+          setOrders(orderData || []);
+          setLoading(prev => ({...prev,
+            orders: false,
+          }));
+        }
       } catch (err) {
         toast.error(`Error fetching user data: ${err.message}`);
       } finally {
@@ -105,6 +129,58 @@ const ClientDashboard = () => {
     }
   }, [navigate, state, update]);
 
+  const getStatusDisplay = (status) => {
+    const statusConfig = {
+      'COMPLETED': {
+        color: 'text-green-600 bg-green-50 border-green-200',
+        icon: <CheckCircle className="w-4 h-4" />,
+        text: 'Completed'
+      },
+      'PENDING': {
+        color: 'text-yellow-600 bg-yellow-50 border-yellow-200',
+        icon: <AlertCircle className="w-4 h-4" />,
+        text: 'Pending'
+      },
+      'IN_PROGRESS': {
+        color: 'text-blue-600 bg-blue-50 border-blue-200',
+        icon: <Clock className="w-4 h-4" />,
+        text: 'In Progress'
+      },
+      'CANCELLED': {
+        color: 'text-red-600 bg-red-50 border-red-200',
+        icon: <XCircle className="w-4 h-4" />,
+        text: 'Cancelled'
+      }
+    };
+
+    return statusConfig[status] || statusConfig['PENDING'];
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0
+    }).format(price);
+  };
+
+  const filteredOrders = Array.isArray(orders) ? orders.filter(order => order.clientId === client.id) : [];
+
+  const handleViewOrderDetails = (orderId) => {
+    console.log('Viewing order details:', orderId);
+    navigate(`/client/orders/${orderId}`);
+  };
+
   if (loading.user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
@@ -115,22 +191,6 @@ const ClientDashboard = () => {
       </div>
     );
   }
-
-  // if (error) {
-  //   return (
-  //     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
-  //       <div className="text-center">
-  //         <p className="text-red-600 mb-4">Error: {error}</p>
-  //         <button 
-  //           onClick={() => window.location.reload()} 
-  //           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-  //         >
-  //           Try Again
-  //         </button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   if (!client) {
     return (
@@ -204,9 +264,14 @@ const ClientDashboard = () => {
               {/* Wallet Section */}
               <div className="w-full lg:w-80 xl:w-96">
                 <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Wallet2 className="w-6 h-6 text-blue-600" />
-                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Wallet</h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="flex items-center gap-3">
+                      <Wallet2 className="w-6 h-6 text-blue-600" />
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Wallet</h3>
+                    </span>
+                    { loading.wallet && (
+                      <Loader className="w-6 h-6 text-blue-600 animate-spin" />
+                    )}
                   </div>
 
                   <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
@@ -401,6 +466,138 @@ const ClientDashboard = () => {
                 </span>
               ))}
             </div>
+          </div>
+
+          {/* Placed Orders Section - FIXED */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border mb-8 border-white/20 p-6">
+            <span className="flex items-center gap-2 mb-6">
+              <div className='p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100'>
+                <ShoppingBagIcon className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Orders</h3>
+            </span>
+
+            {/* Check if there are filtered orders */}
+            {loading.orders ? 
+              (
+                <div className='flex flex-col gap-3 items-center justify-center h-64'>
+                  <Loader size={'10'} otherStyles={'text-center'}/>
+                  <span className='font-light text-md text-gray-600'>Loading Orders...</span>
+                </div>
+              ) : (
+              filteredOrders && filteredOrders.length > 0 ? (
+              <div className="grid gap-6">
+                {filteredOrders.map((order) => {
+                  const statusDisplay = getStatusDisplay(order.status);
+                  
+                  return (
+                    <div key={order.id} className="border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-white to-gray-50/50">
+                      <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+                        
+                        {/* Order Images */}
+                        <div className="flex-shrink-0">
+                          {order.uploadedProducts?.length > 0 ? (
+                            <div className="flex flex-wrap gap-3">
+                              {order.uploadedProducts.slice(0, 3).map((product, idx) => (
+                                <div key={idx} className="relative group">
+                                  <img
+                                    src={product.imageUrl}
+                                    alt={product.description || 'Order item'}
+                                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl border-2 border-gray-200 group-hover:border-blue-300 transition-colors"
+                                  />
+                                  {idx === 2 && order.uploadedProducts.length > 3 && (
+                                    <div className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center">
+                                      <span className="text-white font-semibold text-sm">
+                                        +{order.uploadedProducts.length - 3}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="w-24 h-24 bg-gray-100 rounded-xl flex items-center justify-center">
+                              <Package className="w-8 h-8 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+  
+                        {/* Order Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                            <div>
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  Order #{order.id.toString().slice(0, 8)}...
+                                </h3>
+                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${statusDisplay.color}`}>
+                                  {statusDisplay.icon}
+                                  {statusDisplay.text}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                                <Calendar className="w-4 h-4" />
+                                {formatDate(order.createdAt)}
+                              </div>
+                            </div>
+                            
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-green-600 mb-1">
+                                {formatPrice(order.price)}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                Escrow: {order.escrowStatus?.replace('_', ' ') || 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+  
+                          {/* Problem Description */}
+                          {order.uploadedProducts?.length > 0 && order.uploadedProducts[0].description && (
+                            <div className="mb-4">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-2">Problem Description:</h4>
+                              <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                                {order.uploadedProducts[0].description}
+                              </p>
+                            </div>
+                          )}
+  
+                          {/* Location & Actions */}
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <MapPin className="w-4 h-4" />
+                              <span>
+                                {order.clientAddress?.city}, {order.clientAddress?.state}, {order.clientAddress?.country}
+                              </span>
+                            </div>
+                            
+                            <div className="flex gap-3">
+                              <button 
+                                onClick={() => handleViewOrderDetails(order.id)}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-sm font-medium"
+                              >
+                                <Eye className="w-4 h-4" />
+                                View Details
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+                ) : (
+                <div className="flex flex-col items-center justify-center text-center text-gray-600 py-12 px-4 bg-white/70 rounded-2xl">
+                  <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 shadow-md mb-4">
+                    <ShoppingBagIcon className="w-10 h-10 text-gray-400" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-1">No Recent Orders</h4>
+                  <p className="text-sm text-gray-500">
+                    You haven't received any orders yet. When you do, they'll show up here.
+                  </p>
+                </div>
+              )
+            )}
           </div>
 
           {/* Booking History */}
