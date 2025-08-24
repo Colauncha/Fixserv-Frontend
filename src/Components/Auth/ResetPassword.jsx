@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import useAuth from "../../Auth/useAuth";
 
 const ResetPassword = () => {
   const [newPassword, setNewPassword] = useState("");
@@ -11,9 +12,14 @@ const ResetPassword = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Extract token from query string
-  const queryParams = new URLSearchParams(location.search);
-  const token = queryParams.get("token");
+  const params = new URLSearchParams(location.search);
+  const tokenFromUrl = params.get('token');
+
+  // Get token from global auth context
+  const { state } = useAuth();
+  const tokenFromAuth = state?.token;
+
+  const token = tokenFromUrl || tokenFromAuth;
 
   const handleReset = async (e) => {
     e.preventDefault();
@@ -43,9 +49,10 @@ const ResetPassword = () => {
       }
 
     setIsResetSuccessful(true);
+
   } catch (error) {
     console.error("Error resetting password:", error);
-    alert(`An error occurred while resetting password: ${error.message}`);
+    alert("An error occurred while resetting password");
   }
 };
 
