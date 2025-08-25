@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, House } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuth from "../../Auth/useAuth";
 import { setIdentity } from '../../Auth/tokenStorage';
@@ -72,6 +72,12 @@ const Auth = () => {
       <div className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 sm:p-10">
         <h2 className="text-xl sm:text-2xl text-[#110000C2] font-semibold mb-6">Admin Log in</h2>
   
+        <span
+          className="fixed top-5 left-5 flex items-center justify-center w-12 h-12 bg-gradient-to-br from-[#7A9DF7] to-[#7A9Dd7] hover:to-[#7A9DF7ec] hover:from-[#7A9Dd7e4] hover:shadow-lg hover:scale-105 rounded-full shadow-md transition-all duration-500"
+          onClick={() => navigate('/')}
+        >
+          <House className="hover:scale-105 text-white" size={24} />
+        </span>
         {/* Feedback message */}
         {message && (
           <div
