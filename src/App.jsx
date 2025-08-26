@@ -28,6 +28,10 @@ import TermsPage from "./Components/Others/TermsPage";
 import PrivacyPolicy from "./Components/Others/PrivacyPolicy";
 
 
+import EmailVerification from "./Components/Auth/EmailVerificationPage"
+import EmailVerificationTwo from "./Components/Auth/EmailVerificationPageTwo"
+
+
 function App() {
   return (
     <div>
@@ -42,10 +46,17 @@ function App() {
         <Route path="/terms-conditions" element={<TermsPage/>} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
+        
+        
+
+
+
         {/* Auth Routes */}
         <Route path="/auth">
           <Route path="login" element={<LogInPage />} />
           <Route path="artisan-signup" element={<BuilderSignUp />} />
+          <Route path="email-verification" element={<EmailVerification />} />
+          <Route path="email-verification-two" element={<EmailVerificationTwo />} />
           <Route path="client-signup" element={<UserSignUp />} />
           <Route path="reset-password" element={<ResetPassword />} />
         </Route>
