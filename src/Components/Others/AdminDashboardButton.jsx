@@ -35,7 +35,7 @@ const AdminDashboard = () => {
       onClick={() => navigate("/admin/dashboard")}
       aria-label="Admin button"
       className={`
-        fixed bottom-20 right-6 z-50
+        fixed bottom-20 right-6 z-40
         flex items-center justify-center
         w-12 h-12 rounded-full
         bg-gradient-to-br from-[#7A9DF7] to-[#7A9Dd7]

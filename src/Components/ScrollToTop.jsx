@@ -27,7 +27,7 @@ const ScrollToTop = () => {
       onClick={scrollToTop}
       aria-label="Scroll to top"
       className={`
-        fixed right-6 z-40
+        fixed right-6 z-50
         flex items-center justify-center
         w-12 h-12 rounded-full
         bg-gradient-to-br from-[#7A9DF7] to-[#7A9Dd7]
