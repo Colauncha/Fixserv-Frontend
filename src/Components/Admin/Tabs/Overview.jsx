@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Calendar, Shield, Users, Wrench, ShoppingCart, Eye, Briefcase, IdCard } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Shield, Users, Wrench, ShoppingCart, Eye, Briefcase, IdCard, TrafficCone, ChartGantt } from 'lucide-react';
 import { getIdentity } from '../../../Auth/tokenStorage';
 
 const Overview = () => {
   const identity = getIdentity();
   const [stats, setStats] = useState({
     visitors: null,
+    nuVisitors: null,
     clients: null,
     artisans: null,
     services: null,
@@ -19,6 +20,9 @@ const Overview = () => {
     orders: false
   });
   const [error, setError] = useState('');
+
+  const [trafficSectionToggle, setTrafficSectionToggle] = useState(false);
+
 
   const fetchVisitorsCount = async () => {
     setLoading(prev => ({ ...prev, visitors: true }));
@@ -38,7 +42,10 @@ const Overview = () => {
       }
 
       const data = await response.json();
-      setStats(prev => ({ ...prev, visitors: data.count || data.visitors || 0 }));
+      setStats(prev => ({ ...prev,
+        visitors: data.count || 0 ,
+        nuVisitors: data.nonunique_count || 0
+      }));
     } catch (err) {
       console.error('Error fetching visitors count:', err);
       setError('Failed to load some statistics');
@@ -71,7 +78,7 @@ const Overview = () => {
     );
   };
 
-  const StatCard = ({ title, value, icon: Icon, loading, color = 'blue' }) => {
+  const StatCard = ({ title, value, icon: Icon, loading, color = 'blue', onClick = null }) => {
     const colorStyles = {
       blue: 'bg-blue-50 text-blue-600 border-blue-200',
       green: 'bg-green-50 text-green-600 border-green-200',
@@ -81,7 +88,11 @@ const Overview = () => {
     };
 
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+      <div
+        className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+        onClick={onClick}
+        style={{ cursor: onClick ? 'pointer' : 'default' }}
+      >
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
@@ -214,6 +225,7 @@ const Overview = () => {
               icon={Eye}
               loading={loading.visitors}
               color="blue"
+              onClick={() => setTrafficSectionToggle(!trafficSectionToggle)}
             />
             
             <StatCard
@@ -249,6 +261,40 @@ const Overview = () => {
             />
           </div>
         </div>
+
+        {/* Traffic section */}
+        {trafficSectionToggle && (
+          <div className="bg-white rounded-lg mb-8 shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Traffic and Visitors count
+            </h3>
+            <div className="flex flex-col">
+              <div className="flex items-center text-gray-600 mb-2">
+                <TrafficCone className="mr-2" size={16} />
+                <span className="font-medium">Unique Visitors:</span>
+                <span className="ml-1 text-sm">
+                  {loading.visitors
+                    ? 'Loading...'
+                    : stats.visitors !== null
+                    ? stats.visitors.toLocaleString()
+                    : '--'}
+                </span>
+              </div>
+
+              <div className="flex items-center text-gray-600">
+                <ChartGantt className="mr-2" size={16} />
+                <span className="font-medium">Non-Unique Visitors:</span>
+                <span className="ml-1 text-sm">
+                  {loading.visitors
+                    ? 'Loading...'
+                    : stats.nuVisitors !== null
+                    ? stats.nuVisitors.toLocaleString()
+                    : '--'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Actions or Recent Activity could go here */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

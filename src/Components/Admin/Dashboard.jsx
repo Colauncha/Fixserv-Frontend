@@ -94,7 +94,7 @@ const Dashboard = () => {
         </aside>
 
         {/* Content area */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 overflow-x-auto">
           {activeTab === "Overview" && <div className="text-gray-700">
             🗂 Overview content...
               <Overview />

@@ -37,6 +37,7 @@ import Tracking from "./Components/Others/Tracking";
 // Admins
 import AdminAuth from "./Components/Admin/Auth";
 import AdminDashboard from "./Components/Admin/Dashboard";
+import AdminDashboardButton from "./Components/Others/AdminDashboardButton";
 
 // toastify
 import { ToastContainer } from "react-toastify";
@@ -149,6 +150,7 @@ function App() {
         </Routes>
       </Tracking>
       </AutoScrollToTop>
+      <AdminDashboardButton />
       <ScrollToTop />
       <Footer />
       </AuthProvider>
