@@ -27,6 +27,7 @@ import OrderDetails from "./Components/Guest/OrderDetails";
 
 import ClientDashboard from "./Components/Guest/ClientDashboard";
 import ClientEditProfile from "./Components/Guest/ClientEditProfile";
+import ForgotPassword from "./Components/Auth/ForgotPassword";
 import ResetPassword from "./Components/Auth/ResetPassword";
 import TermsPage from "./Components/Others/TermsPage";
 import PrivacyPolicy from "./Components/Others/PrivacyPolicy";
@@ -82,6 +83,7 @@ function App() {
           <Route path="email-verification" element={<EmailVerification />} />
           <Route path="email-verified" element={<EmailVerificationTwo />} />
           <Route path="client-signup" element={<UserSignUp />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
         </Route>
 

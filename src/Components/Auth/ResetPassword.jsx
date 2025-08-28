@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+// import useAuth from "../../Auth/useAuth";
 
 const ResetPassword = () => {
   const [newPassword, setNewPassword] = useState("");
@@ -9,43 +10,77 @@ const ResetPassword = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleReset = (e) => {
+  const params = new URLSearchParams(location.search);
+  const token = params.get('token');
+
+  const handleReset = async (e) => {
     e.preventDefault();
 
-    if (newPassword && confirmPassword && newPassword === confirmPassword) {
-      setIsResetSuccessful(true);
-    } else {
-      alert("Passwords must match and not be empty.");
+    if (!token) {
+      alert("Invalid or missing token.");
+      return;
     }
-  };
+    if (!newPassword || !confirmPassword || newPassword !== confirmPassword) {
+      alert("Passwords must match and not be empty.");
+      return;
+    }
+    
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/admin/reset-password?token=${token}`, 
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newPassword }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Password reset failed");
+      }
+
+    setIsResetSuccessful(true);
+
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    alert(error.message || "An error occurred while resetting password");
+  }
+};
 
   const Logo = () => (
     <div 
       className="flex space-x-2 text-xl items-center mb-6 cursor-pointer"
-        onClick={() => navigate('/')}
+      onClick={() => navigate('/')}
     >
       <span className="bg-[#779BE7] text-white text-lg font-bold w-14 h-14 flex items-center justify-center rounded-lg">
-        FS </span>
-        <span className="text-[#779BE7] ">Fixserv</span>  
+        FS
+      </span>
+      <span className="text-[#779BE7] ">Fixserv</span>  
     </div>
   );
 
+    // If password reset succeeded
   if (isResetSuccessful) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-t from-blue-100 to-white px-4">
         <div className="bg-white flex flex-col items-center justify-center text-center shadow-lg rounded-2xl p-14 w-full max-w-4xl min-h-[600px]">
           <Logo />
           <div className="mt-6"> 
-          <p className="text-black font-medium text-lg mb-2">Successful password reset!</p>
-          <p className="text-gray-600 mt-8 text-base">
-            You can now use your new password to login to your account 🙌
-          </p>
+            <p className="text-black font-medium text-lg mb-2">
+              Successful password reset!
+            </p>
+            <p className="text-gray-600 mt-8 text-base">
+              You can now log in with your new password 🙌
+            </p>
           </div>
           
           <button
-            onClick={() => window.location.href = "/auth/login"}
-            className="mt-20 w-full  bg-[#779BE7] hover:bg-blue-500 text-white py-2 px-4 rounded"
+             onClick={() => navigate("/auth/login")}
+            className="mt-20 w-full bg-[#779BE7] hover:bg-blue-500 text-white py-2 px-4 rounded"
           >
             Login
           </button>
@@ -54,47 +89,48 @@ const ResetPassword = () => {
     );
   }
 
+  // Default: show reset form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-t from-blue-100 to-blue-0 px-4">
-      <div className="bg-white shadow-lg rounded-2xl p-14 w-full max-w-4xl min-h-[600px]">
+      <div className="bg-white shadow-lg rounded-2xl p-14 w-full max-w-4xl min-h-[600px] relative">
         <div className="flex flex-col items-center justify-center mb-10"> 
-        <Logo />
-
-        <span className="text-center font-semibold mt-2">Reset your password</span>
+          <Logo />
+          <span className="text-center font-semibold mt-2">Reset your password</span>
         </div>
 
-        <form onSubmit={handleReset}>
+        <form onSubmit={handleReset} className="space-y-6">
+          {/* new password */}
           <label className="block font-semibold mb-4">New Password</label>
-          <input
-            type={showNewPassword ? "text" : "newPassword"}
+          <input 
+            type={showNewPassword ? "text" : "password" }
             className="w-full px-4 py-2 border border-gray-400 rounded mb-8"
-            value={newPassword}
+            value={newPassword} 
             onChange={(e) => setNewPassword(e.target.value)}
+            required
           />
           <button
-              type="button"
-              className="absolute inset-y-24  right-[380px] flex items-center text-[#113ca8] cursor-pointer"
-              onClick={() => setShowNewPassword(!showNewPassword)}
-            >
-              {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-
+            type="button"
+            className="absolute top-[260px] right-[100px] flex items-center text-[#6188eb] cursor-pointer"
+            onClick={() => setShowNewPassword(!showNewPassword)}
+          >
+            {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+      
+       {/* confirm new password */}
           <label className="block font-semibold mb-4">Confirm New Password</label>
           <input
-            type={showConfirmPassword ? "text" : "newPassword"}
+            type={showConfirmPassword ? "text" : "password"}
             className="w-full px-4 py-2 border border-gray-400 rounded mb-10"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
           <button
-              type="button"
-              className="absolute inset-y-0  right-[350px] flex items-center text-[#113ca8] cursor-pointer"
-              onClick={() =>
-                setShowConfirmPassword(!showConfirmPassword)
-              }
-            >
-              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+            type="button"
+            className="absolute top-[375px] right-[100px] flex items-center text-[#6188eb] cursor-pointer"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+          >
+            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
 
           <button
             type="submit"
@@ -109,3 +145,7 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
+
+
+
+
