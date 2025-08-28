@@ -15,7 +15,7 @@ const Tracking = ({ children }) => {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'x-clientname': 'BIDDIUS',
+          'x-clientname': 'FIXSERV',
         },
       });
 
