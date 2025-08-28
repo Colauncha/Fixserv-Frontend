@@ -1,63 +1,76 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getIdentity, setIdentity } from "../../Auth/tokenStorage";
 import useAuth from "../../Auth/useAuth";
-import { Camera, Save, ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Key, Edit3, CheckCircle, AlertCircle, Clock, Building } from "lucide-react";
+import Fetch from "../../util/Fetch";
+import CharProfilePic from "../CharProfilePic";
+import { Camera, Save, ArrowLeft, User, Users, Mail, Phone, MapPin, Briefcase, Key, Edit3, CheckCircle, AlertCircle, Clock, Building } from "lucide-react";
 
 const ModernEditProfile = () => {
   const navigate = useNavigate();
   const { state, logout } = useAuth();
+  const storedData = getIdentity()
   
   const [profile, setProfile] = useState({
-    fullName: "",
-    bio: "",
-    skills: "",
-    phone: "",
-    email: "",
-    location: "",
-    password: "",
-    businessName: "",
-    businessHours: "",
+    fullName: storedData.fullName || "",
+    bio: storedData.bio || "",
+    skillSet: storedData.skillSet || "",
+    phone: storedData.phone || "",
+    email: storedData.email || "",
+    location: storedData.location || "",
+    businessName: storedData.businessName || "",
+    businessHours: storedData.businessHours || {},
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const [profileImage, setProfileImage] = useState(null);
+  const [profileImage, setProfileImage] = useState({
+    image: storedData.profilePicture,
+    file: null,
+  });
+  const [saveImage, setSaveImage] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   // Handle profile image change
   const handleImageChange = (e) => {
+    setSaveImage(true);
     const file = e.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setProfileImage(imageUrl);
-      console.log("Selected image:", file);
+      setProfileImage({
+        image: URL.createObjectURL(file),
+        file: file
+      });
     }
   };
 
-  useEffect(() => {
-    const user = getIdentity();
-    if (!user) {
-      setErrorMessage("User not found. Please log in again.");
+  // Handle saving profile changes
+  const handleImageSave = async () => {
+    if (!profileImage.file) {
+      setErrorMessage("No image selected to save.");
       setShowError(true);
-      setTimeout(() => navigate("/auth/login"), 2000);
       return;
     }
-    
-    // Populate profile with user data from sessionStorage
-    setProfile({
-      fullName: user.fullName || "",
-      bio: user.bio || "Professional artisan with years of experience in appliance repair and maintenance.",
-      skills: user.skills || "",
-      phone: user.phone || "",
-      email: user.email || "",
-      location: user.address || "",
-      password: user.password || "",
-      businessName: user.businessName || "",
-      businessHours: user.businessHours || "",
+
+    const { data, success } = await Fetch({
+      url: `${import.meta.env.VITE_API_URL}/api/upload/${storedData._id || storedData.id}/profile-picture`,
+      requestData: { profilePicture: profileImage.file },
+      token: state.token,
+      method: "POST",
+      contentType: "multipart/form-data",
     });
-  }, [navigate]);
+    if (!success) {
+      setErrorMessage("Failed to upload profile image.");
+      setShowError(true);
+      return;
+    }
+    setIdentity(data.user)
+    setProfileImage({image: data.imageUrl, file: null});
+    setSaveImage(false);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+
+  }
 
   const handleSave = async () => {
     const user = getIdentity();
@@ -91,7 +104,7 @@ const ModernEditProfile = () => {
       };
 
       const response = await fetch(
-        `https://user-management-h4hg.onrender.com/api/admin/${user._id}`,
+        `https://user-management-h4hg.onrender.com/api/admin/${user._id || user.id}`,
         {
           method: "PATCH",
           headers: {
@@ -178,12 +191,15 @@ const ModernEditProfile = () => {
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 mb-8">
           <div className="flex flex-col items-center">
             <div className="relative group mb-6">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-              <img
-                src={profileImage || "https://randomuser.me/api/portraits/men/32.jpg"}
-                alt="profile"
-                className="relative w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-              />
+            <div className={`absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur ${profileImage.image ? 'opacity-25 group-hover:opacity-40' : 'opacity-10 group-hover:opacity-15' }  transition duration-300`}></div>
+                  {profileImage.image ? 
+                    <img
+                      src={profileImage.image}
+                      alt="Artisan"
+                      className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
+                    /> : 
+                    <CharProfilePic size={'32'} username={profile.fullName} otherStyles='!text-4xl' />
+                  }
               <label
                 htmlFor="profileImageUpload"
                 className="absolute bottom-0 right-0 bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl hover:scale-105 transition-all group"
@@ -197,6 +213,14 @@ const ModernEditProfile = () => {
                   className="hidden"
                 />
               </label>
+              {saveImage && (
+                <button
+                  className="absolute bottom-0 left-0 bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                  onClick={handleImageSave}
+                >
+                  Save Image
+                </button>
+              )}
             </div>
             <h2 className="text-2xl font-semibold text-gray-800 mb-2">Profile Picture</h2>
             <p className="text-gray-600 text-center">Click the camera icon to upload a new profile picture</p>

@@ -95,8 +95,11 @@ import Facebook from '../assets/icons/FB.png';
 import Instagram from '../assets/icons/instagram icon.png'; 
 import LinkedIn from '../assets/icons/in.png';
 import Twitter from '../assets/icons/X.png';
+import SelectCampaignModal from './Modals/SelectCampaignModal';
 
 const Footer = () => {
+  const [campaignModal, setCampaignModal] = useState(false);
+  const [email, setEmail] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const location = useLocation();
   const path = location.pathname;
@@ -111,86 +114,121 @@ const Footer = () => {
 
   return (
     isVisible && (
-      <footer className="bg-gradient-to-l from-[#7A9DF7] to-[#7A9Dd7] text-[#ECF1FC] px-10 py-12 mt-1">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-24">
-          {/* Brand Info */}
-          <div>
-            <div className="flex items-center space-x-2 text-xl font-JejuMyeongjo">
-              <span className="bg-[#ECF1FC] text-[#7A9DF7] w-10 h-10 flex items-center justify-center rounded-lg font-bold">
-                FS
-              </span>
-              <span className="text-[#ECF1FC] text-xl">Fixserv</span>
-            </div>
-            <p className="text-sm mt-3">
-              A seamless, reliable marketplace connecting customers
-              with verified professional gadget repairers.
-            </p>
-
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center space-x-2">
-                <img src={PhoneImage} alt="Phone" className="w-5 h-5" />
-                <span className="text-sm">+234 987654321</span>
+      <>
+        <SelectCampaignModal isOpen={campaignModal} parentEmail={email} onClose={() => setCampaignModal(false)} />
+        <footer className="bg-gradient-to-l from-[#7A9DF7] to-[#7A9Dd7] text-[#ECF1FC] px-10 py-12 mt-1">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-24">
+            {/* Brand Info */}
+            <div>
+              <div className="flex items-center space-x-2 text-xl font-JejuMyeongjo">
+                <span className="bg-[#ECF1FC] text-[#7A9DF7] w-10 h-10 flex items-center justify-center rounded-lg font-bold">
+                  FS
+                </span>
+                <span className="text-[#ECF1FC] text-xl">Fixserv</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <img src={EmailImage} alt="Email" className="w-5 h-5" />
-                <span className="text-sm">fixserv@gmail.com</span>
+              <p className="text-sm mt-3">
+                A seamless, reliable marketplace connecting customers
+                with verified professional gadget repairers.
+              </p>
+
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center space-x-2">
+                  <img src={PhoneImage} alt="Phone" className="w-5 h-5" />
+                  <span className="text-sm">+234 708 4274 918</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <img src={EmailImage} alt="Email" className="w-5 h-5" />
+                  <span className="text-sm">
+                      <a href="mailto:info@fixserv.co?subject=Fixserv">
+                        info@fixserv.co
+                      </a>
+                    </span>
+                </div>
+              </div>
+
+              <h4 className="mt-5 mb-2 text-md font-semibold">Follow us</h4>
+              <div className="flex space-x-3">
+                <a
+                href="https://www.facebook.com/share/19ENk1Gmtf/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >
+                  <img src={Facebook} alt="Facebook" className="w-5 h-5" />
+                </a> 
+                <a
+                  href="https://instagram.com/fix_serv"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >  
+                  <img src={Instagram} alt="Instagram" className="w-5 h-5" />
+                </a>
+                <a
+                  href="https://www.linkedin.com/company/fixserv/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img src={LinkedIn} alt="LinkedIn" className="w-5 h-5" />
+                </a>
+                <a
+                  href="https://x.com/Fixserv_?t=PjM_qOSUYNKKK7vYsYtY0g&s=09"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img src={Twitter} alt="Twitter/X" className="w-5 h-5" />
+                </a>
               </div>
             </div>
 
-            <h4 className="mt-5 mb-2 text-md font-semibold">Follow us</h4>
-            <div className="flex space-x-3">
-              <img src={Facebook} alt="Facebook" className="w-5 h-5" />
-              <img src={Instagram} alt="Instagram" className="w-5 h-5" />
-              <img src={LinkedIn} alt="LinkedIn" className="w-5 h-5" />
-              <img src={Twitter} alt="Twitter/X" className="w-5 h-5" />
+            {/* Navigation Links */}
+            <div>
+              <h4 className="font-semibold text-md mb-4">Navigation</h4>
+              <ul className="space-y-3 text-md">
+                <li><Link to="/" className="hover:underline">Home</Link></li>
+                <li><Link to="/about-us" className="hover:underline">About Us</Link></li>
+                <li><Link to="/contact-us" className="hover:underline">Contact Us</Link></li>
+                <li><Link to="/support" className="hover:underline">Help & Support</Link></li>
+              </ul>
+            </div>
+
+            {/* Community */}
+            <div>
+              <h4 className="font-semibold text-md mb-4">Community</h4>
+              <ul className="space-y-3 text-md">
+                <li><Link to="/community" className="hover:underline">Community Hub</Link></li>
+                <li><Link to="/events" className="hover:underline">Events</Link></li>
+              </ul>
+            </div>
+
+            {/* Email Subscription */}
+            <div>
+              <h4 className="font-semibold text-md mb-4">Stay Updated</h4>
+              <div className="flex flex-col gap-3 items-center  rounded-md p-2">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="w-full h-12 px-3 shadow-lg text-gray-800 bg-white rounded-xl focus:outline-none"
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <button
+                  className="bg-gradient-to-r from-[#7A9DF7] to-[#7A9Dd7] w-full text-white shadow-lg h-10 px-4 rounded-xl cursor-pointer mt-2 sm:mt-0 sm:ml-2 text-sm font-medium hover:shadow-md hover:bg-gradient-to-l hover:from-[#7a9df7d5] hover:to-[#7a9ed7d5]"
+                  onClick={() => setCampaignModal(true)}
+                >
+                  Subscribe
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <div>
-            <h4 className="font-semibold text-md mb-4">Navigation</h4>
-            <ul className="space-y-3 text-md">
-              <li><Link to="/" className="hover:underline">Home</Link></li>
-              <li><Link to="/about-us" className="hover:underline">About Us</Link></li>
-              <li><Link to="/contact-us" className="hover:underline">Contact Us</Link></li>
-              <li><Link to="/support" className="hover:underline">Help & Support</Link></li>
-            </ul>
-          </div>
-
-          {/* Community */}
-          <div>
-            <h4 className="font-semibold text-md mb-4">Community</h4>
-            <ul className="space-y-3 text-md">
-              <li><Link to="/community" className="hover:underline">Community Hub</Link></li>
-              <li><Link to="/events" className="hover:underline">Events</Link></li>
-            </ul>
-          </div>
-
-          {/* Email Subscription */}
-          <div>
-            <h4 className="font-semibold text-md mb-4">Stay Updated</h4>
-            <div className="flex flex-col gap-3 items-center  rounded-md p-2">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="w-full h-12 px-3 shadow-lg text-gray-800 bg-white rounded-xl focus:outline-none"
-              />
-              <button className="bg-gradient-to-r from-[#7A9DF7] to-[#7A9Dd7] w-full text-white shadow-lg h-10 px-4 rounded-xl cursor-pointer mt-2 sm:mt-0 sm:ml-2 text-sm font-medium hover:shadow-md hover:bg-gradient-to-l hover:from-[#7a9df7d5] hover:to-[#7a9ed7d5]">
-                Subscribe
-              </button>
+          {/* Legal Links */}
+          <div className="border-t border-[#ECF1FC]/30 mt-10 pt-6 flex flex-col md:flex-row gap-10 justify-center items-center text-sm">
+            <p className="mb-2 md:mb-0">© {new Date().getFullYear()} Fixserv. All rights reserved.</p>
+            <div className="flex space-x-4">
+              <Link to="/terms-conditions" className="hover:underline">Terms & Conditions</Link>
+              <Link to="/privacy-policy" className="hover:underline">Privacy Policy</Link>
             </div>
           </div>
-        </div>
-
-        {/* Legal Links */}
-        <div className="border-t border-[#ECF1FC]/30 mt-10 pt-6 flex flex-col md:flex-row gap-10 justify-center items-center text-sm">
-          <p className="mb-2 md:mb-0">© {new Date().getFullYear()} Fixserv. All rights reserved.</p>
-          <div className="flex space-x-4">
-            <Link to="/terms-conditions" className="hover:underline">Terms & Conditions</Link>
-            <Link to="/privacy-policy" className="hover:underline">Privacy Policy</Link>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </>
     )
   );
 };

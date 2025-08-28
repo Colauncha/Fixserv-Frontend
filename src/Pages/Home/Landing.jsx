@@ -1,9 +1,9 @@
 import React from 'react'
 import HeroBooking from '../../Components/HeroBooking'
 import TopArtisans from '../../Components/TopArtisans'
-import Location from '../../Components/Location'
 import Filter from '../../Components/Filter'
 import TestimonialsSection from '../../Components/TestimonialSection'
+import CookiesInfo from '../../Components/Others/CookiesInfo'
 
 const Landing = () => {
 
@@ -12,7 +12,8 @@ const Landing = () => {
       <HeroBooking />
       <Filter />
       <TopArtisans />
-      <TestimonialsSection />  
+      <TestimonialsSection />
+      <CookiesInfo />
     </div>
   )
 }

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import BackgroundImage from '../../assets/uploads/Welcome_bg.png';
+import { Eye, EyeOff, House } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuth from "../../Auth/useAuth";
 import { setIdentity } from '../../Auth/tokenStorage';
+import Fetch from '../../util/Fetch';
+import Loader from '../../assets/Loaders/Loader';
 
-const LogIn = () => {
+const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
@@ -26,37 +27,37 @@ const LogIn = () => {
     setMessage("");
 
     try {
-      const response = await fetch(import.meta.env.VITE_API_URL + "/api/admin/login", {
+      const {data, error, success} = await Fetch({
+        url: import.meta.env.VITE_API_URL + "/api/admin/login",
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+        requestData: { email, password }
       });
 
-      if (!response.ok) {
-        setMessage("Invalid credentials or login failed.");
+      if (!success) {
+        setMessage(`Invalid credentials or login failed, ${error}`);
         setMessageType("error");
         setLoading(false);
         return;
       }
 
-      const data = await response.json();
       login(data?.data?.BearerToken);
       setIdentity(data?.data?.response)
 
-      setMessage("Login successful!");
-      setMessageType("success");
+      const role = data.data.response.role
+      if (role === 'CLIENT' || role === 'ARTISAN') {
+        setMessage("Unauthorized. Please use regular login.");
+        setMessageType("error");
+        setTimeout(() => {
+          navigate('/auth/login')
+        }, 1000)
+      } else {
+        setMessage("Login successful!");
+        setMessageType("success");
+        setTimeout(() => {
+          navigate('/admin/dashboard')
+        }, 1000)
+      }
 
-      setTimeout(() => {
-        if (data.data.response.role === 'CLIENT') {
-          navigate("/client/home");
-        } else if (data.data.response.role === 'ARTISAN') {
-          navigate("/artisans/dashboard");
-        } else {
-          navigate("/admin/dashboard");
-        }
-      }, 500);
     } catch (error) {
       console.error('Error during login:', error);
       setMessage("An error occurred. Please try again.");
@@ -67,22 +68,16 @@ const LogIn = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center lg:flex-row">
-      {/* Left Panel - hidden on small screens */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#A1B7F2] relative items-center justify-center p-8">
-        <img src={BackgroundImage} alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-80" />
-        <div className="relative z-10 text-center px-10">
-          <h1 className="text-4xl lg:text-7xl font-bold mb-4 text-[#110000C2]">Welcome Back!</h1>
-          <p className="text-lg lg:text-xl text-[#110000C2]">
-            Get connected with professional<br /> artisans
-          </p>
-        </div>
-      </div>
-  
-      {/* Right Panel */}
+    <div className='flex items-center justify-center min-h-[100dvh] w-full p-10' >
       <div className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 sm:p-10">
-        <h2 className="text-xl sm:text-2xl text-[#110000C2] font-semibold mb-6">Log in</h2>
+        <h2 className="text-xl sm:text-2xl text-[#110000C2] font-semibold mb-6">Admin Log in</h2>
   
+        <span
+          className="fixed top-5 left-5 flex items-center justify-center w-12 h-12 bg-gradient-to-br from-[#7A9DF7] to-[#7A9Dd7] hover:to-[#7A9DF7ec] hover:from-[#7A9Dd7e4] hover:shadow-lg hover:scale-105 rounded-full shadow-md transition-all duration-500"
+          onClick={() => navigate('/')}
+        >
+          <House className="hover:scale-105 text-white" size={24} />
+        </span>
         {/* Feedback message */}
         {message && (
           <div
@@ -122,66 +117,27 @@ const LogIn = () => {
             </button>
           </div>
   
-          <div className="text-sm mb-4">
-            Forgot Password?{" "}
-            <Link to="/auth/reset-password" className="text-[#000000] font-semibold underline hover:text-blue-500">
-              Reset Password
-            </Link>
-          </div>
-  
           <div className="flex relative w-full justify-between mb-6">
             {/* Login Button with Spinner */}
             <button
               type="button"
               onClick={handleLogin}
               disabled={loading}
-              className={`flex items-center justify-center w-[70%] h-10 rounded-2xl px-4 py-2 transition cursor-pointer shadow-md ${
+              className={`flex items-center justify-center w-[100%] h-10 rounded-2xl px-4 py-2 transition cursor-pointer shadow-md ${
                 loading ? "bg-gray-300 text-gray-700 cursor-not-allowed" : "bg-[#ECF1FC] hover:bg-[#A1B7F2] text-black"
               }`}
             >
               {loading ? (
-                <svg
-                  className="animate-spin h-5 w-5 text-black"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8z"
-                  ></path>
-                </svg>
+                <Loader size={'5'} />
               ) : (
                 "Login"
               )}
-            </button>
-  
-            {/* Google Button */}
-            <button
-              type="button"
-              className="flex items-center justify-center w-10 h-10 rounded-md px-2 py-2 shadow-xl hover:bg-gray-300 transition cursor-pointer ml-2"
-            >
-              <img
-                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                alt="Google"
-                className="w-6 h-6"
-              />
             </button>
           </div>
         </form>
       </div>
     </div>
-  );  
-};
+  )
+}
 
-export default LogIn;
-
+export default Auth

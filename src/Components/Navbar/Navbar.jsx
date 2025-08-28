@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { getIdentity } from '../../Auth/tokenStorage';
 import useAuth from '../../Auth/useAuth';
 import { Bell, Globe, Folder, UserCircleIcon, Menu, X } from "lucide-react";
+import CharProfilePic from '../CharProfilePic';
 
 const Navbar = ({ bg, userIconFill }) => {
   const navigate = useNavigate();
@@ -48,6 +49,10 @@ const Navbar = ({ bg, userIconFill }) => {
     }
   };
 
+  const handleNotify = () => {
+    navigate("/notify");
+  };
+
   const handleAuth = () => {
     navigate("/welcome");
   };
@@ -90,7 +95,7 @@ const Navbar = ({ bg, userIconFill }) => {
               >
                 {label}
                 {!menuOpen && (
-                  <span className={`absolute -bottom-0.5 left-0 w-full h-1 rounded-4xl bg-[#7A9DF7cc] scale-x-0 group-hover:scale-x-105 ${navLocation === label.split(' ')[0] && 'scale-x-105'} transition-transform duration-300`} />
+                  <span className={`absolute -bottom-0.5 left-0 w-full h-1 rounded-4xl bg-[#7A9DF7cc] scale-x-0 group-hover:scale-x-105 ${navLocation === label.split(' ')[0] && 'scale-x-10 rounded-2xl'} transition-transform duration-300`} />
                 )}
               </li>
             );
@@ -110,16 +115,29 @@ const Navbar = ({ bg, userIconFill }) => {
                 <Globe className="text-[#00FF9D] w-4 h-4 absolute top-3 left-4" />
               </div>
 
-              <div className="relative cursor-pointer" title="Notifications">
-                <Bell className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6" />
+              <div 
+              className="relative cursor-pointer"
+              onClick={handleNotify}
+              title="Notifications">
+                <Bell
+                  className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6"
+                  onClick={handleNotify}
+                />
                 <span className="absolute top-3 right-0 bg-[#00FF9D] w-3 h-3 rounded-full" />
               </div>
 
               <div className="relative cursor-pointer" title="Profile">
-                <UserCircleIcon
-                  onClick={handleUserDashboard}
-                  className={`w-6 h-6 text-[#7A9DF7] ${userIconFill || 'fill-white'}`}
-                />
+                {userData?.profilePicture ? (
+                  <img
+                    src={userData.profilePicture}
+                    onClick={handleUserDashboard}
+                    title="Profile"
+                    alt={userData.fullName || "User Profile"}
+                    className="w-8 h-8 rounded-full object-cover cursor-pointer"
+                  />
+                ) : (
+                  <CharProfilePic onClick={handleUserDashboard} size={'8'} username={userData?.fullName} otherStyles={`cursor-pointer shadow-color-${userIconFill}`} />
+                )}
               </div>
             </div>
           ) : (

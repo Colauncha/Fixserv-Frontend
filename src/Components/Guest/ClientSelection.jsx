@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import {  useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PrivateBookingModal from "../Modals/PrivateBookingModal";
-import { Star, MapPin, Clock, Phone, Mail, Building, ChartNoAxesCombined, ChevronDown, ChevronUp } from 'lucide-react';
+import Fetch from "../../util/Fetch";
+import useAuth from "../../Auth/useAuth";
+import { Star, MapPin, Clock, Phone, Mail, Building, ChartNoAxesCombined, ChevronDown, ChevronUp, Cog  } from 'lucide-react';
 
 const ClientSelection = () => {
   const [artisan, setArtisan] = useState(null);
@@ -10,28 +12,65 @@ const ClientSelection = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [privateBookingOpen, setPrivateBookingOpen] = useState(false);
+  const [services, setServices] = useState([]);
+  const [selectedService, setSelectedServices] = useState(null);
   const location = useLocation();
+  const { state } = useAuth();
   const artisanId = new URLSearchParams(location.search).get("artisanId");
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const serviceId = new URLSearchParams(location.search).get("serviceId");
+    if (serviceId) {
+      const foundService = services.find(service => service.id === serviceId);
+      if (foundService) {
+        setSelectedServices(foundService);
+        setPrivateBookingOpen(true);
+      }
+    }
+  }, [location, services]);
+
+  useEffect(() => {
+  
+    const fetchAllData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/user/${artisanId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
+        setAvailability("Available")
+  
+        // fetch user data using Fetch utility
+        const { data: userData, error: userError } = await Fetch({
+          url: `${import.meta.env.VITE_API_URL}/api/admin/user/${artisanId}`,
+          token: state.token,
+        });
+  
+        if (userError) {
+          throw new Error(`Failed to fetch user data: ${userError.message}`);
         }
-        const data = await response.json();
-        console.log(`Data`, data);
-        setArtisan(data);
+        console.log('User Data:', userData);
+        setArtisan(userData);
+  
+        // fetch artisan services
+        const { data: servicesData, error: servicesError } = await Fetch({
+          url: `${import.meta.env.VITE_API_SERVICE_URL}/service/artisan/${artisanId}`,
+          token: state.token,
+        });
+  
+        if (servicesError) {
+          console.error('Error fetching services:', servicesError);
+        } else {
+          console.log('Services:', servicesData);
+          setServices(servicesData);
+        }
+  
       } catch (err) {
+        console.error('Fetch error:', err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-    fetchUserData();
-    }, [artisanId]);
+  
+    fetchAllData();
+  }, [artisanId, state]);
 
     if (loading) {
       return (
@@ -71,7 +110,11 @@ const ClientSelection = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       {privateBookingOpen && (
-        <PrivateBookingModal artisanId={artisanId} closeModal={() => setPrivateBookingOpen(false)} />
+        <PrivateBookingModal
+          artisanId={artisanId}
+          closeModal={() => setPrivateBookingOpen(false)}
+          rootPageSelectedService={selectedService && selectedService}
+        />
       )}
       {/* Header with subtle background pattern */}
       <div className="relative overflow-hidden">
@@ -86,7 +129,7 @@ const ClientSelection = () => {
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
                   <img
-                    src="https://randomuser.me/api/portraits/men/32.jpg"
+                    src={artisan.profilePicture || "https://randomuser.me/api/portraits/men/32.jpg"}
                     alt="Artisan"
                     className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
                   />
@@ -112,7 +155,7 @@ const ClientSelection = () => {
                   </div>
                   
                   <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                    {artisan.skills.slice(0, 3).map((skill, index) => (
+                    {artisan.skillSet.slice(0, 3).map((skill, index) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 rounded-full text-sm font-medium border border-blue-200/50"
@@ -120,9 +163,9 @@ const ClientSelection = () => {
                         {skill.trim()}
                       </span>
                     ))}
-                    {artisan.skills.length > 3 && (
+                    {artisan.skillSet.length > 3 && (
                       <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
-                        +{artisan.skills.length - 3} more
+                        +{artisan.skillSet.length - 3} more
                       </span>
                     )}
                   </div>
@@ -143,7 +186,7 @@ const ClientSelection = () => {
                 <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <img
-                      src="https://randomuser.me/api/portraits/men/32.jpg"
+                      src={artisan.profilePicture || "https://randomuser.me/api/portraits/men/32.jpg"}
                       alt="Artisan"
                       className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
                     />
@@ -232,13 +275,13 @@ const ClientSelection = () => {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">About me</h3>
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  Professional artisan specializing in {artisan.skills.join(", ").toLowerCase()}. 
+                  Professional artisan specializing in {artisan.skillSet.join(", ").toLowerCase()}. 
                   Based in {artisan.location}, I provide high-quality services through {artisan.businessName}.
                 </p>
                 
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Skills & Expertise</h3>
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {artisan.skills.map((skill, index) => (
+                  {artisan.skillSet.map((skill, index) => (
                     <span
                       key={index}
                       className="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 rounded-xl text-sm font-medium border border-blue-200/50 hover:shadow-md transition-shadow"
@@ -293,6 +336,80 @@ const ClientSelection = () => {
               </div>
             </div>
           </div>
+          
+          {/* Services Section */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border mb-8 border-white/20 p-6">
+            <span className="flex items-center gap-2 mb-4">
+              <div className='p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100'>
+                <Cog className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">My Services</h3>
+            </span>
+
+            {/* Scrollable Grid */}
+            <div className="overflow-x-auto">
+              <div className="grid grid-flow-col auto-cols-[280px] gap-4 my-4 min-w-full">
+                {services?.length > 0 && services.map((service) => (
+                  <div
+                    key={service.id}
+                    className="bg-white rounded-2xl drop-shadow-md cursor-pointer border border-gray-200 p-4 hover:drop-shadow-xl transition-shadow"
+                    onClick={() => {
+                      setPrivateBookingOpen(true)
+                      setSelectedServices(service)
+                    }}
+                  >
+                    {/* Header with Actions */}
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="text-base font-semibold text-gray-900 flex-1 pr-2">{service.title}</h4>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{service.description}</p>
+
+                    {/* Service Details */}
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Duration:</span>
+                        <span className="text-gray-700 font-medium">{service.estimatedDuration}</span>
+                      </div>
+                      
+                      <div className="flex justify-between text-sm items-center">
+                        <span className="text-gray-500">Status:</span>
+                        <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          service.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+                        }`}>
+                          {service.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Rating:</span>
+                        <span className="text-gray-700 font-medium">{service.rating ?? 0}/5</span>
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className="text-blue-600 font-bold text-lg">
+                      ₦{Number(service.price).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Add Service Card */}
+                <div 
+                  className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-dashed border-blue-200 p-4 hover:border-blue-300 transition-colors cursor-pointer group"
+                >
+                  <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
+                    <div className="p-3 bg-white rounded-full shadow-sm group-hover:shadow-md transition-shadow mb-3">
+                      <Cog className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <h4 className="text-base font-semibold text-gray-700 mb-1">No Services yet</h4>
+                    <p className="text-sm text-gray-500">Artisan is yet to upload any service</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Review Section */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
@@ -307,33 +424,7 @@ const ClientSelection = () => {
               <p>No reviews to display</p>
             </div>
           </div>
-
-      {/* <div className="mt-6">
-        <h3 className="text-lg font-semibold">Reviews</h3>
-        <div className="space-y-4 mt-2">
-          {artisan?.reviews.map((review, index) => (
-            <div key={index} className="border p-3 rounded-md">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center font-bold text-blue-600">
-                  {review.name[0]}
-                </div>
-                <div>
-                  <p className="font-medium">{review.name}</p>
-                  <span className="text-sm text-gray-500">
-                    {review.country} • {review.time}
-                  </span>
-                </div>
-              </div>
-              <p className="mt-2 text-[#110000C2]">{"★".repeat(review.rating)}</p>
-              <p className="text-[#110000C2] mt-1">{review.comment}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Helpful? {review.helpful ? "Yes" : "No"} •{" "}
-              </p>
-            </div>
-          ))}
         </div>
-      </div> */}
-      </div>
       </div>
     </div>
   );
