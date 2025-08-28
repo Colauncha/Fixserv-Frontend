@@ -31,7 +31,7 @@ const LogIn = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username: email, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
@@ -122,24 +122,14 @@ const LogIn = () => {
             </button>
           </div>
   
-          <p className="text-sm text-center mt-4">
+          <p className="text-sm text-left mb-4">
             <button
             onClick={() => navigate("/auth/forgot-password")} 
             className="text-[#000000] font-semibold underline hover:text-blue-500"
             >
                Forgot Password?
             </button>
-          </p>  
-
-          <div className="text-sm mb-4">
-            {/* <a href="/auth/forgot-password" className="text-[#000000] hover:text-blue-600 font-semibold">
-             Forgot password?
-           </a> */}
-            {/* Forgot Password?{" "} */}
-            <Link to="/auth/reset-password" className="text-[#000000] font-semibold underline hover:text-blue-500">
-              Reset Password
-            </Link>
-          </div>
+          </p> 
   
           <div className="flex relative w-full justify-between mb-6">
             {/* Login Button with Spinner */}
