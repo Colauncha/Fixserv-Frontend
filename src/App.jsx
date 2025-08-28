@@ -43,6 +43,10 @@ import AdminDashboardButton from "./Components/Others/AdminDashboardButton";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+import EmailVerification from "./Components/Auth/EmailVerificationPage"
+import EmailVerificationTwo from "./Components/Auth/EmailVerificationPageTwo"
+
+
 function App() {
 
   return (
@@ -70,14 +74,17 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/notify" element={<Notification/>} />
           {/* <Route path="/kyc_client" element={<KYC_Client />} /> */}
+       
+        {/* Auth Routes */}
+        <Route path="/auth">
+          <Route path="login" element={<LogInPage />} />
+          <Route path="artisan-signup" element={<BuilderSignUp />} />
+          <Route path="email-verification" element={<EmailVerification />} />
+          <Route path="email-verified" element={<EmailVerificationTwo />} />
+          <Route path="client-signup" element={<UserSignUp />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+        </Route>
 
-          {/* Auth Routes */}
-          <Route path="/auth">
-            <Route path="login" element={<LogInPage />} />
-            <Route path="artisan-signup" element={<BuilderSignUp />} />
-            <Route path="client-signup" element={<UserSignUp />} />
-            <Route path="reset-password" element={<ResetPassword />} />
-          </Route>
 
           {/* Client Routes */}
           <Route path="/client">
