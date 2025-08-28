@@ -1,10 +1,13 @@
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 import KycNavbar from "../Navbar/KycNavbar";
 import resendEmail from "../../assets/uploads/Resend Email.png";
 
 const EmailVerificationPage = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const location = useLocation();
+  const state = location.state;
 
   const handleResend = async () => {
     try {
@@ -29,6 +32,7 @@ const EmailVerificationPage = () => {
       setMessage("✅ Verification email resent successfully!");
     } catch (error) {
       setMessage("❌ Failed to resend email. Please try again.");
+      console.error(error)
     } finally {
       setLoading(false);
     }
@@ -68,7 +72,7 @@ const EmailVerificationPage = () => {
                   href="mailto:email@gmail.com"
                   className="font-semibold text-black-500 hover:underline"
                 >
-                  email@gmail.com
+                  {state?.email}
                 </a>
               </p>
               <p className="text-gray-600 text-sm">
