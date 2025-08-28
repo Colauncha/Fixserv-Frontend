@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Calendar, Shield, Users, Wrench, ShoppingCart, Eye, Briefcase, IdCard } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Shield, Users, Wrench, ShoppingCart, Eye, Briefcase, IdCard, TrafficCone, HatGlasses } from 'lucide-react';
 import { getIdentity } from '../../../Auth/tokenStorage';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 const Overview = () => {
   const identity = getIdentity();
   const [stats, setStats] = useState({
     visitors: null,
+    nuVisitors: null,
     clients: null,
     artisans: null,
     services: null,
@@ -19,6 +30,41 @@ const Overview = () => {
     orders: false
   });
   const [error, setError] = useState('');
+
+  const [trafficSectionToggle, setTrafficSectionToggle] = useState(false);
+
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [dateRangeStats, setDateRangeStats] = useState(null);
+  const [showChart, setShowChart] = useState(false);
+
+  const handleVisitorDateQuery = async () => {
+    // Fetch stats with dateRange.start and dateRange.end
+    console.log('Querying stats for:', dateRange);
+    setLoading((prev) => ({ ...prev, visitors: true }));
+    try {
+      const response = await fetch(
+        `https://news-letter-middle-app.vercel.app/api/tracking/visitors/count/range?start=${dateRange.start}&end=${dateRange.end}`,
+        {
+          method: 'GET',
+          headers: {
+            'x-clientname': 'FIXSERV',
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch visitors count');
+      }
+
+      const data = await response.json();
+      setDateRangeStats(data);
+    } catch (err) {
+      console.error('Error fetching visitors count:', err);
+      setError('Failed to load some statistics');
+    } finally {
+      setLoading((prev) => ({ ...prev, visitors: false }));
+    }
+  };
 
   const fetchVisitorsCount = async () => {
     setLoading(prev => ({ ...prev, visitors: true }));
@@ -38,7 +84,10 @@ const Overview = () => {
       }
 
       const data = await response.json();
-      setStats(prev => ({ ...prev, visitors: data.count || data.visitors || 0 }));
+      setStats(prev => ({ ...prev,
+        visitors: data.count || 0 ,
+        nuVisitors: data.nonunique_count || 0
+      }));
     } catch (err) {
       console.error('Error fetching visitors count:', err);
       setError('Failed to load some statistics');
@@ -71,7 +120,7 @@ const Overview = () => {
     );
   };
 
-  const StatCard = ({ title, value, icon: Icon, loading, color = 'blue' }) => {
+  const StatCard = ({ title, value, icon: Icon, loading, color = 'blue', onClick = null }) => {
     const colorStyles = {
       blue: 'bg-blue-50 text-blue-600 border-blue-200',
       green: 'bg-green-50 text-green-600 border-green-200',
@@ -81,7 +130,11 @@ const Overview = () => {
     };
 
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+      <div
+        className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+        onClick={onClick}
+        style={{ cursor: onClick ? 'pointer' : 'default' }}
+      >
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
@@ -214,6 +267,7 @@ const Overview = () => {
               icon={Eye}
               loading={loading.visitors}
               color="blue"
+              onClick={() => setTrafficSectionToggle(!trafficSectionToggle)}
             />
             
             <StatCard
@@ -249,6 +303,180 @@ const Overview = () => {
             />
           </div>
         </div>
+
+        {/* Traffic section */}
+        {trafficSectionToggle && (
+          <div className="bg-white rounded-lg mb-8 shadow-sm border border-gray-200 p-6">
+            {/* Header with date */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="flex items-center justify-center gap-3 text-lg font-semibold text-gray-900">
+                <TrafficCone size={20} className="text-orange-400" />
+                Traffic and Visitors count
+              </h3>
+              <span className="text-sm text-gray-500">
+                {new Date().toLocaleDateString()}
+              </span>
+            </div>
+
+            {/* Date Range Query Section */}
+            <div className="flex flex-col md:flex-row items-center gap-3 mb-6">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">From:</label>
+                <input
+                  type="date"
+                  className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                  value={dateRange.start}
+                  onChange={(e) =>
+                    setDateRange((prev) => ({ ...prev, start: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">To:</label>
+                <input
+                  type="date"
+                  className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                  value={dateRange.end}
+                  onChange={(e) =>
+                    setDateRange((prev) => ({ ...prev, end: e.target.value }))
+                  }
+                />
+              </div>
+              <button
+                onClick={handleVisitorDateQuery}
+                className="bg-[#7A9DF7] text-white px-3 py-1 rounded-md text-sm shadow-sm hover:bg-[#7A9Dd7]"
+              >
+                Apply
+              </button>
+            </div>
+
+            {/* Default Visitor Stats */}
+            <div className="flex flex-col mb-6">
+              <h4 className="text-md font-medium text-gray-800 mb-2">
+                Default Results
+              </h4>
+              <div className="flex items-center text-gray-600 mb-2">
+                <HatGlasses className="mr-2" size={16} />
+                <span className="font-medium">Unique Visitors:</span>
+                <span className="ml-1 text-sm">
+                  {loading.visitors
+                    ? 'Loading...'
+                    : stats.visitors !== null
+                    ? stats.visitors.toLocaleString()
+                    : '--'}
+                </span>
+              </div>
+
+              <div className="flex items-center text-gray-600">
+                <TrafficCone className="mr-2" size={16} />
+                <span className="font-medium">Non-Unique Visitors:</span>
+                <span className="ml-1 text-sm">
+                  {loading.visitors
+                    ? 'Loading...'
+                    : stats.nuVisitors !== null
+                    ? stats.nuVisitors.toLocaleString()
+                    : '--'}
+                </span>
+              </div>
+            </div>
+
+            {/* Queried Date Range Stats */}
+            {dateRangeStats && (
+              <div>
+                <h4 className="text-md font-medium text-gray-800 mb-2">
+                  Results for {dateRange.start} → {dateRange.end}
+                </h4>
+
+                {/* Toggle button for chart */}
+                <button
+                  onClick={() => setShowChart((prev) => !prev)}
+                  className="mb-4 bg-gray-200 text-gray-800 px-3 py-1 rounded-md text-sm hover:bg-gray-300"
+                >
+                  {showChart ? 'Hide Chart' : 'Show Chart'}
+                </button>
+
+                {/* Per-day breakdown table */}
+                {!showChart && (
+                  <div className="overflow-x-auto mb-4">
+                    <table className="min-w-full border border-gray-200 text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left border-b">Date</th>
+                          <th className="px-3 py-2 text-left border-b">
+                            Unique
+                          </th>
+                          <th className="px-3 py-2 text-left border-b">
+                            Non-Unique
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.keys(dateRangeStats.unique).map((date) => (
+                          <tr key={date}>
+                            <td className="px-3 py-2 border-b">{date}</td>
+                            <td className="px-3 py-2 border-b">
+                              {dateRangeStats.unique[date]}
+                            </td>
+                            <td className="px-3 py-2 border-b">
+                              {dateRangeStats.non_unique[date]}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Chart visualization */}
+                {showChart && (
+                  <div className="w-full h-64 mb-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={Object.keys(dateRangeStats.unique).map(
+                          (date) => ({
+                            date,
+                            unique: dateRangeStats.unique[date],
+                            non_unique: dateRangeStats.non_unique[date],
+                          }),
+                        )}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="unique"
+                          stroke="#2563eb"
+                          strokeWidth={2}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="non_unique"
+                          stroke="#f97316"
+                          strokeWidth={2}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Totals */}
+                <div className="flex flex-col text-gray-700">
+                  <div>
+                    <span className="font-medium">Total Unique:</span>{' '}
+                    {dateRangeStats.total_unique_count.toLocaleString()}
+                  </div>
+                  <div>
+                    <span className="font-medium">Total Non-Unique:</span>{' '}
+                    {dateRangeStats.total_nonunique_count.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Quick Actions or Recent Activity could go here */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

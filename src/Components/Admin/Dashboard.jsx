@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Users, Briefcase, Settings, UserPlus, ShoppingBag, MailSearch, LogOut, Blocks } from "lucide-react"; // Lucide icons
+import { useNavigate } from "react-router-dom";
+import { Users, Briefcase, Settings, UserPlus, ShoppingBag, MailSearch, LogOut, Blocks, House } from "lucide-react"; // Lucide icons
 import Services from './Tabs/Services'
 import CreateAdmin from "./Tabs/CreateAdmin";
 import Orders from "./Tabs/Orders";
@@ -14,6 +15,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("Overview");
   const identity = getIdentity();
   const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const tabs = [
     { label: "Overview", icon: Blocks },
@@ -30,10 +32,10 @@ const Dashboard = () => {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <h1 className="text-2xl font-semibold text-gray-800">Admin Dashboard</h1>
+          <h1 className="text-2xl font-semibold text-gray-800">FixServ Admin Dashboard</h1>
           <p className="text-sm text-gray-500 mt-1 flex justify-between gap-3">
             Welcome, {identity?.fullName}
-            <button
+            {/* <button
               onClick={() => {
                 logout()
                 console.log("Logout clicked");
@@ -42,7 +44,28 @@ const Dashboard = () => {
             >
               <LogOut className="w-5 h-5" />
               <span className="text-sm">Logout</span>
-          </button>
+          </button> */}
+            <span className="flex gap-2">
+              <button
+                onClick={() => {
+                  navigate('/');
+                }}
+                className="border-r-2 pr-2 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              >
+                <House className="w-5 h-5" />
+                <span className="text-sm">Home</span>
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/admin/login');
+                  logout();
+                }}
+                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="text-sm">Logout</span>
+              </button>
+            </span>
           </p>
         </div>
       </header>
@@ -71,7 +94,7 @@ const Dashboard = () => {
         </aside>
 
         {/* Content area */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 overflow-x-auto">
           {activeTab === "Overview" && <div className="text-gray-700">
             🗂 Overview content...
               <Overview />

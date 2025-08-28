@@ -53,6 +53,8 @@ const LogIn = () => {
           navigate("/client/home");
         } else if (data.data.response.role === 'ARTISAN') {
           navigate("/artisans/dashboard");
+        } else {
+          navigate("/admin/dashboard");
         }
       }, 500);
     } catch (error) {

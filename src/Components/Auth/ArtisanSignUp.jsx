@@ -102,13 +102,13 @@ const ArtisanSignUp = () => {
   const submitData = { ...formData, artisanData };
     console.log("Submitting data:", submitData);
     const data = await runFetch(submitData);
-    setMessage("Registration successful! Redirecting to login...");
-      setMessageType("success");
+    setMessage("Registration successful!");
+    setMessageType("success");
     console.log("Data received:", data);
-    navigate("/auth/login");
+    navigate("/auth/email-verification", {state: {email: formData.email}});
   } catch (error) {
     setMessage("An error occurred during registration.");
-      setMessageType("error");
+    setMessageType("error");
     console.error("Error during registration:", error);
   } finally {
     setLoading(false);

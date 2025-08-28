@@ -2,8 +2,13 @@ import {  useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import GuestImage from "../../assets/uploads/Guest_Image.png";
 import { useNavigate } from "react-router-dom";
+import Loader from "../../assets/Loaders/Loader";
 
 const GuestSignUp = () => {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState(""); 
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -56,6 +61,9 @@ const GuestSignUp = () => {
 
   const handleGuestSignUp = async () => {
     try {
+      setLoading(true);
+      setMessage("");
+      setMessageType("");
       if (formData.password !== formData.confirmPassword) {
         alert("Passwords do not match.");
         return;
@@ -74,9 +82,16 @@ const GuestSignUp = () => {
 
       const data = await runFetch(submitData);
       console.log("Guest Sign Up Data:", data);
-      navigate("/auth/login");
+      setMessage("✅ Registration successful! Please verify your email.");
+      setMessageType("success");
+      navigate("/auth/email-verification", {state: {email: formData.email}});
+
     } catch (error) {
       console.error("Error during guest sign up:", error);
+      setMessage("❌ Registration failed. Please try again.");
+      setMessageType("error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -92,6 +107,19 @@ const GuestSignUp = () => {
         <h2 className="text-2xl text-[#110000C2] font-semibold mb-6">
           Client Registration
         </h2>
+
+        {/* Feedback message */}
+        {message && (
+          <div
+            className={`mb-4 text-center px-4 py-2 rounded w-full max-w-sm ${
+              messageType === "success"
+                ? "bg-green-100 text-green-700 border border-green-400"
+                : "bg-red-100 text-red-700 border border-red-400"
+            }`}
+          >
+            {message}
+          </div>
+        )}
   
         <form className="w-full max-w-md">
           {/* First Name */}
@@ -212,9 +240,13 @@ const GuestSignUp = () => {
             <button
               type="button"
               onClick={handleGuestSignUp}
-              className="w-3/4 h-10 text-white px-8 py-2 rounded-lg text-lg font-medium cursor-pointer bg-gradient-to-r from-[#7A9DF7] to-[#7A9Dd7] shadow-lg hover:shadow-md hover:from-[#7a9ed7d9] hover:to-[#7a9df7d9] transition duration-300 ease-in-out"
+              disabled={loading}
+              className="w-3/4 h-10 flex items-center justify-center text-white px-8 py-2 rounded-lg text-lg font-medium cursor-pointer bg-gradient-to-r from-[#7A9DF7] to-[#7A9Dd7] shadow-lg hover:shadow-md hover:from-[#7a9ed7d9] hover:to-[#7a9df7d9] transition duration-300 ease-in-out"
             >
-              Sign Up
+              {loading ?
+                <Loader size={'5'} otherStyles={'text-white'} /> : 
+                'Sign Up'
+              }
             </button>
   
             <button
