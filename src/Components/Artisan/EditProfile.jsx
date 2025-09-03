@@ -14,9 +14,9 @@ const ModernEditProfile = () => {
   const [profile, setProfile] = useState({
     fullName: storedData.fullName || "",
     bio: storedData.bio || "",
-    skillSet: storedData.skillSet || "",
+    skillSet: "",
     phone: storedData.phone || "",
-    email: storedData.email || "",
+    // email: storedData.email || "",
     location: storedData.location || "",
     businessName: storedData.businessName || "",
     businessHours: storedData.businessHours || {},
@@ -95,9 +95,9 @@ const ModernEditProfile = () => {
 
       const updatedProfile = {
         fullName: profile.fullName,
-        skills: profile.skills,
+        skillSet: profile.skillSet,
         phone: profile.phone,
-        email: profile.email,
+        // email: profile.email,
         location: profile.location,
         businessName: profile.businessName,
         businessHours: profile.businessHours,
@@ -215,7 +215,7 @@ const ModernEditProfile = () => {
               </label>
               {saveImage && (
                 <button
-                  className="absolute bottom-0 left-0 bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                  className="absolute bottom-0 left-0 bg-green-500 text-white text-lg px-3 py-1 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
                   onClick={handleImageSave}
                 >
                   Save Image
@@ -223,7 +223,7 @@ const ModernEditProfile = () => {
               )}
             </div>
             <h2 className="text-2xl font-semibold text-gray-800 mb-2">Profile Picture</h2>
-            <p className="text-gray-600 text-center">Click the camera icon to upload a new profile picture</p>
+            <p className="text-gray-600 text-center">Click the camera icon to upload a new profile picture <br /> (Image must not be more than 1mb)</p>
           </div>
         </div>
 
@@ -257,8 +257,8 @@ const ModernEditProfile = () => {
               <ModernInfoCard
                 icon={<Briefcase className="w-4 h-4" />}
                 title="Skills & Services"
-                value={profile.skills}
-                onChange={(val) => setProfile({ ...profile, skills: val })}
+                value={profile.skillSet}
+                onChange={(val) => setProfile({ ...profile, skillSet: val })}
                 multiline
               />
             </div>
@@ -310,13 +310,13 @@ const ModernEditProfile = () => {
               onChange={(val) => setProfile({ ...profile, phone: val })}
               type="tel"
             />
-            <ModernInfoCard
+            {/* <ModernInfoCard
               icon={<Mail className="w-4 h-4" />}
               title="Email Address"
               value={profile.email}
               onChange={(val) => setProfile({ ...profile, email: val })}
               type="email"
-            />
+            /> */}
           </div>
           
           <div className="mt-4">
@@ -351,11 +351,11 @@ const ModernEditProfile = () => {
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-center mt-8">
+        <div className="flex justify-center mt-8 gap-4">
           <button
             disabled={isSaving}
             onClick={handleSave}
-            className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-white shadow-lg transition-all ${
+            className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-white shadow-lg transition-all cursor-pointer ${
               isSaving 
                 ? "bg-gray-400 cursor-not-allowed" 
                 : "bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-xl hover:scale-105"
@@ -363,6 +363,18 @@ const ModernEditProfile = () => {
           >
             <Save className="w-5 h-5" />
             {isSaving ? "Saving Changes..." : "Save Changes"}
+          </button>
+         
+          <button
+            onClick={() => navigate(-1)}
+            className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-white shadow-lg transition-all cursor-pointer ${
+              isSaving 
+                ? "bg-gray-400 cursor-not-allowed" 
+                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-xl hover:scale-105"
+            }`}
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back to Profile
           </button>
         </div>
       </div>
