@@ -34,7 +34,7 @@ const GenNavBar = () => {
       setNavbarComponent(<HomeNavbar />);
     } else if (path.startsWith("/notify")) {
       setIsVisible(true);
-      setNavbarComponent(<HomeNavbar />);
+      setNavbarComponent(<DashboardNavbar />);
     } else if (path.startsWith("/kyc_client")) {
       setIsVisible(true);
       setNavbarComponent(<Navbar />);
