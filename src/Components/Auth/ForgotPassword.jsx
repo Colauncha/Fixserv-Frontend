@@ -64,7 +64,7 @@ const ForgotPassword = () => {
              a reset link has been sent!
           </p> */}
           <p className="text-black font-medium text-lg mb-4">
-             A reset link has been sent!
+             A reset link has been sent to your email!
           </p>
           <button
             onClick={() => navigate("/auth/login")}
