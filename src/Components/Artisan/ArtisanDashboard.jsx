@@ -19,6 +19,7 @@ const ModernProfile = () => {
     user: true,
     orders: true,
     services: true,
+    businessHours: false,
   });
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   
@@ -40,6 +41,7 @@ const ModernProfile = () => {
           user: true,
           orders: true,
           services: true,
+          businessHours: false,
         });
   
         // fetch user data using Fetch utility
@@ -98,6 +100,7 @@ const ModernProfile = () => {
           user: false,
           orders: false,
           services: false,
+          businessHours: false,
         });
       }
     };
@@ -188,6 +191,36 @@ const ModernProfile = () => {
         }
       }
     }));
+  };
+
+  const updateBusinessHours = async () => {
+    try {
+      setLoading(prev => ({...prev, businessHours: true}));
+      const { data, error } = await Fetch({
+        url: `${import.meta.env.VITE_API_URL}/api/admin/${userData.id}`,
+        method: 'PATCH',
+        token: state.token,
+        requestData: {
+          businessHours: userData.businessHours
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast.success('Business hours updated successfully');
+      setUserData(prev => ({
+        ...prev,
+        businessHours: data.businessHours
+      }));
+      setIdentity(data);
+    } catch (err) {
+      console.error('Error updating business hours:', err);
+      toast.error(`Error: ${err.message}`);
+    } finally {
+      setLoading(prev => ({...prev, businessHours: false}));
+    }
   };
 
   const handleServiceUpdate = (service) => {
@@ -347,8 +380,6 @@ const ModernProfile = () => {
                           <div key={day} className="flex justify-between items-center">
                             <span className="capitalize text-sm text-gray-600 w-20">{day}:</span>
                             {hours.open.toLowerCase() === "closed" ? (
-                              <span className="text-sm text-gray-500">Closed</span>
-                            ) : (
                               <div className="flex gap-1">
                                 <input
                                   type="time"
@@ -363,9 +394,39 @@ const ModernProfile = () => {
                                   className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                 />
                               </div>
+                            ) : (
+                              <div className="flex gap-1">
+                                <input
+                                  type="time"
+                                  value={hours.open}
+                                  onChange={(e) => handleHourChange(day, "open", e.target.value)}
+                                  className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                                <input
+                                  type="time"
+                                  value={hours.close}
+                                  onChange={(e) => handleHourChange(day, "close", e.target.value)}
+                                  className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                                <span className="px-2 py-1">
+                                  <XCircle 
+                                    className="w-4 h-4 text-red-500 cursor-pointer" 
+                                    onClick={() => {
+                                      handleHourChange(day, "open", "closed")
+                                      handleHourChange(day, "close", "closed")
+                                    }}
+                                  />
+                                </span>
+                              </div>
                             )}
                           </div>
                         ))}
+                        <button
+                          className='mt-2 py-1.5 px-3 bg-gradient-to-r from-green-500 rounded-xl to-green-600 text-white text-center shadow-lg hover:opacity-90 transition-opacity text-sm font-medium'
+                          onClick={updateBusinessHours}
+                        >
+                          {loading.businessHours ? <Loader size={'5'} otherStyles={'text-white'} /> : 'Update'}
+                        </button>
                       </div>
                     )}
                   </div>

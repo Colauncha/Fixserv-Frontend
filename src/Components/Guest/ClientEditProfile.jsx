@@ -214,7 +214,7 @@ const ClientEditProfile = () => {
           />
         </div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-2">Profile Picture</h2>
-        <p className="mt-4 text-sm text-gray-600">Tap the camera to change image</p>
+        <p className="mt-4 text-sm text-gray-600">Tap the camera icon to change image <br /> (Image must not be more than 1mb)</p>
       </div>
 
       {/* Form Sections */}

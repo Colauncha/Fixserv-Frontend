@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BackgroundImage from "../../assets/uploads/Welcome_bg.png";
 import ArtisanImage from "../../assets/uploads/Artisan_Image.png";
@@ -91,6 +91,7 @@ const ArtisanSignUp = () => {
         skillSet: formData.skillSet,
         location: formData.location,
         rating: formData.rating,
+        phoneNumber: formData.phoneNumber,
       };
 
       delete formData.businessName;
@@ -118,20 +119,29 @@ const ArtisanSignUp = () => {
 return (
   <div className="min-h-screen flex flex-col justify-center md:flex-row">
     {/* Left Panel - Hidden on small/medium screens */}
-    <div className="hidden md:flex md:w-1/3 bg-[#A1B7F2] relative flex-col justify-center items-center p-8">
+    <div className="hidden md:flex md:w-1/3 bg-gradient-to-bl to-[#7A9DF7] from-[#7A9Dd7] relative flex-col justify-center items-center p-8">
       <img
         src={BackgroundImage}
         alt="Background"
         className="absolute inset-0 w-full h-full object-cover opacity-80"
       />
-      <img src={ArtisanImage} alt="Artisan" className="h-4xl mt-10 ml-10 z-10" />
+      <img src={ArtisanImage} alt="Artisan" className="h-xl mt-10 ml-10 z-10" />
     </div>
 
     {/* Right Panel */}
     <div className="w-full md:w-2/3 flex flex-col justify-center items-center p-6">
-      <h2 className="text-2xl text-[#110000C2] font-semibold mb-4">
-        Artisan Registration
-      </h2>
+      <div className="flex flex-col items-start w-full max-w-sm">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-600 text-sm hover:text-gray-800 transition-colors mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back
+        </button>
+        <h2 className="text-xl text-[#110000C2] font-semibold mb-4">
+          Artisan Registration
+        </h2>
+      </div>
 
       {/* Feedback message */}
       {message && (

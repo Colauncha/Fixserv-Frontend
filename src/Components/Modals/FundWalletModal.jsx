@@ -23,7 +23,7 @@ const FundWalletModal = ({closeModal}) => {
     
     try {
       const { data, error, success } = await Fetch({
-        url: 'https://wallet-service-qjm4.onrender.com/api/wallet/top-up',
+        url: `${import.meta.env.VITE_API_WALLET_URL}/wallet/top-up`,
         token: state.token,
         method: 'POST',
         requestData: {
@@ -55,7 +55,7 @@ const FundWalletModal = ({closeModal}) => {
     try {
       // Replace with your actual verification endpoint
       const { data, error, success } = await Fetch({
-        url: `https://wallet-service-qjm4.onrender.com/api/wallet/top-up/verify/${verificationCode}`,
+        url: `${import.meta.env.VITE_API_WALLET_URL}/wallet/top-up/verify/${verificationCode}`,
         token: state.token,
       });
 

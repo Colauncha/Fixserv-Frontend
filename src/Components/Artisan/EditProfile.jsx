@@ -4,7 +4,7 @@ import { getIdentity, setIdentity } from "../../Auth/tokenStorage";
 import useAuth from "../../Auth/useAuth";
 import Fetch from "../../util/Fetch";
 import CharProfilePic from "../CharProfilePic";
-import { Camera, Save, ArrowLeft, User, Users, Mail, Phone, MapPin, Briefcase, Key, Edit3, CheckCircle, AlertCircle, Clock, Building } from "lucide-react";
+import { Camera, Save, ArrowLeft, User, XCircle, Phone, Wallet, MapPin, ServerCog, Key, Lock, Edit3, CheckCircle, AlertCircle, Clock, Building } from "lucide-react";
 
 const ModernEditProfile = () => {
   const navigate = useNavigate();
@@ -14,9 +14,9 @@ const ModernEditProfile = () => {
   const [profile, setProfile] = useState({
     fullName: storedData.fullName || "",
     bio: storedData.bio || "",
-    skillSet: "",
-    phone: storedData.phone || "",
-    // email: storedData.email || "",
+    skillSet: storedData.skillSet || [],
+    phoneNumber: storedData.phoneNumber || "",
+    // isEmailVerified: storedData.isEmailVerified || "",
     location: storedData.location || "",
     businessName: storedData.businessName || "",
     businessHours: storedData.businessHours || {},
@@ -96,15 +96,15 @@ const ModernEditProfile = () => {
       const updatedProfile = {
         fullName: profile.fullName,
         skillSet: profile.skillSet,
-        phone: profile.phone,
-        // email: profile.email,
+        phoneNumber: profile.phoneNumber,
+        isEmailVerified: profile.isEmailVerified,
         location: profile.location,
         businessName: profile.businessName,
         businessHours: profile.businessHours,
       };
 
       const response = await fetch(
-        `https://user-management-h4hg.onrender.com/api/admin/${user._id || user.id}`,
+        `${import.meta.env.VITE_API_URL}/api/admin/${user._id || user.id}`,
         {
           method: "PATCH",
           headers: {
@@ -154,6 +154,44 @@ const ModernEditProfile = () => {
     }
   };
 
+  const handleHourChange = (day, type, value) => {
+    setProfile(prev => ({
+      ...prev,
+      businessHours: {
+        ...prev.businessHours,
+        [day]: {
+          ...prev.businessHours[day],
+          [type]: value
+        }
+      }
+    }));
+  };
+
+  const handleSkillsChange = (e) => {
+    if (e.key === "," || e.key === "Enter") {
+      const value = e.target.value.replace(",", "").trim();
+      if (value && !profile.skillSet.includes(value)) {
+        setProfile((prevData) => ({
+          ...prevData,
+          skillSet: [...prevData.skillSet, value],
+        }));
+      }
+    e.preventDefault(); // Prevent default comma behavior
+    e.target.value = ""; // Clear the input after adding
+    }
+  };
+
+  const removeSkills = (index) => {
+    setProfile((prevData) => ({
+      ...prevData,
+      skillSet: prevData.skillSet.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handlePassChanges = () => {
+    alert("Coming Soon...");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       {/* Success/Error Notifications */}
@@ -192,14 +230,14 @@ const ModernEditProfile = () => {
           <div className="flex flex-col items-center">
             <div className="relative group mb-6">
             <div className={`absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur ${profileImage.image ? 'opacity-25 group-hover:opacity-40' : 'opacity-10 group-hover:opacity-15' }  transition duration-300`}></div>
-                  {profileImage.image ? 
-                    <img
-                      src={profileImage.image}
-                      alt="Artisan"
-                      className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
-                    /> : 
-                    <CharProfilePic size={'32'} username={profile.fullName} otherStyles='!text-4xl' />
-                  }
+              {profileImage.image ? 
+                <img
+                  src={profileImage.image}
+                  alt="Artisan"
+                  className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
+                /> : 
+                <CharProfilePic size={'32'} username={profile.fullName} otherStyles='!text-4xl' />
+              }
               <label
                 htmlFor="profileImageUpload"
                 className="absolute bottom-0 right-0 bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl hover:scale-105 transition-all group"
@@ -254,13 +292,29 @@ const ModernEditProfile = () => {
                 disabled
                 note="Coming soon"
               />
-              <ModernInfoCard
-                icon={<Briefcase className="w-4 h-4" />}
-                title="Skills & Services"
-                value={profile.skillSet}
-                onChange={(val) => setProfile({ ...profile, skillSet: val })}
-                multiline
-              />
+              <div>
+                <h3 className="text-lg font-semibold mb-2 flex items-center">
+                  <ServerCog className="mr-2" size={18} /> Skills
+                </h3>
+                <input
+                  type="text"
+                  onKeyDown={handleSkillsChange}
+                  placeholder="Enter new skills preference (comma separated)..."
+                  className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <div className="text-sm text-gray-500 mt-4 flex flex-wrap gap-2">
+                  {profile.skillSet?.map((skill, index) => (
+                      <span
+                        key={index}
+                        className="bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 px-2 py-1 rounded-full flex gap-2 justify-between"
+                      >
+                        {skill}
+                        <span className="cursor-pointer" onClick={() => removeSkills(index)}>&times;</span>
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -281,15 +335,83 @@ const ModernEditProfile = () => {
                 onChange={(val) => setProfile({ ...profile, businessName: val })}
                 placeholder="e.g., Akande Appliance Repair Services"
               />
-              <ModernInfoCard
-                icon={<Clock className="w-4 h-4" />}
-                title="Business Hours"
-                value={JSON.stringify(profile.businessHours)}
-                onChange={(val) => setProfile({ ...profile, businessHours: val })}
-                multiline
-                placeholder="e.g., Monday - Friday: 8:00 AM - 6:00 PM, Saturday: 9:00 AM - 4:00 PM"
-              />
+              <div>
+              {profile.businessHours && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg">
+                      <Clock className="w-5 h-5 text-blue-600" /> 
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2 flex items-center">
+                      Business Hours
+                    </h3>
+                  </div>
+                  {Object.entries(profile.businessHours).map(([day, hours]) => (
+                    <div key={day} className="flex justify-between items-center">
+                      <span className="capitalize text-sm text-gray-600 w-20">{day}:</span>
+                      {hours.open.toLowerCase() === "closed" ? (
+                        <div className="flex gap-1">
+                          <input
+                            type="time"
+                            value={hours.open}
+                            onChange={(e) => handleHourChange(day, "open", e.target.value)}
+                            className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                          />
+                          <input
+                            type="time"
+                            value={hours.close}
+                            onChange={(e) => handleHourChange(day, "close", e.target.value)}
+                            className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex gap-1">
+                          <input
+                            type="time"
+                            value={hours.open}
+                            onChange={(e) => handleHourChange(day, "open", e.target.value)}
+                            className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                          />
+                          <input
+                            type="time"
+                            value={hours.close}
+                            onChange={(e) => handleHourChange(day, "close", e.target.value)}
+                            className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                          />
+                          <span className="px-2 py-1">
+                            <XCircle 
+                              className="w-4 h-4 text-red-500 cursor-pointer" 
+                              onClick={() => {
+                                handleHourChange(day, "open", "closed")
+                                handleHourChange(day, "close", "closed")
+                              }}
+                            />
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Wallet Info */}
+        <div className="bg-white mt-8 p-6 rounded-2xl shadow-md">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-gradient-to-r from-cyan-100 to-cyan-200 rounded-lg">
+              <Wallet className="w-5 h-5 text-cyan-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">Wallet Information</h3>
+          </div>
+          <div className="mb-4">
+            <label className="text-sm text-gray-700 flex items-center mb-1">
+              <Wallet className="mr-2" size={16} />
+              Wallet Info
+            </label>
+            <p className="text-sm text-gray-400 font-light text-center mt-auto">Coming soon...</p>
           </div>
         </div>
 
@@ -306,19 +428,11 @@ const ModernEditProfile = () => {
             <ModernInfoCard
               icon={<Phone className="w-4 h-4" />}
               title="Phone Number"
-              value={profile.phone}
-              onChange={(val) => setProfile({ ...profile, phone: val })}
+              value={profile.phoneNumber}
+              onChange={(val) => setProfile({ ...profile, phoneNumber: val })}
               type="tel"
             />
-            {/* <ModernInfoCard
-              icon={<Mail className="w-4 h-4" />}
-              title="Email Address"
-              value={profile.email}
-              onChange={(val) => setProfile({ ...profile, email: val })}
-              type="email"
-            /> */}
           </div>
-          
           <div className="mt-4">
             <ModernInfoCard
               icon={<MapPin className="w-4 h-4" />}
@@ -330,25 +444,59 @@ const ModernEditProfile = () => {
           </div>
         </div>
 
-        {/* Security Section */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mt-8">
+        {/* Security */}
+        <div className=" w-full mt-8 bg-white p-6 rounded-2xl shadow-md md:col-span-2">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-gradient-to-r from-red-100 to-pink-100 rounded-lg">
               <Key className="w-5 h-5 text-red-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-900">Security</h3>
           </div>
-          
-          <ModernInfoCard
-            icon={<Key className="w-4 h-4" />}
-            title="Change Password"
-            value={profile.password}
-            onChange={(val) => setProfile({ ...profile, password: val })}
-            type="password"
-            disabled
-            note="Password changes coming soon"
-          />
-        </div>
+          <div className="mb-4">
+            <label className="text-sm text-gray-700 flex items-center mb-1">
+              <Lock className="mr-2" size={16} />
+              Current Password
+            </label>
+            <input
+              type="password"
+              placeholder="Enter current password..."
+              disabled={true}
+              className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="text-sm text-gray-700 flex items-center mb-1">
+              <Lock className="mr-2" size={16} />
+              New Password
+            </label>
+            <input
+              type="password"
+              placeholder="Enter new password..."
+              disabled={true}
+              className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="text-sm text-gray-700 flex items-center mb-1">
+              <Lock className="mr-2" size={16} />
+              Confirm New Password
+            </label>
+            <input
+              type="password"
+              placeholder="Confirm new password..."
+              className="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              disabled={true}
+            />
+          </div>
+          <div className="max-w-6xl mx-auto text-left">
+            <button 
+            onClick={handlePassChanges}
+            disabled={true}
+            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl text-xs shadow hover:opacity-90 disabled:opacity-50">
+              Change Password
+            </button>
+          </div>
+        </div> 
 
         {/* Save Button */}
         <div className="flex justify-center mt-8 gap-4">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import BackgroundImage from '../../assets/uploads/Welcome_bg.png';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuth from "../../Auth/useAuth";
@@ -76,12 +76,33 @@ const LogIn = () => {
           <p className="text-lg lg:text-xl text-[#110000C2]">
             Get connected with professional<br /> artisans
           </p>
+          <p className="text-lg mt-4 lg:text-sm text-[#110000C2]">
+            New here? 
+            <span 
+              onClick={() => navigate("/welcome")}
+              className='text-[#000000] font-semibold underline hover:text-blue-500 cursor-pointer ml-1'
+            >
+                Sign Up
+              </span>
+          </p>
         </div>
       </div>
   
       {/* Right Panel */}
       <div className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 sm:p-10">
-        <h2 className="text-xl sm:text-2xl text-[#110000C2] font-semibold mb-6">Log in</h2>
+        {/* <h2 className="text-xl sm:text-2xl text-[#110000C2] font-semibold mb-6">Log in</h2> */}
+        <div className="flex flex-col items-start w-full max-w-sm">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-gray-600 text-sm hover:text-gray-800 transition-colors mb-4"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back
+          </button>
+          <h2 className="text-xl text-[#110000C2] font-semibold mb-4">
+            Login
+          </h2>
+        </div>
   
         {/* Feedback message */}
         {message && (
