@@ -24,7 +24,7 @@ const ContactUs = () => {
             <div className="flex items-start gap-3">
               <Phone className="w-5 h-5 mt-1 fill-white"  />
              <div className="flex flex-col text-sm">
-               <span>+234 9876543213</span>
+               <span>+234 7084274918</span>
                <span>+234 8059770443</span>
              </div>
            </div>
@@ -32,7 +32,7 @@ const ContactUs = () => {
         <div className="h-4" />
        <div className="flex items-center gap-3">
          <Mail className="w-5 h-5 text-white" />
-          <span>fixserv@gmail.com</span>
+          <span>info@fixserv.co</span>
        </div>
 
       <div className="h-4" /> 
@@ -43,7 +43,7 @@ const ContactUs = () => {
         </div>
 
           {/* Right: Form */}
-          <form className="flex flex-col gap-4 md:w-1/2 bg-white mt-15">
+          <form className="relative flex flex-col gap-4 md:w-1/2 bg-white mt-15 mb-10 md:mb-0">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <label className="text-sm text-gray-600">Your Name</label>
@@ -81,7 +81,7 @@ const ContactUs = () => {
             </div>
             <button
               type="submit"
-              className="bg-[#779BE7] hover:bg-[#779BE5dd] hover:shadow-gray-300 transition-all duration-300 text-white px-4 py-2 rounded-lg h-10 w-40 shadow-xl"
+              className="absolute right-0 -bottom-12 md:bottom-16 bg-[#779BE7] hover:bg-[#779BE5dd] hover:shadow-gray-300 transition-all duration-300 text-white px-4 py-2 rounded-lg h-10 w-40 shadow-xl"
             >
               Send Message
             </button>
