@@ -1,5 +1,5 @@
 import {  useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import GuestImage from "../../assets/uploads/Guest_Image.png";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../assets/Loaders/Loader";
@@ -73,6 +73,7 @@ const GuestSignUp = () => {
         email: formData.email,
         fullName: formData.fullName,
         password: formData.password,
+        phoneNumber: formData.phoneNumber,
         role: formData.role,
         clientData: {
           deliveryAddress: formData.deliveryAddress,
@@ -104,9 +105,18 @@ const GuestSignUp = () => {
   
       {/* Right Panel - full width on small screens */}
       <div className="w-full md:w-2/3 flex flex-col justify-center items-center px-4 py-8 md:px-6">
-        <h2 className="text-2xl text-[#110000C2] font-semibold mb-6">
-          Client Registration
-        </h2>
+        <div className="flex flex-col items-start w-full max-w-sm">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-gray-600 text-sm hover:text-gray-800 transition-colors mb-4"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back
+          </button>
+          <h2 className="text-xl text-[#110000C2] font-semibold mb-4">
+            Client Registration
+          </h2>
+        </div>
 
         {/* Feedback message */}
         {message && (
@@ -133,7 +143,7 @@ const GuestSignUp = () => {
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
   
-          {/* Last Name */}
+          {/* Phone Number */}
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
             Phone Number
           </label>
