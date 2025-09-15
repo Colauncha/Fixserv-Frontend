@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import PublicBookingModal from "../Modals/PublicBookingModal";
 import AddItemModal from '../Modals/AddItemModal';
 import FundWalletModal from '../Modals/FundWalletModal';
+import WithdrawWalletModal from '../Modals/WithdrawWalletModal';
 import { getIdentity, setIdentity } from '../../Auth/tokenStorage';
 import Fetch from '../../util/Fetch'
 import { 
@@ -39,6 +40,7 @@ const ClientDashboard = () => {
   const [publicBookingOpen, setPublicBookingOpen] = useState(false);
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
   const [fundWalletModalOpen, setFundWalletModalOpen] = useState(false);
+  const [WithdrawWalletModalOpen, setWithdrawWalletModalOpen] = useState(false);
   const [profileImage, setProfileImage] = useState("");
   const [uploadedProducts, setUploadedProducts] = useState(null);
   const [loading, setLoading] = useState({
@@ -221,6 +223,12 @@ const ClientDashboard = () => {
         <FundWalletModal
           closeModal={() => setFundWalletModalOpen(false)}
         />
+
+      )}
+       {WithdrawWalletModalOpen && (
+        <WithdrawWalletModal
+          closeModal={() => setWithdrawWalletModalOpen(false)}
+        />
       )}
       
       <div className="relative overflow-hidden">
@@ -290,7 +298,8 @@ const ClientDashboard = () => {
                   </div>
 
                   <div className="flex gap-3">
-                    <button className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+                    <button className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                    onClick={() => setWithdrawWalletModalOpen(true)}>
                       Withdraw
                     </button>
                     <button 
