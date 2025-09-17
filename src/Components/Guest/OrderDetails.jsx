@@ -19,13 +19,15 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import CharProfilePic from '../CharProfilePic';
+import { toast } from 'react-toastify';
+import Loader from '../../assets/Loaders/Loader';
 
 const OrderDetails = () => {
   const location = useLocation();
   const orderId = location.pathname.split('/').pop();
   const navigate = useNavigate();
   const { state } = useAuth();
-  
+
   const [order, setOrder] = useState(null);
   const [client, setClient] = useState(null);
   const [artisan, setArtisan] = useState(null);
@@ -33,18 +35,24 @@ const OrderDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [loaders, setLoaders] = useState({
+    cancel: false,
+    complete: false,
+  });
 
   useEffect(() => {
     const storedUser = getIdentity();
     setCurrentUser(storedUser);
-    
+
     const fetchOrderDetails = async () => {
       try {
         setLoading(true);
-        
+
         // First, fetch the order details (you'll need to replace this with your actual order endpoint)
         const { data: orderData, error: orderError } = await Fetch({
-          url: `${import.meta.env.VITE_API_ORDER_URL}/orders/${orderId}/getOrder`,
+          url: `${
+            import.meta.env.VITE_API_ORDER_URL
+          }/orders/${orderId}/getOrder`,
           token: state.token,
         });
 
@@ -56,7 +64,9 @@ const OrderDetails = () => {
 
         // Fetch client details
         const { data: clientData, error: clientError } = await Fetch({
-          url: `${import.meta.env.VITE_API_URL}/api/admin/user/${orderData.clientId}`,
+          url: `${import.meta.env.VITE_API_URL}/api/admin/user/${
+            orderData.clientId
+          }`,
           token: state.token,
         });
 
@@ -68,7 +78,9 @@ const OrderDetails = () => {
 
         // Fetch artisan details
         const { data: artisanData, error: artisanError } = await Fetch({
-          url: `${import.meta.env.VITE_API_URL}/api/admin/user/${orderData.artisanId}`,
+          url: `${import.meta.env.VITE_API_URL}/api/admin/user/${
+            orderData.artisanId
+          }`,
           token: state.token,
         });
 
@@ -81,7 +93,9 @@ const OrderDetails = () => {
         // Fetch service details
         if (orderData.serviceId) {
           const { data: serviceData, error: serviceError } = await Fetch({
-            url: `${import.meta.env.VITE_API_SERVICE_URL}/service/${orderData.serviceId}`,
+            url: `${import.meta.env.VITE_API_SERVICE_URL}/service/${
+              orderData.serviceId
+            }`,
             token: state.token,
           });
 
@@ -91,7 +105,6 @@ const OrderDetails = () => {
             setService(serviceData);
           }
         }
-
       } catch (err) {
         console.error('Fetch error:', err);
         setError(err.message);
@@ -107,26 +120,36 @@ const OrderDetails = () => {
 
   const getStatusDisplay = (status) => {
     const statusConfig = {
-      'COMPLETED': {
+      COMPLETED: {
         color: 'text-green-600 bg-green-50 border-green-200',
         icon: <CheckCircle className="w-5 h-5" />,
-        text: 'Completed'
+        text: 'Completed',
       },
-      'PENDING': {
+      PENDING: {
         color: 'text-yellow-600 bg-yellow-50 border-yellow-200',
         icon: <AlertCircle className="w-5 h-5" />,
-        text: 'Pending'
+        text: 'Pending',
       },
-      'IN_PROGRESS': {
+      PENDING_ARTISAN_RESPONSE: {
+        color: 'text-yellow-600 bg-yellow-50 border-yellow-200',
+        icon: <AlertCircle className="w-5 h-5" />,
+        text: 'Pending artisan acceptance',
+      },
+      IN_PROGRESS: {
         color: 'text-blue-600 bg-blue-50 border-blue-200',
         icon: <Clock className="w-5 h-5" />,
-        text: 'In Progress'
+        text: 'In Progress',
       },
-      'CANCELLED': {
+      ACCEPTED: {
+        color: 'text-blue-600 bg-blue-50 border-blue-200',
+        icon: <Clock className="w-5 h-5" />,
+        text: 'In Progress',
+      },
+      CANCELLED: {
         color: 'text-red-600 bg-red-50 border-red-200',
         icon: <XCircle className="w-5 h-5" />,
-        text: 'Cancelled'
-      }
+        text: 'Cancelled',
+      },
     };
 
     return statusConfig[status] || statusConfig['PENDING'];
@@ -134,26 +157,26 @@ const OrderDetails = () => {
 
   const getEscrowStatusDisplay = (escrowStatus) => {
     const escrowConfig = {
-      'PAID': {
+      PAID: {
         color: 'text-green-600 bg-green-50 border-green-200',
         icon: <Shield className="w-4 h-4" />,
-        text: 'Funds Secured'
+        text: 'Funds Secured',
       },
-      'NOT_PAID': {
+      NOT_PAID: {
         color: 'text-red-600 bg-red-50 border-red-200',
         icon: <CreditCard className="w-4 h-4" />,
-        text: 'Payment Pending'
+        text: 'Payment Pending',
       },
-      'RELEASED': {
+      RELEASED: {
         color: 'text-blue-600 bg-blue-50 border-blue-200',
         icon: <CheckCircle className="w-4 h-4" />,
-        text: 'Funds Released'
+        text: 'Funds Released',
       },
-      'REFUNDED': {
+      REFUNDED: {
         color: 'text-purple-600 bg-purple-50 border-purple-200',
         icon: <ArrowLeft className="w-4 h-4" />,
-        text: 'Refunded'
-      }
+        text: 'Refunded',
+      },
     };
 
     return escrowConfig[escrowStatus] || escrowConfig['NOT_PAID'];
@@ -165,7 +188,7 @@ const OrderDetails = () => {
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -173,28 +196,54 @@ const OrderDetails = () => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 0,
     }).format(price);
   };
 
-  const handleAcceptOrder = async () => {
-    // Add your order acceptance logic here
-    console.log('Accepting order:', orderId);
-  };
+  const handleCancelOrder = async () => {
+    try {
+      setLoaders({ ...loaders, cancel: true });
+      const { resp, error, success } = Fetch({
+        url: `${import.meta.env.VITE_API_ORDER_URL}/orders/${orderId}/cancel`,
+        token: state.token,
+        method: 'POST',
+      });
 
-  const handleRejectOrder = async () => {
-    // Add your order rejection logic here
-    console.log('Rejecting order:', orderId);
+      if (!success) {
+        throw new Error(`Error: ${error}`);
+      }
+      toast.success('Job cancelled successfully');
+      console.log(resp);
+    } catch (error) {
+      console.error(error);
+      toast.error(error);
+    } finally {
+      setLoaders({ cancel: false, complete: false });
+    }
   };
-
-//   const handleStartWork = async () => {
-//     // Add your start work logic here
-//     console.log('Starting work on order:', orderId);
-//   };
 
   const handleCompleteOrder = async () => {
-    // Add your complete order logic here
-    console.log('Completing order:', orderId);
+    try {
+      setLoaders({ ...loaders, complete: true });
+      const { resp, error, success } = Fetch({
+        url: `${
+          import.meta.env.VITE_API_ORDER_URL
+        }/orders/${orderId}/release-payment`,
+        token: state.token,
+        method: 'POST',
+      });
+
+      if (!success) {
+        throw new Error(`Error: ${error}`);
+      }
+      toast.success('Job completed successfully');
+      console.log(resp);
+    } catch (error) {
+      console.error(error);
+      toast.error(error);
+    } finally {
+      setLoaders({ cancel: false, complete: false });
+    }
   };
 
   if (loading) {
@@ -213,8 +262,8 @@ const OrderDetails = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">Error: {error}</p>
-          <button 
-            onClick={() => navigate(-1)} 
+          <button
+            onClick={() => navigate(-1)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Go Back
@@ -234,13 +283,11 @@ const OrderDetails = () => {
 
   const statusDisplay = getStatusDisplay(order.status);
   const escrowDisplay = getEscrowStatusDisplay(order.escrowStatus);
-  const isArtisan = currentUser?.role === 'ARTISAN';
   const isClient = currentUser?.role === 'CLIENT';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
@@ -256,21 +303,25 @@ const OrderDetails = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            
             {/* Order Overview */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Overview</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Order Overview
+                  </h2>
                   <div className="flex items-center gap-3">
-                    <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border ${statusDisplay.color}`}>
+                    <span
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border ${statusDisplay.color}`}
+                    >
                       {statusDisplay.icon}
                       {statusDisplay.text}
                     </span>
-                    <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border ${escrowDisplay.color}`}>
+                    <span
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border ${escrowDisplay.color}`}
+                    >
                       {escrowDisplay.icon}
                       {escrowDisplay.text}
                     </span>
@@ -289,13 +340,23 @@ const OrderDetails = () => {
               {/* Service Information */}
               {service && (
                 <div className="border-t pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Service Details</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Service Details
+                  </h3>
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900">{service.title}</h4>
-                    <p className="text-gray-600 text-sm mt-1">{service.description}</p>
+                    <h4 className="font-semibold text-gray-900">
+                      {service.title}
+                    </h4>
+                    <p className="text-gray-600 text-sm mt-1">
+                      {service.description}
+                    </p>
                     <div className="flex items-center justify-between mt-3">
-                      <span className="text-sm text-gray-500">Base Price: {formatPrice(service.price)}</span>
-                      <span className="text-sm text-gray-500">Duration: {service.estimatedDuration}</span>
+                      <span className="text-sm text-gray-500">
+                        Base Price: {formatPrice(service.price)}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        Duration: {service.estimatedDuration}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -305,10 +366,15 @@ const OrderDetails = () => {
             {/* Uploaded Products/Problem Description */}
             {order.uploadedProducts && order.uploadedProducts.length > 0 && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Problem Details</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  Problem Details
+                </h2>
                 <div className="grid gap-6">
                   {order.uploadedProducts.map((product) => (
-                    <div key={product.id} className="border border-gray-200 rounded-xl p-4">
+                    <div
+                      key={product.id}
+                      className="border border-gray-200 rounded-xl p-4"
+                    >
                       <div className="flex flex-col md:flex-row gap-4">
                         <div className="md:w-32 md:h-32 w-full h-48 flex-shrink-0">
                           <img
@@ -319,12 +385,16 @@ const OrderDetails = () => {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-semibold text-gray-900">{product.objectName}</h3>
+                            <h3 className="font-semibold text-gray-900">
+                              {product.objectName}
+                            </h3>
                             <span className="text-xs text-gray-500">
                               {formatDate(product.uploadedAt)}
                             </span>
                           </div>
-                          <p className="text-gray-700 mb-3">{product.description}</p>
+                          <p className="text-gray-700 mb-3">
+                            {product.description}
+                          </p>
                           <button className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium">
                             <Eye className="w-4 h-4" />
                             View Full Size
@@ -339,13 +409,18 @@ const OrderDetails = () => {
 
             {/* Client Address */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Service Location</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Service Location
+              </h2>
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-gray-900">{order.clientAddress.street}</p>
+                  <p className="font-medium text-gray-900">
+                    {order.clientAddress.street}
+                  </p>
                   <p className="text-gray-600">
-                    {order.clientAddress.city}, {order.clientAddress.state} {order.clientAddress.postalCode}
+                    {order.clientAddress.city}, {order.clientAddress.state}{' '}
+                    {order.clientAddress.postalCode}
                   </p>
                   <p className="text-gray-600">{order.clientAddress.country}</p>
                 </div>
@@ -353,45 +428,41 @@ const OrderDetails = () => {
             </div>
 
             {/* Action Buttons for Artisan */}
-            {isArtisan && currentUser.id === order.artisanId && (
+            {isClient && currentUser.id === order.clientId && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Actions</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Actions
+                </h2>
                 <div className="flex flex-wrap gap-3">
-                  {order.status === 'PENDING' && (
-                    <>
-                      <button
-                        onClick={handleAcceptOrder}
-                        className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-medium"
-                      >
-                        <CheckCircle className="w-5 h-5" />
-                        Accept Order
-                      </button>
-                      <button
-                        onClick={handleRejectOrder}
-                        className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium"
-                      >
-                        <XCircle className="w-5 h-5" />
-                        Decline Order
-                      </button>
-                    </>
+                  {order.status.startsWith('PENDING') && (
+                    <button
+                      onClick={handleCancelOrder}
+                      className="flex items-center gap-2 px-6 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition-colors font-medium"
+                    >
+                      {loaders.cancel ? (
+                        <Loader size={6} otherStyles={'text-white'} />
+                      ) : (
+                        <>
+                          <XCircle className="w-5 h-5" />
+                          Cancel Order
+                        </>
+                      )}
+                    </button>
                   )}
-                  {order.status === 'IN_PROGRESS' && (
+                  {order.status === 'ACCEPTED' && (
                     <button
                       onClick={handleCompleteOrder}
                       className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
                     >
-                      <CheckCircle className="w-5 h-5" />
-                      Mark as Complete
+                      {loaders.cancel ? (
+                        <Loader size={6} otherStyles={'text-white'} />
+                      ) : (
+                        <>
+                          <CheckCircle className="w-5 h-5" />
+                          Mark as Complete
+                        </>
+                      )}
                     </button>
-                  )}
-                  {isClient && (
-                    <button
-                    // onClick={handleCompleteOrder}
-                    className="flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors font-medium"
-                  >
-                    <XCircle className="w-5 h-5" />
-                    Mark as Complete
-                  </button>
                   )}
                   {isClient ? (
                     <button
@@ -402,10 +473,10 @@ const OrderDetails = () => {
                       Chat with Artisan
                     </button>
                   ) : (
-                  <button className="flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors font-medium">
-                    <MessageSquare className="w-5 h-5" />
-                    Contact Client
-                  </button>
+                    <button className="flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors font-medium">
+                      <MessageSquare className="w-5 h-5" />
+                      Contact Client
+                    </button>
                   )}
                 </div>
               </div>
@@ -414,11 +485,12 @@ const OrderDetails = () => {
 
           {/* Sidebar */}
           <div className="space-y-8">
-            
             {/* Client Information */}
             {client && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Client Information</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  Client Information
+                </h3>
                 <div className="flex items-center gap-4 mb-4">
                   {client.profilePicture ? (
                     <img
@@ -430,21 +502,31 @@ const OrderDetails = () => {
                     <CharProfilePic size="16" username={client.fullName} />
                   )}
                   <div>
-                    <h4 className="font-semibold text-gray-900">{client.fullName}</h4>
+                    <h4 className="font-semibold text-gray-900">
+                      {client.fullName}
+                    </h4>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">{client.email}</span>
+                    <span className="text-sm text-gray-700">
+                      {client.email}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">{client.phoneNumber || 'N/A'}</span>
+                    <span className="text-sm text-gray-700">
+                      {client.phoneNumber || 'N/A'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <MapPin className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">{client.deliveryAddress.state + ', ' + client.deliveryAddress.street || 'N/A'}</span>
+                    <span className="text-sm text-gray-700">
+                      {client.deliveryAddress.state +
+                        ', ' +
+                        client.deliveryAddress.street || 'N/A'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -453,7 +535,9 @@ const OrderDetails = () => {
             {/* Artisan Information (for clients) */}
             {artisan && isClient && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Artisan Information</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  Artisan Information
+                </h3>
                 <div className="flex items-center gap-4 mb-4">
                   {artisan.profilePicture ? (
                     <img
@@ -465,25 +549,35 @@ const OrderDetails = () => {
                     <CharProfilePic size="16" username={artisan.fullName} />
                   )}
                   <div>
-                    <h4 className="font-semibold text-gray-900">{artisan.fullName}</h4>
+                    <h4 className="font-semibold text-gray-900">
+                      {artisan.fullName}
+                    </h4>
                     <div className="flex items-center gap-1 text-amber-500">
                       <Star className="w-4 h-4 fill-current" />
-                      <span className="text-sm font-medium text-gray-900">{artisan.rating || 'N/A'}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {artisan.rating || 'N/A'}
+                      </span>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">{artisan.email}</span>
+                    <span className="text-sm text-gray-700">
+                      {artisan.email}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">{artisan.phone || 'N/A'}</span>
+                    <span className="text-sm text-gray-700">
+                      {artisan.phone || 'N/A'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <MapPin className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">{artisan.location || 'N/A'}</span>
+                    <span className="text-sm text-gray-700">
+                      {artisan.location || 'N/A'}
+                    </span>
                   </div>
                 </div>
                 {artisan.skillSet && artisan.skillSet.length > 0 && (
@@ -511,22 +605,32 @@ const OrderDetails = () => {
 
             {/* Payment Information */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Payment Details</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Payment Details
+              </h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Order Amount:</span>
-                  <span className="font-semibold">{formatPrice(order.price)}</span>
+                  <span className="font-semibold">
+                    {formatPrice(order.price)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Escrow Status:</span>
-                  <span className={`text-sm font-medium ${escrowDisplay.color.split(' ')[0]}`}>
+                  <span
+                    className={`text-sm font-medium ${
+                      escrowDisplay.color.split(' ')[0]
+                    }`}
+                  >
                     {escrowDisplay.text}
                   </span>
                 </div>
                 {order.paymentReference && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Payment Ref:</span>
-                    <span className="text-sm font-mono">{order.paymentReference}</span>
+                    <span className="text-sm font-mono">
+                      {order.paymentReference}
+                    </span>
                   </div>
                 )}
               </div>
@@ -534,13 +638,19 @@ const OrderDetails = () => {
 
             {/* Quick Stats */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Order Timeline</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Order Timeline
+              </h3>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Order Created</p>
-                    <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      Order Created
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(order.createdAt)}
+                    </p>
                   </div>
                 </div>
                 {/* Add more timeline items based on order status */}

@@ -24,16 +24,18 @@ import ContactUsPage from "./Pages/Home/ContactUsPage";
 import AutoScrollToTop from "./Components/AutoScrollToTop";
 import JobDetails from "./Components/Artisan/JobDetails";
 import OrderDetails from "./Components/Guest/OrderDetails";
+import ArtisanTranxHist from './Components/Artisan/ArtisanTranxHist';
 
-import ClientDashboard from "./Components/Guest/ClientDashboard";
-import ClientEditProfile from "./Components/Guest/ClientEditProfile";
-import ForgotPassword from "./Components/Auth/ForgotPassword";
-import ResetPassword from "./Components/Auth/ResetPassword";
-import TermsPage from "./Components/Others/TermsPage";
-import PrivacyPolicy from "./Components/Others/PrivacyPolicy";
-import Notification from "./Components/Others/Notification";
-import KYC from "./Components/Others/KYC";
-import Tracking from "./Components/Others/Tracking";
+import ClientDashboard from './Components/Guest/ClientDashboard';
+import ClientEditProfile from './Components/Guest/ClientEditProfile';
+import ForgotPassword from './Components/Auth/ForgotPassword';
+import ResetPassword from './Components/Auth/ResetPassword';
+import TermsPage from './Components/Others/TermsPage';
+import PrivacyPolicy from './Components/Others/PrivacyPolicy';
+import Notification from './Components/Others/Notification';
+import KYC from './Components/Others/KYC';
+import Tracking from './Components/Others/Tracking';
+import ClientTranxHist from './Components/Guest/ClientTranxHist';
 
 // Admins
 import AdminAuth from "./Components/Admin/Auth";
@@ -132,6 +134,14 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="wallet-history"
+                    element={
+                      <ProtectedRoute>
+                        <ClientTranxHist />
+                      </ProtectedRoute>
+                    }
+                  />
                 </Route>
 
                 {/* Artisan Routes */}
@@ -174,6 +184,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <KYC />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="wallet-history"
+                    element={
+                      <ProtectedRoute>
+                        <ArtisanTranxHist />
                       </ProtectedRoute>
                     }
                   />
