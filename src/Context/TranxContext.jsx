@@ -4,7 +4,7 @@ import {
   setTranx,
   removeTranx,
   TranxContext,
-} from '../Auth/tranxStorage';
+} from '../Context/TranxStorage';
 
 const initialState = {};
 
