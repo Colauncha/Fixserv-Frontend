@@ -543,6 +543,8 @@ import { getIdentity } from '../../Auth/tokenStorage';
 import useAuth from '../../Auth/useAuth';
 import Fetch from '../../util/Fetch';
 import Loader from '../../assets/Loaders/Loader';
+import { toast } from 'react-toastify';
+import { setTranx } from '../../Context/TranxStorage';
 
 /* -------------------- Helper Components -------------------- */
 const ErrorBox = ({ message }) => (
@@ -857,6 +859,7 @@ const WithdrawWalletModal = ({ closeModal, walletData = null }) => {
   const handleResolve = useCallback(async () => {
     setLoading((l) => ({ ...l, resolve: true }));
     try {
+      console.log(state.accountNumber, state.bankCode);
       const { data, success, error } = await Fetch({
         url: `${
           import.meta.env.VITE_API_WALLET_URL
@@ -864,7 +867,7 @@ const WithdrawWalletModal = ({ closeModal, walletData = null }) => {
         method: 'POST',
         requestData: {
           accountNumber: state.accountNumber,
-          bankCode: state.bankCode,
+          bankCode: '001', //state.bankCode,
         },
       });
       if (!success) throw new Error(error);
@@ -882,12 +885,14 @@ const WithdrawWalletModal = ({ closeModal, walletData = null }) => {
     setLoading((l) => ({ ...l, submit: true }));
     try {
       const { data, success, error } = await Fetch({
-        url: `${import.meta.env.VITE_API_WALLET_URL}/wallet/withdrawal`,
+        url: `${
+          import.meta.env.VITE_API_WALLET_URL
+        }/wallet/withdrawal/initiate`,
         token: auth.token,
         method: 'POST',
         requestData: {
           userId: user.id,
-          amount: state.amount,
+          amount: new Number(state.amount),
           accountNumber: state.accountNumber,
           bankCode: state.bankCode,
           pin: '1234',
@@ -895,6 +900,8 @@ const WithdrawWalletModal = ({ closeModal, walletData = null }) => {
       });
       if (!success) throw new Error(error);
       console.log('Withdrawal successful:', data);
+      setTranx(data);
+      toast.success(data.data.message || 'Withdrawal successful');
       closeModal();
     } catch (err) {
       setState((s) => ({ ...s, error: err.message }));
