@@ -1,0 +1,33 @@
+name: Deploy and Build Frontend on Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.FIXSERV_AWS_HOST }}
+          username: ${{ secrets.FIXSERV_AWS_USER }}
+          key: ${{ secrets.FIXSERV_AWS_KEY }}
+          script: |
+
+            cd /var/www/fixserv/Fixserv-Frontend || exit 1
+            git reset --hard HEAD
+            git clean -fd
+            git pull --ff-only origin main
+            npm install
+            npm run build
+            sudo rm -rf /var/www/html/*
+            sudo cp -r dist/* /var/www/html/
+
+          shell: bash -l {0}
