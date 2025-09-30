@@ -26,7 +26,7 @@ const ClientHomePage = () => {
   const fetchArtisans = async () => {
     try {
       const res = await axios.get(
-        'https://user-management-h4hg.onrender.com/api/users/artisans'
+        `${import.meta.env.VITE_API_URL}/api/users/artisans`
       );
       setArtisans(res.data);
     } catch (error) {

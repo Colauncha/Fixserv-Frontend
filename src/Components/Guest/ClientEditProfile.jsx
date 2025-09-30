@@ -89,14 +89,17 @@ const ClientEditProfile = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`https://user-management-h4hg.onrender.com/api/admin/${stored._id || stored.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${state.token}`,
-        },
-        body: JSON.stringify(userData),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/admin/${stored._id || stored.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${state.token}`,
+          },
+          body: JSON.stringify(userData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update profile.");

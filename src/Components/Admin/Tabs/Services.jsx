@@ -30,50 +30,49 @@ const Services = () => {
   // Fetch all services
   const fetchAllServices = useCallback(async () => {
     setLoadingServices(true);
-    setError("");
+    setError('');
     try {
       const res = await fetch(
-        "https://service-management-1tz6.onrender.com/api/service/admin/getAll",
+        `${import.meta.env.VITE_API_SERVICE_URL}/service/admin/getAll`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      
-      if (!res.ok) throw new Error("Failed to fetch services");
-      
+
+      if (!res.ok) throw new Error('Failed to fetch services');
+
       const data = await res.json();
       setAllServices(data?.data || []);
     } catch (err) {
-      setError("Failed to fetch services");
+      setError('Failed to fetch services');
       console.error(err);
     } finally {
       setLoadingServices(false);
     }
-  }, [token])
+  }, [token]);
 
   // Fetch all services on component mount
   useEffect(() => {
     fetchAllServices();
   }, [fetchAllServices]);
 
-
   // Search service
   const handleSearch = async () => {
     if (!keyword.trim()) return;
     setLoadingSearch(true);
-    setError("");
+    setError('');
     try {
       const res = await fetch(
-        `https://search-and-discovery.onrender.com/api/search?keyword=${encodeURIComponent(
-          keyword
-        )}`
+        `${
+          import.meta.env.VITE_API_SEARCH_URL
+        }/search?keyword=${encodeURIComponent(keyword)}`
       );
       const data = await res.json();
       setSearchResults(data?.data?.services?.data || []);
     } catch (err) {
-      setError("Failed to fetch search results");
+      setError('Failed to fetch search results');
       console.error(err);
     } finally {
       setLoadingSearch(false);
@@ -86,25 +85,25 @@ const Services = () => {
     if (!title.trim() || !description.trim()) return;
 
     setLoadingCreate(true);
-    setError("");
+    setError('');
     try {
       const res = await fetch(
-        "https://service-management-1tz6.onrender.com/api/service/admin",
+        `${import.meta.env.VITE_API_SERVICE_URL}/service/admin`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ title, description }),
         }
       );
 
-      if (!res.ok) throw new Error("Failed to create service");
+      if (!res.ok) throw new Error('Failed to create service');
 
-      setTitle("");
-      setDescription("");
-      alert("Service created successfully!");
+      setTitle('');
+      setDescription('');
+      alert('Service created successfully!');
       fetchAllServices(); // Refresh the list
     } catch (err) {
       setError(err.message);
@@ -115,25 +114,26 @@ const Services = () => {
 
   // Delete service
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this service?")) return;
+    if (!window.confirm('Are you sure you want to delete this service?'))
+      return;
 
     try {
       const res = await fetch(
-        `https://service-management-1tz6.onrender.com/api/service/${id}`,
+        `${import.meta.env.VITE_API_SERVICE_URL}/service/${id}`,
         {
-          method: "DELETE",
+          method: 'DELETE',
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
 
-      if (!res.ok) throw new Error("Failed to delete service");
+      if (!res.ok) throw new Error('Failed to delete service');
 
       // Remove from both search results and all services
       setSearchResults((prev) => prev.filter((s) => s.id !== id));
       setAllServices((prev) => prev.filter((s) => s.id !== id));
-      alert("Service deleted successfully!");
+      alert('Service deleted successfully!');
     } catch (err) {
       alert(err.message);
     }
@@ -149,8 +149,8 @@ const Services = () => {
   // Cancel editing
   const cancelEdit = () => {
     setEditingService(null);
-    setEditTitle("");
-    setEditDescription("");
+    setEditTitle('');
+    setEditDescription('');
   };
 
   // Update service
@@ -158,36 +158,36 @@ const Services = () => {
     if (!editTitle.trim() || !editDescription.trim()) return;
 
     setLoadingEdit(true);
-    setError("");
+    setError('');
     try {
       const res = await fetch(
-        `https://service-management-1tz6.onrender.com/api/service/${id}`,
+        `${import.meta.env.VITE_API_SERVICES_URL}/service/${id}`,
         {
-          method: "PATCH",
+          method: 'PATCH',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ 
-            title: editTitle, 
-            description: editDescription 
+          body: JSON.stringify({
+            title: editTitle,
+            description: editDescription,
           }),
         }
       );
 
-      if (!res.ok) throw new Error("Failed to update service");
+      if (!res.ok) throw new Error('Failed to update service');
 
       // Update in both lists
-      const updateService = (service) => 
-        service.id === id 
+      const updateService = (service) =>
+        service.id === id
           ? { ...service, title: editTitle, description: editDescription }
           : service;
 
       setAllServices((prev) => prev.map(updateService));
       setSearchResults((prev) => prev.map(updateService));
-      
+
       cancelEdit();
-      alert("Service updated successfully!");
+      alert('Service updated successfully!');
     } catch (err) {
       setError(err.message);
     } finally {

@@ -26,11 +26,13 @@ const Notification = () => {
       const statusFilter = activeTab === 'Unread' ? '&status=unread' : '';
       
       const response = await fetch(
-        `https://notifications-service-9dn1.onrender.com/api/notifications?limit=${limit}&offset=${offset}${statusFilter}`,
+        `${
+          import.meta.env.VITE_API_NOTIF_URL
+        }/notifications?limit=${limit}&offset=${offset}${statusFilter}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         }
       );
@@ -72,12 +74,12 @@ const Notification = () => {
   const markAllAsRead = async () => {
     try {
       const response = await fetch(
-        "https://notifications-service-9dn1.onrender.com/api/notifications/mark-all-read",
+        `${import.meta.env.VITE_API_NOTIF_URL}/notifications/mark-all-read`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         }
       );
@@ -95,12 +97,14 @@ const Notification = () => {
   const markAsRead = async (notificationId) => {
     try {
       const response = await fetch(
-        `https://notifications-service-9dn1.onrender.com/api/notifications/${notificationId}/read`,
+        `${
+          import.meta.env.VITE_API_NOTIF_URL
+        }/notifications/${notificationId}/read`,
         {
-          method: "PATCH",
+          method: 'PATCH',
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         }
       );
@@ -127,12 +131,12 @@ const Notification = () => {
   const deleteNotification = async (notificationId) => {
     try {
       const response = await fetch(
-        `https://notifications-service-9dn1.onrender.com/api/notifications/${notificationId}`,
+        `${import.meta.env.VITE_API_NOTIF_URL}/notifications/${notificationId}`,
         {
-          method: "DELETE",
+          method: 'DELETE',
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         }
       );

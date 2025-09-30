@@ -36,13 +36,16 @@ const PrivateBookingModal = ({ closeModal }) => {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await fetch(`https://service-management-1tz6.onrender.com/api/service/services`, {
-          method: 'GET',
-          headers: {
-            'content-type': 'application/json',
-            'Authorization': `Bearer ${state.token}`,
+        const response = await fetch(
+          `${import.meta.env.VITE_API_SERVICE_URL}/service/services`,
+          {
+            method: 'GET',
+            headers: {
+              'content-type': 'application/json',
+              Authorization: `Bearer ${state.token}`,
+            },
           }
-        });
+        );
         if (!response.ok) {
           throw new Error('Failed to fetch services');
         }
@@ -59,14 +62,17 @@ const PrivateBookingModal = ({ closeModal }) => {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`https://order-management-hm08.onrender.com/api/orders/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.token}`,
-        },
-        body: JSON.stringify(submitData),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ORDER_URL}/orders/create`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${state.token}`,
+          },
+          body: JSON.stringify(submitData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to submit repair request');

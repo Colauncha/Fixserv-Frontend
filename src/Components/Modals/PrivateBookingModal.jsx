@@ -46,7 +46,9 @@ const PrivateBookingModal = ({
     const fetchServices = async () => {
       try {
         const response = await fetch(
-          `https://service-management-1tz6.onrender.com/api/service/artisan/${artisanId}`,
+          `${
+            import.meta.env.VITE_API_SERVICE_URL
+          }/service/artisan/${artisanId}`,
           {
             method: 'GET',
             headers: {

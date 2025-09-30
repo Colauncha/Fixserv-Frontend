@@ -30,7 +30,7 @@
 //     console.log(formData);
 
 //     try {
-//       const response = await fetch(`https://user-management-h4hg.onrender.com/api/upload/${user._id || user.id}/upload-products`, {
+//       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/upload/${user._id || user.id}/upload-products`, {
 //         method: 'POST',
 //         headers: {
 //           'Authorization': `Bearer ${state.token}`,
@@ -264,13 +264,18 @@ const AddItemModal = ({ closeModal, updateParent }) => {
     const user = getIdentity();
 
     try {
-      const response = await fetch(`https://user-management-h4hg.onrender.com/api/upload/${user._id || user.id}/upload-products`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${state.token}`,
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/upload/${
+          user._id || user.id
+        }/upload-products`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${state.token}`,
+          },
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to upload item');

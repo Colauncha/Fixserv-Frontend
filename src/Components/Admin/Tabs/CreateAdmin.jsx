@@ -36,18 +36,18 @@ const CreateAdmin = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        "https://user-management-h4hg.onrender.com/api/users/register",
+        'https://user-api.fixserv.co/api/users/register',
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             ...(token && { Authorization: `Bearer ${token}` }),
           },
           body: JSON.stringify({
             ...formData,
-            role: "ADMIN",
+            role: 'ADMIN',
             adminData: {
-              permissions: ["basic-access"],
+              permissions: ['basic-access'],
             },
           }),
         }

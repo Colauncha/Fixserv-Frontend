@@ -35,7 +35,7 @@ const Orders = () => {
     setError("");
     try {
       const res = await fetch(
-        "https://order-management-hm08.onrender.com/api/orders/public",
+        'https://order-api.fixserv.co/api/orders/public',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -96,15 +96,12 @@ const Orders = () => {
     if (!window.confirm("Are you sure you want to delete this order?")) return;
 
     try {
-      const res = await fetch(
-        `https://order-management-hm08.onrender.com/api/orders/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`https://order-api.fixserv.co/api/orders/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) throw new Error("Failed to delete order");
 
@@ -140,21 +137,18 @@ const Orders = () => {
     setLoadingEdit(true);
     setError("");
     try {
-      const res = await fetch(
-        `https://order-management-hm08.onrender.com/api/orders/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ 
-            price: parseFloat(editPrice), 
-            status: editStatus,
-            escrowStatus: editEscrowStatus
-          }),
-        }
-      );
+      const res = await fetch(`https://order-api.fixserv.co/api/orders/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          price: parseFloat(editPrice),
+          status: editStatus,
+          escrowStatus: editEscrowStatus,
+        }),
+      });
 
       if (!res.ok) throw new Error("Failed to update order");
 

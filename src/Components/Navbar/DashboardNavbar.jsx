@@ -33,18 +33,20 @@ const DashboardNavbar = () => {
         setLoading(true);
         setShowSuggestions(true);
 
-        fetch(`https://search-and-discovery.onrender.com/api/search?keyword=${keyword}`)  
-          .then(res => {
+        fetch(
+          `${import.meta.env.VITE_API_SEARCH_URL}/search?keyword=${keyword}`
+        )
+          .then((res) => {
             if (!res.ok) {
               throw new Error('Network response was not ok');
             }
             return res.json();
           })
-          .then(data => {            
+          .then((data) => {
             // More flexible response handling
             let artisansList = [];
             let servicesList = [];
-            
+
             if (data.success) {
               // Handle different possible response structures
               if (data.data?.artisans?.data) {
@@ -54,7 +56,7 @@ const DashboardNavbar = () => {
               } else if (data.artisans) {
                 artisansList = data.artisans;
               }
-              
+
               if (data.data?.services?.data) {
                 servicesList = data.data.services.data;
               } else if (data.data?.services) {
@@ -63,14 +65,14 @@ const DashboardNavbar = () => {
                 servicesList = data.services;
               }
             }
-            
+
             setSuggestions({
               artisans: Array.isArray(artisansList) ? artisansList : [],
-              services: Array.isArray(servicesList) ? servicesList : []
+              services: Array.isArray(servicesList) ? servicesList : [],
             });
           })
-          .catch(err => {
-            console.error("Search error:", err);
+          .catch((err) => {
+            console.error('Search error:', err);
             setSuggestions({ artisans: [], services: [] });
           })
           .finally(() => setLoading(false));
