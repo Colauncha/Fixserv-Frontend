@@ -25,6 +25,10 @@ jobs:
             git reset --hard HEAD
             git clean -fd
             git pull --ff-only origin main
+            
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            
             npm install
             npm run build
             sudo rm -rf /var/www/html/*
