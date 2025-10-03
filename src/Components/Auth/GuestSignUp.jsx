@@ -13,20 +13,20 @@ const GuestSignUp = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
-    email: "",
-    fullName: "",
-    phoneNumber: "",
-    password: "",
-    confirmPassword: "",
-    role: "CLIENT",
+    email: '',
+    fullName: '',
+    phoneNumber: '',
+    password: '',
+    confirmPassword: '',
+    role: 'CLIENT',
     deliveryAddress: {
-      street: "",
-      city: "",
-      state: "",
-      country: "",
-      postalCode: "",
+      street: '',
+      city: '',
+      state: '',
+      country: '',
+      postalCode: '',
     },
-    servicePreferences: [],
+    servicePreferences: ['General'],
   });
 
   const navigate = useNavigate();
@@ -34,11 +34,11 @@ const GuestSignUp = () => {
   const runFetch = async (submitData) => {
     try {
       const response = await fetch(
-        import.meta.env.VITE_API_URL + "/api/users/register",
+        import.meta.env.VITE_API_URL + '/api/users/register',
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify(submitData),
         }
@@ -46,15 +46,15 @@ const GuestSignUp = () => {
 
       if (!response.ok) {
         const errorDetails = await response.json().catch(() => ({}));
-        console.log("Error details:", errorDetails);
-        throw new Error("Network response was not ok");
+        console.log('Error details:', errorDetails);
+        throw new Error('Network response was not ok');
       }
 
       const data = await response.json();
-      console.log("Success:", data);
+      console.log('Success:', data);
       return data;
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Error:', error);
       throw error;
     }
   };
@@ -62,10 +62,10 @@ const GuestSignUp = () => {
   const handleGuestSignUp = async () => {
     try {
       setLoading(true);
-      setMessage("");
-      setMessageType("");
+      setMessage('');
+      setMessageType('');
       if (formData.password !== formData.confirmPassword) {
-        alert("Passwords do not match.");
+        alert('Passwords do not match.');
         return;
       }
 
@@ -82,15 +82,16 @@ const GuestSignUp = () => {
       };
 
       const data = await runFetch(submitData);
-      console.log("Guest Sign Up Data:", data);
-      setMessage("✅ Registration successful! Please verify your email.");
-      setMessageType("success");
-      navigate("/auth/email-verification", {state: {email: formData.email}});
-
+      console.log('Guest Sign Up Data:', data);
+      setMessage('✅ Registration successful! Please verify your email.');
+      setMessageType('success');
+      navigate('/auth/email-verification', {
+        state: { email: formData.email },
+      });
     } catch (error) {
-      console.error("Error during guest sign up:", error);
-      setMessage("❌ Registration failed. Please try again.");
-      setMessageType("error");
+      console.error('Error during guest sign up:', error);
+      setMessage('❌ Registration failed. Please try again.');
+      setMessageType('error');
     } finally {
       setLoading(false);
     }
@@ -220,7 +221,7 @@ const GuestSignUp = () => {
           </div>
 
           {/* Service Preferences */}
-          <label className="block mb-2 text-sm font-medium text-[#110000C2]">
+          {/* <label className="block mb-2 text-sm font-medium text-[#110000C2]">
             Service Preferences
           </label>
           <input
@@ -236,7 +237,7 @@ const GuestSignUp = () => {
               })
             }
             className="w-full p-2 mb-4 border border-[#94B0F8] rounded"
-          />
+          /> */}
 
           {/* Address Fields */}
           {['street', 'city', 'state', 'country', 'postalCode'].map((field) => (
