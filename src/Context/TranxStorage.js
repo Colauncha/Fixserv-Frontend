@@ -7,13 +7,7 @@ const getTranx = () => {
 };
 
 const setTranx = (tranx) => {
-  let existing = getTranx() || [];
-  if (
-    !existing.some((item) => JSON.stringify(item) === JSON.stringify(tranx))
-  ) {
-    existing.push(tranx);
-    localStorage.setItem('tranx', JSON.stringify(existing));
-  }
+    localStorage.setItem('tranx', JSON.stringify(tranx));
 };
 
 // TODO: fix removeTranx to actually remove a specific transaction
