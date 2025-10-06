@@ -393,7 +393,7 @@ const ClientHome = () => {
                     onClick={() => {
                       // Navigate to service booking page
                       navigate(
-                        `/client/selection?artisanId=${service.artisanId}`
+                        `/client/selection?artisanId=${service.artisanId}&serviceId=${service.id}`
                       );
                     }}
                     className="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium text-sm hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
