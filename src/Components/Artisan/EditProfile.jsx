@@ -4,25 +4,44 @@ import { getIdentity, setIdentity } from "../../Auth/tokenStorage";
 import useAuth from "../../Auth/useAuth";
 import Fetch from "../../util/Fetch";
 import CharProfilePic from "../CharProfilePic";
-import { Camera, Save, ArrowLeft, User, XCircle, Phone, Wallet, MapPin, ServerCog, Key, Lock, Edit3, CheckCircle, AlertCircle, Clock, Building } from "lucide-react";
+import Loader from '../../assets/Loaders/Loader';
+import {
+  Camera,
+  Save,
+  ArrowLeft,
+  User,
+  XCircle,
+  Phone,
+  Wallet,
+  MapPin,
+  ServerCog,
+  Key,
+  Lock,
+  Edit3,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Building,
+} from 'lucide-react';
 
 const ModernEditProfile = () => {
   const navigate = useNavigate();
   const { state, logout } = useAuth();
-  const storedData = getIdentity()
-  
+  const storedData = getIdentity();
+
   const [profile, setProfile] = useState({
-    fullName: storedData.fullName || "",
-    bio: storedData.bio || "",
+    fullName: storedData.fullName || '',
+    bio: storedData.bio || '',
     skillSet: storedData.skillSet || [],
-    phoneNumber: storedData.phoneNumber || "",
+    phoneNumber: storedData.phoneNumber || '',
     // isEmailVerified: storedData.isEmailVerified || "",
-    location: storedData.location || "",
-    businessName: storedData.businessName || "",
+    location: storedData.location || '',
+    businessName: storedData.businessName || '',
     businessHours: storedData.businessHours || {},
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [imageIsSaving, setImageIsSaving] = useState(false);
   const [profileImage, setProfileImage] = useState({
     image: storedData.profilePicture,
     file: null,
@@ -30,7 +49,7 @@ const ModernEditProfile = () => {
   const [saveImage, setSaveImage] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Handle profile image change
   const handleImageChange = (e) => {
@@ -39,56 +58,66 @@ const ModernEditProfile = () => {
     if (file) {
       setProfileImage({
         image: URL.createObjectURL(file),
-        file: file
+        file: file,
       });
     }
   };
 
   // Handle saving profile changes
   const handleImageSave = async () => {
+    setImageIsSaving(true);
+    setShowError(false);
+
+    if (!state.token) {
+      setErrorMessage('No token found. Please log in again.');
+      setShowError(true);
+      return;
+    }
     if (!profileImage.file) {
-      setErrorMessage("No image selected to save.");
+      setErrorMessage('No image selected to save.');
       setShowError(true);
       return;
     }
 
     const { data, success } = await Fetch({
-      url: `${import.meta.env.VITE_API_URL}/api/upload/${storedData._id || storedData.id}/profile-picture`,
+      url: `${import.meta.env.VITE_API_URL}/api/upload/${
+        storedData._id || storedData.id
+      }/profile-picture`,
       requestData: { profilePicture: profileImage.file },
       token: state.token,
-      method: "POST",
-      contentType: "multipart/form-data",
+      method: 'POST',
+      contentType: 'multipart/form-data',
     });
     if (!success) {
-      setErrorMessage("Failed to upload profile image.");
+      setErrorMessage('Failed to upload profile image.');
       setShowError(true);
       return;
     }
-    setIdentity(data.user)
-    setProfileImage({image: data.imageUrl, file: null});
+    setIdentity(data.user);
+    setProfileImage({ image: data.imageUrl, file: null });
     setSaveImage(false);
     setShowSuccess(true);
+    setImageIsSaving(false);
     setTimeout(() => setShowSuccess(false), 3000);
-
-  }
+  };
 
   const handleSave = async () => {
     const user = getIdentity();
     if (!user) {
-      setErrorMessage("User not found. Please log in again.");
+      setErrorMessage('User not found. Please log in again.');
       setShowError(true);
-      setTimeout(() => navigate("/auth/login"), 2000);
+      setTimeout(() => navigate('/auth/login'), 2000);
       return;
     }
-    
+
     setIsSaving(true);
     setShowError(false);
-    
+
     try {
-      const token = state.token
+      const token = state.token;
       console.log(token);
       if (!token) {
-        setErrorMessage("No token found. Please log in again.");
+        setErrorMessage('No token found. Please log in again.');
         setShowError(true);
         return;
       }
@@ -106,9 +135,9 @@ const ModernEditProfile = () => {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/admin/${user._id || user.id}`,
         {
-          method: "PATCH",
+          method: 'PATCH',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(updatedProfile),
@@ -118,35 +147,34 @@ const ModernEditProfile = () => {
       if (!response.ok) {
         const errorText = await response.text();
         if (
-            errorText.includes("token has expired") ||
-            errorText.includes("Invalid token")
-          ) {
-         setErrorMessage("Your session has expired. Please log in again.");
-         setShowError(true);
-         logout();
-         setTimeout(() => {
-           window.location.href = "/auth/login";
-         }, 500);
-         return;
-       }
+          errorText.includes('token has expired') ||
+          errorText.includes('Invalid token')
+        ) {
+          setErrorMessage('Your session has expired. Please log in again.');
+          setShowError(true);
+          logout();
+          setTimeout(() => {
+            window.location.href = '/auth/login';
+          }, 500);
+          return;
+        }
 
-        console.error("Server responded with:", errorText);
-        throw new Error("Failed to save profile");
+        console.error('Server responded with:', errorText);
+        throw new Error('Failed to save profile');
       }
 
       setProfile((prev) => ({ ...prev, ...updatedProfile }));
-      
+
       const updatedUser = { ...user, ...updatedProfile };
       setIdentity(updatedUser);
       const resp = await response.json();
-      console.log("Profile updated successfully:", resp);
-      
+      console.log('Profile updated successfully:', resp);
+
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-
     } catch (error) {
-      console.error("Save error:", error);
-      setErrorMessage("An error occurred while saving your profile.");
+      console.error('Save error:', error);
+      setErrorMessage('An error occurred while saving your profile.');
       setShowError(true);
       setTimeout(() => setShowError(false), 5000);
     } finally {
@@ -155,29 +183,29 @@ const ModernEditProfile = () => {
   };
 
   const handleHourChange = (day, type, value) => {
-    setProfile(prev => ({
+    setProfile((prev) => ({
       ...prev,
       businessHours: {
         ...prev.businessHours,
         [day]: {
           ...prev.businessHours[day],
-          [type]: value
-        }
-      }
+          [type]: value,
+        },
+      },
     }));
   };
 
   const handleSkillsChange = (e) => {
-    if (e.key === "," || e.key === "Enter") {
-      const value = e.target.value.replace(",", "").trim();
+    if (e.key === ',' || e.key === 'Enter') {
+      const value = e.target.value.replace(',', '').trim();
       if (value && !profile.skillSet.includes(value)) {
         setProfile((prevData) => ({
           ...prevData,
           skillSet: [...prevData.skillSet, value],
         }));
       }
-    e.preventDefault(); // Prevent default comma behavior
-    e.target.value = ""; // Clear the input after adding
+      e.preventDefault(); // Prevent default comma behavior
+      e.target.value = ''; // Clear the input after adding
     }
   };
 
@@ -189,7 +217,7 @@ const ModernEditProfile = () => {
   };
 
   const handlePassChanges = () => {
-    alert("Coming Soon...");
+    alert('Coming Soon...');
   };
 
   return (
@@ -201,7 +229,7 @@ const ModernEditProfile = () => {
           Profile updated successfully!
         </div>
       )}
-      
+
       {showError && (
         <div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
           <AlertCircle className="w-5 h-5" />
@@ -222,22 +250,35 @@ const ModernEditProfile = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
             Edit Profile
           </h1>
-          <p className="text-gray-600 mt-2">Update your personal information and settings</p>
+          <p className="text-gray-600 mt-2">
+            Update your personal information and settings
+          </p>
         </div>
 
         {/* Profile Image Section */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 mb-8">
           <div className="flex flex-col items-center">
             <div className="relative group mb-6">
-            <div className={`absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur ${profileImage.image ? 'opacity-25 group-hover:opacity-40' : 'opacity-10 group-hover:opacity-15' }  transition duration-300`}></div>
-              {profileImage.image ? 
+              <div
+                className={`absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur ${
+                  profileImage.image
+                    ? 'opacity-25 group-hover:opacity-40'
+                    : 'opacity-10 group-hover:opacity-15'
+                }  transition duration-300`}
+              ></div>
+              {profileImage.image ? (
                 <img
                   src={profileImage.image}
                   alt="Artisan"
                   className="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-white shadow-lg"
-                /> : 
-                <CharProfilePic size={'32'} username={profile.fullName} otherStyles='!text-4xl' />
-              }
+                />
+              ) : (
+                <CharProfilePic
+                  size={'32'}
+                  username={profile.fullName}
+                  otherStyles="!text-4xl"
+                />
+              )}
               <label
                 htmlFor="profileImageUpload"
                 className="absolute bottom-0 right-0 bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl hover:scale-105 transition-all group"
@@ -256,12 +297,24 @@ const ModernEditProfile = () => {
                   className="absolute bottom-0 left-0 bg-green-500 text-white text-lg px-3 py-1 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
                   onClick={handleImageSave}
                 >
-                  Save Image
+                  {imageIsSaving ? (
+                    <Loader
+                      size={'5'}
+                      otherStyles={'text-white !border-white'}
+                    />
+                  ) : (
+                    'Save Image'
+                  )}
                 </button>
               )}
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">Profile Picture</h2>
-            <p className="text-gray-600 text-center">Click the camera icon to upload a new profile picture <br /> (Image must not be more than 1mb)</p>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+              Profile Picture
+            </h2>
+            <p className="text-gray-600 text-center">
+              Click the camera icon to upload a new profile picture <br />{' '}
+              (Image must not be more than 1mb)
+            </p>
           </div>
         </div>
 
@@ -275,7 +328,7 @@ const ModernEditProfile = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-900">About</h3>
             </div>
-            
+
             <div className="space-y-4">
               <ModernInfoCard
                 icon={<User className="w-4 h-4" />}
@@ -304,15 +357,19 @@ const ModernEditProfile = () => {
                 />
                 <div className="text-sm text-gray-500 mt-4 flex flex-wrap gap-2">
                   {profile.skillSet?.map((skill, index) => (
+                    <span
+                      key={index}
+                      className="bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 px-2 py-1 rounded-full flex gap-2 justify-between"
+                    >
+                      {skill}
                       <span
-                        key={index}
-                        className="bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 px-2 py-1 rounded-full flex gap-2 justify-between"
+                        className="cursor-pointer"
+                        onClick={() => removeSkills(index)}
                       >
-                        {skill}
-                        <span className="cursor-pointer" onClick={() => removeSkills(index)}>&times;</span>
+                        &times;
                       </span>
-                    )
-                  )}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -324,75 +381,94 @@ const ModernEditProfile = () => {
               <div className="p-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg">
                 <Building className="w-5 h-5 text-purple-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">Business Information</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                Business Information
+              </h3>
             </div>
-            
+
             <div className="space-y-4">
               <ModernInfoCard
                 icon={<Building className="w-4 h-4" />}
                 title="Business Name"
                 value={profile.businessName}
-                onChange={(val) => setProfile({ ...profile, businessName: val })}
+                onChange={(val) =>
+                  setProfile({ ...profile, businessName: val })
+                }
                 placeholder="e.g., Akande Appliance Repair Services"
               />
               <div>
-              {profile.businessHours && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg">
-                      <Clock className="w-5 h-5 text-blue-600" /> 
+                {profile.businessHours && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg">
+                        <Clock className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 flex items-center">
+                        Business Hours
+                      </h3>
                     </div>
-                    <h3 className="text-lg font-semibold mb-2 flex items-center">
-                      Business Hours
-                    </h3>
-                  </div>
-                  {Object.entries(profile.businessHours).map(([day, hours]) => (
-                    <div key={day} className="flex justify-between items-center">
-                      <span className="capitalize text-sm text-gray-600 w-20">{day}:</span>
-                      {hours.open.toLowerCase() === "closed" ? (
-                        <div className="flex gap-1">
-                          <input
-                            type="time"
-                            value={hours.open}
-                            onChange={(e) => handleHourChange(day, "open", e.target.value)}
-                            className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                          />
-                          <input
-                            type="time"
-                            value={hours.close}
-                            onChange={(e) => handleHourChange(day, "close", e.target.value)}
-                            className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex gap-1">
-                          <input
-                            type="time"
-                            value={hours.open}
-                            onChange={(e) => handleHourChange(day, "open", e.target.value)}
-                            className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                          />
-                          <input
-                            type="time"
-                            value={hours.close}
-                            onChange={(e) => handleHourChange(day, "close", e.target.value)}
-                            className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                          />
-                          <span className="px-2 py-1">
-                            <XCircle 
-                              className="w-4 h-4 text-red-500 cursor-pointer" 
-                              onClick={() => {
-                                handleHourChange(day, "open", "closed")
-                                handleHourChange(day, "close", "closed")
-                              }}
-                            />
+                    {Object.entries(profile.businessHours).map(
+                      ([day, hours]) => (
+                        <div
+                          key={day}
+                          className="flex justify-between items-center"
+                        >
+                          <span className="capitalize text-sm text-gray-600 w-20">
+                            {day}:
                           </span>
+                          {hours.open.toLowerCase() === 'closed' ? (
+                            <div className="flex gap-1">
+                              <input
+                                type="time"
+                                value={hours.open}
+                                onChange={(e) =>
+                                  handleHourChange(day, 'open', e.target.value)
+                                }
+                                className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                              />
+                              <input
+                                type="time"
+                                value={hours.close}
+                                onChange={(e) =>
+                                  handleHourChange(day, 'close', e.target.value)
+                                }
+                                className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex gap-1">
+                              <input
+                                type="time"
+                                value={hours.open}
+                                onChange={(e) =>
+                                  handleHourChange(day, 'open', e.target.value)
+                                }
+                                className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                              />
+                              <input
+                                type="time"
+                                value={hours.close}
+                                onChange={(e) =>
+                                  handleHourChange(day, 'close', e.target.value)
+                                }
+                                className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                              />
+                              <span className="px-2 py-1">
+                                <XCircle
+                                  className="w-4 h-4 text-red-500 cursor-pointer"
+                                  onClick={() => {
+                                    handleHourChange(day, 'open', 'closed');
+                                    handleHourChange(day, 'close', 'closed');
+                                  }}
+                                />
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                      )
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -404,14 +480,18 @@ const ModernEditProfile = () => {
             <div className="p-2 bg-gradient-to-r from-cyan-100 to-cyan-200 rounded-lg">
               <Wallet className="w-5 h-5 text-cyan-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Wallet Information</h3>
+            <h3 className="text-xl font-bold text-gray-900">
+              Wallet Information
+            </h3>
           </div>
           <div className="mb-4">
             <label className="text-sm text-gray-700 flex items-center mb-1">
               <Wallet className="mr-2" size={16} />
               Wallet Info
             </label>
-            <p className="text-sm text-gray-400 font-light text-center mt-auto">Coming soon...</p>
+            <p className="text-sm text-gray-400 font-light text-center mt-auto">
+              Coming soon...
+            </p>
           </div>
         </div>
 
@@ -421,9 +501,11 @@ const ModernEditProfile = () => {
             <div className="p-2 bg-gradient-to-r from-green-100 to-blue-100 rounded-lg">
               <Phone className="w-5 h-5 text-green-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Contact Information</h3>
+            <h3 className="text-xl font-bold text-gray-900">
+              Contact Information
+            </h3>
           </div>
-          
+
           <div className="grid md:grid-cols-2 gap-4">
             <ModernInfoCard
               icon={<Phone className="w-4 h-4" />}
@@ -489,14 +571,15 @@ const ModernEditProfile = () => {
             />
           </div>
           <div className="max-w-6xl mx-auto text-left">
-            <button 
-            onClick={handlePassChanges}
-            disabled={true}
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl text-xs shadow hover:opacity-90 disabled:opacity-50">
+            <button
+              onClick={handlePassChanges}
+              disabled={true}
+              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl text-xs shadow hover:opacity-90 disabled:opacity-50"
+            >
               Change Password
             </button>
           </div>
-        </div> 
+        </div>
 
         {/* Save Button */}
         <div className="flex justify-center mt-8 gap-4">
@@ -504,21 +587,21 @@ const ModernEditProfile = () => {
             disabled={isSaving}
             onClick={handleSave}
             className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-white shadow-lg transition-all cursor-pointer ${
-              isSaving 
-                ? "bg-gray-400 cursor-not-allowed" 
-                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-xl hover:scale-105"
+              isSaving
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-xl hover:scale-105'
             }`}
           >
             <Save className="w-5 h-5" />
-            {isSaving ? "Saving Changes..." : "Save Changes"}
+            {isSaving ? 'Saving Changes...' : 'Save Changes'}
           </button>
-         
+
           <button
             onClick={() => navigate(-1)}
             className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-white shadow-lg transition-all cursor-pointer ${
-              isSaving 
-                ? "bg-gray-400 cursor-not-allowed" 
-                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-xl hover:scale-105"
+              isSaving
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-xl hover:scale-105'
             }`}
           >
             <ArrowLeft className="w-5 h-5" />

@@ -1,9 +1,21 @@
-import { useState, useEffect} from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getIdentity } from '../../Auth/tokenStorage';
-import { ExternalLink, GitPullRequestCreateArrow, Plus, X, Cog, Package, Check } from "lucide-react";
+import {
+  ExternalLink,
+  GitPullRequestCreateArrow,
+  Plus,
+  X,
+  Cog,
+  Package,
+  Check,
+  Tag,
+  FileText,
+  Camera,
+  Upload,
+  Trash2,
+} from 'lucide-react';
 import useAuth from '../../Auth/useAuth';
 import Fetch from '../../util/Fetch';
-import { useNavigate } from 'react-router-dom';
 import Loader from '../../assets/Loaders/Loader';
 import { toast } from 'react-toastify';
 
@@ -20,9 +32,22 @@ const PrivateBookingModal = ({
     serviceId: '',
     uploadedProductId: '',
   });
+
+  // Item related
+  const [showItemForm, setShowItemForm] = useState(false);
+  const [itemErrors, setErrors] = useState({});
+  const [dragActive, setDragActive] = useState(false);
+  const [productImage, setProductImage] = useState(null);
+  const [itemLoading, setItemLoading] = useState(false);
+  const [itemData, setItemData] = useState({
+    itemName: '',
+    description: '',
+  });
+  const fileInputRef = useRef(null);
+
+  // Misc
   const [loading, setLoading] = useState(false);
   const { state } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -83,9 +108,85 @@ const PrivateBookingModal = ({
     setSubmitData({ ...submitData, serviceId: service.id });
   };
 
+  // Items
   const handleItemSelect = (item, index) => {
     setSelectedItem(index);
     setSubmitData({ ...submitData, uploadedProductId: item.id });
+  };
+
+  const handleItemChange = (e) => {
+    const { name, value } = e.target;
+    setItemData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Clear error when user starts typing
+    if (itemErrors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const showAddItemForm = () => {
+    setShowItemForm(true);
+  };
+
+  const removeImage = (e) => {
+    e.stopPropagation();
+    setProductImage(null);
+    setErrors((prev) => ({ ...prev, image: '' }));
+  };
+
+  // Images
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors((prev) => ({
+          ...prev,
+          image: 'Please select a valid image file',
+        }));
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors((prev) => ({
+          ...prev,
+          image: 'Image size must be less than 5MB',
+        }));
+        return;
+      }
+
+      setProductImage(file);
+      setErrors((prev) => ({ ...prev, image: '' }));
+    }
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      handleImageChange({ target: { files: [file] } });
+    }
   };
 
   const handleSubmit = async () => {
@@ -119,6 +220,61 @@ const PrivateBookingModal = ({
     }
   };
 
+  const closeItemsForm = () => {
+    setShowItemForm(false);
+    setItemData({
+      itemName: '',
+      description: '',
+    });
+    setProductImage(null);
+    setErrors({});
+  };
+
+  const handleItemSubmit = async () => {
+    setItemLoading(true);
+    const formData = new FormData();
+    formData.append('description', itemData.description);
+    formData.append('productImage', productImage);
+    formData.append('objectName', itemData.itemName);
+
+    const user = getIdentity();
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/upload/${
+          user._id || user.id
+        }/upload-products`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${state.token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to upload item');
+      }
+
+      const data = await response.json();
+      console.log('Item uploaded successfully:', data);
+      toast.success('Item uploaded successfully');
+      closeItemsForm();
+      setItems(data.user.uploadedProducts || []);
+    } catch (error) {
+      console.error('Error uploading item:', error);
+      setErrors((prev) => ({
+        ...prev,
+        submit: 'Failed to upload item. Please try again.',
+      }));
+    } finally {
+      setItemLoading(false);
+    }
+  };
+
+  const isFormValid = itemData.itemName && itemData.description && productImage;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
@@ -135,7 +291,7 @@ const PrivateBookingModal = ({
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">
-                Create Repair Request
+                Create Request
               </h2>
               <p className="text-sm text-gray-600">
                 Select a service and item to get started
@@ -300,7 +456,7 @@ const PrivateBookingModal = ({
                 <div className="relative group">
                   <div
                     className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border-2 border-dashed border-purple-200 p-3 hover:border-purple-300 transition-colors cursor-pointer h-[140px] flex flex-col items-center justify-center"
-                    onClick={() => navigate('/client/dashboard')}
+                    onClick={showAddItemForm}
                   >
                     <div className="p-2 bg-white rounded-full shadow-sm group-hover:shadow-md transition-shadow mb-2">
                       <Plus className="w-5 h-5 text-purple-600" />
@@ -316,7 +472,7 @@ const PrivateBookingModal = ({
                 <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-600 mb-4">No items uploaded yet.</p>
                 <button
-                  onClick={() => navigate('/client/dashboard')}
+                  onClick={showAddItemForm}
                   className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-sm rounded-xl shadow-lg hover:opacity-80 hover:shadow-xl hover:scale-105 transition-transform"
                 >
                   <Plus className="inline mr-2 w-4 h-4" />
@@ -324,6 +480,183 @@ const PrivateBookingModal = ({
                 </button>
               </div>
             )}
+            {/* add items */}
+            <div
+              className={`p-6 overflow-y-auto flex-1 ${
+                showItemForm ? '' : 'hidden'
+              }`}
+            >
+              <div className="space-y-6">
+                {/* Item Name */}
+                <div>
+                  <label className="flex items-center gap-2 mb-3 text-sm font-semibold text-gray-700">
+                    <Tag className="w-4 h-4 text-blue-600" />
+                    Item Name
+                  </label>
+                  <input
+                    type="text"
+                    name="itemName"
+                    value={itemData.itemName}
+                    onChange={handleItemChange}
+                    className={`w-full p-4 border rounded-xl text-sm shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      itemErrors.itemName
+                        ? 'border-red-300 bg-red-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    placeholder="e.g., iPhone 12, Samsung TV, MacBook Pro"
+                  />
+                  {itemErrors.itemName && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {itemErrors.itemName}
+                    </p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="flex items-center gap-2 mb-3 text-sm font-semibold text-gray-700">
+                    <FileText className="w-4 h-4 text-green-600" />
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={itemData.description}
+                    rows={4}
+                    onChange={handleItemChange}
+                    className={`w-full p-4 border rounded-xl text-sm shadow-sm transition-all resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      itemErrors.description
+                        ? 'border-red-300 bg-red-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    placeholder="Describe the issue with your item. What's broken? What needs to be fixed?"
+                  />
+                  {itemErrors.description && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {itemErrors.description}
+                    </p>
+                  )}
+                  <p className="mt-2 text-xs text-gray-500">
+                    {itemData.description.length}/500 characters
+                  </p>
+                </div>
+
+                {/* Photo Upload */}
+                <div>
+                  <label className="flex items-center gap-2 mb-3 text-sm font-semibold text-gray-700">
+                    <Camera className="w-4 h-4 text-orange-600" />
+                    Item Photo
+                  </label>
+                  <div
+                    className={`relative flex items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                      dragActive
+                        ? 'border-blue-400 bg-blue-50'
+                        : itemErrors.image
+                        ? 'border-red-300 bg-red-50'
+                        : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                    }`}
+                    onClick={handleImageClick}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                  >
+                    {productImage ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={URL.createObjectURL(productImage)}
+                          alt="Product preview"
+                          className="w-full h-full object-contain rounded-lg"
+                        />
+                        <button
+                          onClick={removeImage}
+                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                          title="Remove Image"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                          {(productImage.size / 1024 / 1024).toFixed(1)} MB
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleImageChange}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <div className="flex flex-col items-center gap-3 text-gray-500">
+                          <div className="p-3 bg-gray-100 rounded-full">
+                            <Upload className="w-8 h-8" />
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-medium">
+                              {dragActive
+                                ? 'Drop image here'
+                                : 'Click to upload or drag & drop'}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              PNG, JPG, JPEG up to 5MB
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {itemErrors.image && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {itemErrors.image}
+                    </p>
+                  )}
+                </div>
+
+                {/* Error Message */}
+                {itemErrors.submit && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <p className="text-sm text-red-600">{itemErrors.submit}</p>
+                  </div>
+                )}
+
+                {/* Items Footer */}
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      {isFormValid ? (
+                        <span className="text-green-600 font-medium">
+                          ✓ Ready to upload item
+                        </span>
+                      ) : (
+                        <span>Please fill in all required fields</span>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={closeItemsForm}
+                        className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                      >
+                        Close
+                      </button>
+                      <button
+                        onClick={handleItemSubmit}
+                        disabled={!isFormValid || loading}
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      >
+                        {itemLoading ? (
+                          <Loader otherStyles={'text-white'} size={'7'} />
+                        ) : (
+                          <>
+                            <ExternalLink className="w-4 h-4" />
+                            Upload Item
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -345,7 +678,7 @@ const PrivateBookingModal = ({
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {loading ? (
-                <Loader otherStyles={'text-white'} size={16} />
+                <Loader otherStyles={'text-white'} size={'7'} />
               ) : (
                 <>
                   <ExternalLink className="w-4 h-4" />

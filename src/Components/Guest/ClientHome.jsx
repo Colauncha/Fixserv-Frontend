@@ -131,7 +131,7 @@ const ClientHome = () => {
       case 'available':
         return 'Book Artisan';
       case 'booked':
-        return 'View Booking';
+        return 'Book Artisan';
       default:
         return 'Book Artisan';
     }
@@ -139,12 +139,38 @@ const ClientHome = () => {
 
   const navigate = useNavigate();
 
+  const isCurrentlyOpen = (businessHours) => {
+    if (!businessHours) return false;
+
+    const days = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
+    const now = new Date();
+    const currentDay = days[now.getDay()];
+    const currentTime = now.toTimeString().slice(0, 5); // Format: "HH:MM"
+
+    const todayHours = businessHours[currentDay];
+    if (!todayHours || todayHours.open === 'closed') return false;
+
+    return currentTime >= todayHours.open && currentTime <= todayHours.close;
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Artisans/Services</h1>
-        <p className="text-gray-600">Discover and book skilled professionals and services for your needs</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Find Artisans/Services
+        </h1>
+        <p className="text-gray-600">
+          Discover and book skilled professionals and services for your needs
+        </p>
       </div>
 
       {/* Tab Navigation */}
@@ -163,7 +189,11 @@ const ClientHome = () => {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${activeTab === tab.id ? tab.color : 'text-gray-400'}`} />
+                  <Icon
+                    className={`w-5 h-5 ${
+                      activeTab === tab.id ? tab.color : 'text-gray-400'
+                    }`}
+                  />
                   {tab.label}
                 </button>
               );
@@ -175,7 +205,11 @@ const ClientHome = () => {
       {/* Results Summary */}
       <div className="mb-6">
         <p className="text-gray-600">
-          Showing {resultType === 'artisan' ? getCurrentArtisans().length : services.length} of {total} {resultType === 'artisan' ? 'artisans' : 'services'} found
+          Showing{' '}
+          {resultType === 'artisan'
+            ? getCurrentArtisans().length
+            : services.length}{' '}
+          of {total} {resultType === 'artisan' ? 'artisans' : 'services'} found
         </p>
       </div>
 
@@ -205,7 +239,10 @@ const ClientHome = () => {
                           className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
                         />
                       ) : (
-                        <CharProfilePic username={artisan.fullName} size={'20'} />
+                        <CharProfilePic
+                          username={artisan.fullName}
+                          size={'20'}
+                        />
                       )}
                       {activeTab === 'top' && (
                         <div className="absolute -top-2 -right-2 bg-yellow-500 text-white rounded-full p-1">
@@ -213,24 +250,50 @@ const ClientHome = () => {
                         </div>
                       )}
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
                       {artisan.fullName}
                     </h3>
+
+                    {/* Business Name */}
+                    {artisan.businessName && (
+                      <p className="text-sm text-gray-600 mb-3">
+                        {artisan.businessName}
+                      </p>
+                    )}
 
                     {/* Rating */}
                     <div className="flex items-center justify-center gap-1 mb-2">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                       <span className="text-sm font-medium text-gray-700">
-                        {artisan.rating || '4.5'}
+                        {artisan.rating || '0.0'}
                       </span>
-                      <span className="text-xs text-gray-500">(24 reviews)</span>
                     </div>
 
                     {/* Location */}
-                    <div className="flex items-center justify-center gap-1 text-sm text-gray-600">
+                    <div className="flex items-center justify-center gap-1 text-sm text-gray-600 mb-3">
                       <MapPin className="w-4 h-4" />
                       <span>{artisan.location || 'Lagos, Nigeria'}</span>
                     </div>
+
+                    {/* Skills */}
+                    {artisan.skillSet && artisan.skillSet.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 justify-center mt-3">
+                        {artisan.skillSet.slice(0, 3).map((skill, index) => (
+                          <span
+                            key={index}
+                            className="px-2.5 py-1 bg-white/80 text-xs font-medium text-gray-700 rounded-full border border-gray-200"
+                          >
+                            {skill.trim()}
+                          </span>
+                        ))}
+                        {artisan.skillSet.length > 3 && (
+                          <span className="px-2.5 py-1 bg-white/80 text-xs font-medium text-gray-500 rounded-full border border-gray-200">
+                            +{artisan.skillSet.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Card Footer */}
@@ -243,19 +306,24 @@ const ClientHome = () => {
                       </div>
                     )}
 
-                    {activeTab === 'booked' && (
-                      <div className="mb-4 p-2 bg-blue-50 rounded-lg">
-                        <p className="text-xs text-blue-700 text-center font-medium">
-                          Booking confirmed for Dec 15, 2024
+                    {/* Business Hours Indicator */}
+                    {artisan.businessHours && (
+                      <div className="mb-4 text-center">
+                        <p className="text-xs text-gray-500">
+                          {isCurrentlyOpen(artisan.businessHours) ? (
+                            <span className="text-green-600 font-medium">
+                              🟢 Open Now
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">Closed</span>
+                          )}
                         </p>
                       </div>
                     )}
 
                     <button
                       onClick={() => {
-                        if (activeTab !== 'booked') {
-                          navigate(`/client/selection?artisanId=${artisan.id}`);
-                        }
+                        navigate(`/client/selection?artisanId=${artisan.id}`);
                       }}
                       className={`w-full py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 ${
                         activeTab === 'booked'
@@ -324,7 +392,9 @@ const ClientHome = () => {
                   <button
                     onClick={() => {
                       // Navigate to service booking page
-                      navigate(`/client/book-service?serviceId=${service.id}`);
+                      navigate(
+                        `/client/selection?artisanId=${service.artisanId}`
+                      );
                     }}
                     className="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium text-sm hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
                   >
@@ -336,92 +406,97 @@ const ClientHome = () => {
       )}
 
       {/* Empty State */}
-      {!loading && (
-        (resultType === 'artisan' && getCurrentArtisans().length === 0) ||
-        (resultType === 'service' && services.length === 0)
-        ) && (
-        <div className="text-center py-12">
-          <div className="text-gray-400 mb-4">
-            {resultType === 'artisan' ? <Users className="w-16 h-16 mx-auto" /> : <Cog className="w-16 h-16 mx-auto" />}
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {resultType === 'artisan' ? 'No artisans found' : 'No services available'}
-          </h3>
-          <p className="text-gray-600">
-            {activeTab === 'booked' 
-              ? "You haven't booked any artisans yet."
-              : "No artisans/services available at the moment."}
-          </p>
-        </div>
-      )}
-
-        {/* Pagination */}
-        {!loading && totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
+      {!loading &&
+        ((resultType === 'artisan' && getCurrentArtisans().length === 0) ||
+          (resultType === 'service' && services.length === 0)) && (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              {resultType === 'artisan' ? (
+                <Users className="w-16 h-16 mx-auto" />
+              ) : (
+                <Cog className="w-16 h-16 mx-auto" />
+              )}
             </div>
-
-            <div className="flex gap-3 text-sm text-gray-700">
-              <label htmlFor="perPage">Per Page</label>
-              <select
-                name="perPage"
-                value={perPage}
-                onChange={(e) => {
-                  setPerPage(Number(e.target.value));
-                  setCurrentPage(1); // Reset to first page when perPage changes
-                }}
-              >
-                <option value={3}>3</option>
-                <option value={6}>6</option>
-                <option value={9}>9</option>
-                <option value={12}>12</option>
-                <option value={15}>15</option>
-                <option value={18}>18</option>
-              </select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              
-              {/* Page Numbers */}
-              <div className="flex gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = Math.max(1, currentPage - 2) + i;
-                  if (pageNum > totalPages) return null;
-                  
-                  return (
-                <button
-                  key={pageNum}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    currentPage === pageNum
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-                  );
-                })}
-              </div>
-              
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {resultType === 'artisan'
+                ? 'No artisans found'
+                : 'No services available'}
+            </h3>
+            <p className="text-gray-600">
+              {activeTab === 'booked'
+                ? "You haven't booked any artisans yet."
+                : 'No artisans/services available at the moment.'}
+            </p>
           </div>
         )}
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Page {currentPage} of {totalPages}
+          </div>
+
+          <div className="flex gap-3 text-sm text-gray-700">
+            <label htmlFor="perPage">Per Page</label>
+            <select
+              name="perPage"
+              value={perPage}
+              onChange={(e) => {
+                setPerPage(Number(e.target.value));
+                setCurrentPage(1); // Reset to first page when perPage changes
+              }}
+            >
+              <option value={3}>3</option>
+              <option value={6}>6</option>
+              <option value={9}>9</option>
+              <option value={12}>12</option>
+              <option value={15}>15</option>
+              <option value={18}>18</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            {/* Page Numbers */}
+            <div className="flex gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = Math.max(1, currentPage - 2) + i;
+                if (pageNum > totalPages) return null;
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === pageNum
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
