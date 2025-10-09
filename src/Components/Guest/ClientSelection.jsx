@@ -185,7 +185,7 @@ const ClientSelection = () => {
                       onClick={() => setPrivateBookingOpen(true)}
                       title="Book this artisan for a repair session"
                     >
-                      Book Me
+                      Create Request
                     </button>
                   </div>
                 </div>
@@ -308,7 +308,7 @@ const ClientSelection = () => {
 
           {/* About & Skills Section */}
           <div className="grid lg:grid-cols-3 gap-8 mb-8">
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-1">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">
                   About me
@@ -338,135 +338,95 @@ const ClientSelection = () => {
                     className={`flex-1 py-2 mt-6 px-4 rounded-lg font-medium transition-all bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:scale-105`}
                     onClick={() => setPrivateBookingOpen(true)}
                   >
-                    Book Me
+                    Create Request
                   </button>
                 </div>
               </div>
             </div>
+            {/* Services Section */}
+            <div className="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+              <span className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100">
+                  <Cog className="w-5 h-5 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">My Services</h3>
+              </span>
 
-            {/* Contact Info */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Contact Info
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Phone className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-900">Phone</p>
-                    <p className="text-gray-600">
-                      {artisan.phoneNumber || 'Not provided'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-900">Email</p>
-                    <p className="text-gray-600">{artisan.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-900">Location</p>
-                    <p className="text-gray-600">{artisan.location}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Building className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-900">Business</p>
-                    <p className="text-gray-600">{artisan.businessName}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+              {/* Scrollable Grid */}
+              <div className="overflow-x-auto">
+                <div className="grid grid-flow-col auto-cols-[280px] gap-4 my-4 min-w-full">
+                  {services?.length > 0 &&
+                    services.map((service) => (
+                      <div
+                        key={service.id}
+                        className="bg-white rounded-2xl drop-shadow-md cursor-pointer border border-gray-200 p-4 hover:drop-shadow-xl transition-shadow"
+                        onClick={() => {
+                          setPrivateBookingOpen(true);
+                          setSelectedServices(service);
+                        }}
+                      >
+                        {/* Header with Actions */}
+                        <div className="flex justify-between items-start mb-3">
+                          <h4 className="text-base font-semibold text-gray-900 flex-1 pr-2">
+                            {service.title}
+                          </h4>
+                        </div>
 
-          {/* Services Section */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border mb-8 border-white/20 p-6">
-            <span className="flex items-center gap-2 mb-4">
-              <div className="p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100">
-                <Cog className="w-5 h-5 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">My Services</h3>
-            </span>
+                        {/* Description */}
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {service.description}
+                        </p>
 
-            {/* Scrollable Grid */}
-            <div className="overflow-x-auto">
-              <div className="grid grid-flow-col auto-cols-[280px] gap-4 my-4 min-w-full">
-                {services?.length > 0 &&
-                  services.map((service) => (
-                    <div
-                      key={service.id}
-                      className="bg-white rounded-2xl drop-shadow-md cursor-pointer border border-gray-200 p-4 hover:drop-shadow-xl transition-shadow"
-                      onClick={() => {
-                        setPrivateBookingOpen(true);
-                        setSelectedServices(service);
-                      }}
-                    >
-                      {/* Header with Actions */}
-                      <div className="flex justify-between items-start mb-3">
-                        <h4 className="text-base font-semibold text-gray-900 flex-1 pr-2">
-                          {service.title}
-                        </h4>
+                        {/* Service Details */}
+                        <div className="space-y-2 mb-3">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Duration:</span>
+                            <span className="text-gray-700 font-medium">
+                              {service.estimatedDuration}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between text-sm items-center">
+                            <span className="text-gray-500">Status:</span>
+                            <span
+                              className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                service.isActive
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-red-100 text-red-600'
+                              }`}
+                            >
+                              {service.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Rating:</span>
+                            <span className="text-gray-700 font-medium">
+                              {service.rating ?? 0}/5
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Price */}
+                        <div className="text-blue-600 font-bold text-lg">
+                          ₦{Number(service.price).toLocaleString()}
+                        </div>
                       </div>
+                    ))}
 
-                      {/* Description */}
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {service.description}
+                  {/* Add Service Card */}
+                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-dashed border-blue-200 p-4 hover:border-blue-300 transition-colors cursor-pointer group">
+                    <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
+                      <div className="p-3 bg-white rounded-full shadow-sm group-hover:shadow-md transition-shadow mb-3">
+                        <Cog className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <h4 className="text-base font-semibold text-gray-700 mb-1">
+                        No Services yet
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        Artisan is yet to upload any service
                       </p>
-
-                      {/* Service Details */}
-                      <div className="space-y-2 mb-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Duration:</span>
-                          <span className="text-gray-700 font-medium">
-                            {service.estimatedDuration}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between text-sm items-center">
-                          <span className="text-gray-500">Status:</span>
-                          <span
-                            className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              service.isActive
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-red-100 text-red-600'
-                            }`}
-                          >
-                            {service.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Rating:</span>
-                          <span className="text-gray-700 font-medium">
-                            {service.rating ?? 0}/5
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Price */}
-                      <div className="text-blue-600 font-bold text-lg">
-                        ₦{Number(service.price).toLocaleString()}
-                      </div>
                     </div>
-                  ))}
-
-                {/* Add Service Card */}
-                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-dashed border-blue-200 p-4 hover:border-blue-300 transition-colors cursor-pointer group">
-                  <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
-                    <div className="p-3 bg-white rounded-full shadow-sm group-hover:shadow-md transition-shadow mb-3">
-                      <Cog className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <h4 className="text-base font-semibold text-gray-700 mb-1">
-                      No Services yet
-                    </h4>
-                    <p className="text-sm text-gray-500">
-                      Artisan is yet to upload any service
-                    </p>
                   </div>
                 </div>
               </div>

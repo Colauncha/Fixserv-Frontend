@@ -3,16 +3,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../Auth/useAuth';
 import Fetch from '../../util/Fetch';
 import { getIdentity } from '../../Auth/tokenStorage';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Star, 
-  Phone, 
-  Mail, 
-  Clock, 
-  AlertCircle, 
-  CheckCircle, 
-  XCircle, 
+import {
+  ArrowLeft,
+  MapPin,
+  Star,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
   Shield,
   CreditCard,
   Eye,
@@ -352,7 +350,7 @@ const OrderDetails = () => {
                     </p>
                     <div className="flex items-center justify-between mt-3">
                       <span className="text-sm text-gray-500">
-                        Base Price: {formatPrice(service.price)}
+                        Base Price: {formatPrice(service.details.price)}
                       </span>
                       <span className="text-sm text-gray-500">
                         Duration: {service.estimatedDuration}
@@ -509,18 +507,6 @@ const OrderDetails = () => {
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <Mail className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">
-                      {client.email}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">
-                      {client.phoneNumber || 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
                     <MapPin className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-700">
                       {client.deliveryAddress.state +
@@ -561,18 +547,6 @@ const OrderDetails = () => {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">
-                      {artisan.email}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">
-                      {artisan.phone || 'N/A'}
-                    </span>
-                  </div>
                   <div className="flex items-center gap-3">
                     <MapPin className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-700">

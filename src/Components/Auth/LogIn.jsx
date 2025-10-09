@@ -122,7 +122,13 @@ const LogIn = () => {
           </div>
         )}
 
-        <form className="w-full max-w-sm">
+        <form
+          className="w-full max-w-sm"
+          onSubmit={(e) => {
+            e.preventDefault(); // prevent page reload
+            handleLogin(); // trigger login
+          }}
+        >
           <label className="block mb-2 text-sm text-[#110000C2] font-medium">
             Email
           </label>
@@ -154,8 +160,9 @@ const LogIn = () => {
 
           <p className="text-sm text-left mb-4">
             <button
+              type="button"
               onClick={() => navigate('/auth/forgot-password')}
-              className="text-[#000000] font-semibold underline hover:text-blue-500"
+              className="text-gray-700 text-xs font-medium underline hover:text-blue-500"
             >
               Forgot Password?
             </button>
@@ -164,8 +171,7 @@ const LogIn = () => {
           <div className="flex relative flex-col gap-3 w-full justify-between mb-2">
             {/* Login Button with Spinner */}
             <button
-              type="button"
-              onClick={handleLogin}
+              type="submit"
               disabled={loading}
               className={`flex items-center justify-center w-full h-10 rounded-2xl px-4 py-2 transition cursor-pointer shadow-md ${
                 loading

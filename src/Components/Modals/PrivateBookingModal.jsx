@@ -13,6 +13,7 @@ import {
   Camera,
   Upload,
   Trash2,
+  Wallet2,
 } from 'lucide-react';
 import useAuth from '../../Auth/useAuth';
 import Fetch from '../../util/Fetch';
@@ -44,6 +45,12 @@ const PrivateBookingModal = ({
     description: '',
   });
   const fileInputRef = useRef(null);
+
+  // Wallet
+  const [wallet, setWallet] = useState({
+    balance: 0,
+    lockedBalance: 0,
+  });
 
   // Misc
   const [loading, setLoading] = useState(false);
@@ -92,7 +99,22 @@ const PrivateBookingModal = ({
       }
     };
 
+    const fetchWalletBalance = async () => {
+      // Fetch wallet balance
+      const user = getIdentity();
+      const { data: walletResp, error: walletErr } = await Fetch({
+        url: `${import.meta.env.VITE_API_WALLET_URL}/wallet/get-balance/${
+          user.id || user._id
+        }`,
+      });
+
+      if (walletErr) throw new Error(walletErr);
+
+      setWallet(walletResp.data);
+    };
+
     fetchServices();
+    fetchWalletBalance();
   }, [artisanId, state]);
 
   useEffect(() => {
@@ -102,6 +124,14 @@ const PrivateBookingModal = ({
       return;
     }
   }, [rootPageSelectedService]);
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
 
   const handleServiceSelect = (service) => {
     setSelectedService(service);
@@ -193,12 +223,11 @@ const PrivateBookingModal = ({
     setLoading(true);
     if (!submitData.serviceId || !submitData.uploadedProductId) {
       toast.warn('Please select both a service and an item');
-      // alert();
       return;
     }
 
     try {
-      const { data, success, error } = await Fetch({
+      const { data, success } = await Fetch({
         url: `${import.meta.env.VITE_API_ORDER_URL}/orders/create`,
         method: 'POST',
         token: state.token,
@@ -206,15 +235,15 @@ const PrivateBookingModal = ({
       });
 
       if (!success) {
-        throw new Error(error);
+        throw new Error(data.error || 'Failed to submit repair request');
       }
 
       console.log('Repair request submitted successfully:', data);
       toast.success('Repair request submitted successfully');
       closeModal();
     } catch (error) {
-      toast.error(`Error submitting repair request: ${error}`);
-      // console.error('Error submitting repair request:', error);
+      toast.error(`${error}`);
+      console.error('Error submitting repair request:', error);
     } finally {
       setLoading(false);
     }
@@ -307,6 +336,16 @@ const PrivateBookingModal = ({
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 space-y-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+            <div className="flex items-center gap-2">
+              <Wallet2 className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-bold text-gray-900">
+                Wallet balance:
+              </h3>
+              <span>{formatPrice(wallet.balance)}</span>
+            </div>
+          </div>
+
           {/* Services Section */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
             <div className="flex items-center gap-2 mb-6">
@@ -393,9 +432,7 @@ const PrivateBookingModal = ({
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
             <div className="flex items-center gap-2 mb-6">
               <Package className="w-5 h-5 text-purple-600" />
-              <h3 className="text-lg font-bold text-gray-900">
-                Select Item to Repair
-              </h3>
+              <h3 className="text-lg font-bold text-gray-900">Select Item</h3>
             </div>
 
             {items.length > 0 ? (
@@ -682,7 +719,7 @@ const PrivateBookingModal = ({
               ) : (
                 <>
                   <ExternalLink className="w-4 h-4" />
-                  'Submit Repair Request'
+                  Submit Request
                 </>
               )}
             </button>

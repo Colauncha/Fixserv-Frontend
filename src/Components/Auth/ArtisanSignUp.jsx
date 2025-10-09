@@ -156,7 +156,13 @@ return (
         </div>
       )}
 
-      <form className="w-full max-w-sm">
+      <form
+        className="w-full max-w-sm"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleArtisanSignUp();
+        }}
+      >
         {/* Form Fields (same as before)... */}
         <label className="block mb-2 text-sm text-[#110000C2] font-medium">
           Full Name
@@ -277,8 +283,8 @@ return (
         {/* Bottom Actions */}
         <div className="flex flex-col gap-3 items-center justify-start mb-2">
           <button
-            type="button"
-            onClick={handleArtisanSignUp}
+            type="submit"
+            // onClick={handleArtisanSignUp}
             disabled={loading}
             className="w-full h-10 bg-gradient-to-r from-[#7A9DF7] to-[#7A9Dd7] shadow-lg text-white px-8 py-2 rounded-lg text-lg font-medium cursor-pointer hover:shadow-md hover:from-[#7a9ed7d9] hover:to-[#7a9df7d9] transition duration-300 ease-in-out"
           >
