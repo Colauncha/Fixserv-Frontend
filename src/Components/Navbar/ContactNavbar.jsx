@@ -69,7 +69,7 @@ const ContactNavbar = () => {
                 onClick={() => {}}
                 title="Public Listing"
               >
-                <Globe className="text-[#00FF9D] w-6 h-6 relative" />
+                <Globe className="text-[#7A9DF7] w-6 h-6 relative" />
               </div>
 
               <div

@@ -254,7 +254,7 @@ const DashboardNavbar = () => {
               userData?.role === 'CLIENT' ? 'Find Artisans' : 'Find Jobs'
             }`}
           >
-            <Globe className="text-[#00FF9D] w-6 h-6 relative" />
+            <Globe className="text-[#7A9DF7] w-6 h-6 relative" />
           </div>
           <div
             className="relative cursor-pointer"
@@ -312,7 +312,7 @@ const DashboardNavbar = () => {
               onClick={handlePublicListing}
               title="View History"
             >
-              <Globe className="text-[#00FF9D] w-6 h-6 relative" />
+              <Globe className="text-[#7A9DF7] w-6 h-6 relative" />
             </div>
             <div
               className="relative cursor-pointer"
