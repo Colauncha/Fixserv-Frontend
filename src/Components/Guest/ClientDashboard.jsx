@@ -64,6 +64,10 @@ const ClientDashboard = () => {
 
   useEffect(() => {
     const storedUser = getIdentity();
+    if (!storedUser) {
+      navigate('/welcome');
+      return;
+    }
     if (storedUser.role !== 'CLIENT') {
       navigate('/artisans/dashboard');
     }

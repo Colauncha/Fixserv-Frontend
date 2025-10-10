@@ -83,7 +83,7 @@ const LogIn = () => {
             Get connected with professional
             <br /> artisans
           </p>
-          <p className="text-lg mt-4 lg:text-sm text-[#110000C2]">
+          <p className="text-lg mt-4 lg:text-lg text-[#110000C2]">
             New here?
             <span
               onClick={() => navigate('/welcome')}
@@ -204,9 +204,20 @@ const LogIn = () => {
                 'Login'
               )}
             </button>
+            <div className="md:hidden">
+              <p className="text-lg mt-4 lg:text-sm text-[#110000C2]">
+                New here?
+                <span
+                  onClick={() => navigate('/welcome')}
+                  className="text-[#000000] font-semibold underline hover:text-blue-500 cursor-pointer ml-1"
+                >
+                  Sign Up
+                </span>
+              </p>
+            </div>
 
             {/* Google Button */}
-            <button
+            {/* <button
               type="button"
               className="flex items-center gap-2 justify-center w-full h-10 rounded-md px-2 py-2 shadow-xl hover:bg-gray-300 transition cursor-pointer ml-2"
             >
@@ -216,7 +227,7 @@ const LogIn = () => {
                 alt="Google"
                 className="w-6 h-6"
               />
-            </button>
+            </button> */}
           </div>
         </form>
       </div>

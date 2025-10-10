@@ -356,7 +356,7 @@ const PrivateBookingModal = ({
             </div>
 
             {services.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="max-h-80 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {services.map((service) => (
                   <div
                     key={service.id}
@@ -429,7 +429,7 @@ const PrivateBookingModal = ({
           </div>
 
           {/* Items Section */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-2 md:p-6">
             <div className="flex items-center gap-2 mb-6">
               <Package className="w-5 h-5 text-purple-600" />
               <h3 className="text-lg font-bold text-gray-900">Select Item</h3>
@@ -519,7 +519,7 @@ const PrivateBookingModal = ({
             )}
             {/* add items */}
             <div
-              className={`p-6 overflow-y-auto flex-1 ${
+              className={`px-2 py-6 md:p-6 overflow-y-auto flex-1 ${
                 showItemForm ? '' : 'hidden'
               }`}
             >
@@ -657,9 +657,9 @@ const PrivateBookingModal = ({
                 )}
 
                 {/* Items Footer */}
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                <div className="px-2 md:px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
+                    <div className="hidden md:block text-sm text-gray-600">
                       {isFormValid ? (
                         <span className="text-green-600 font-medium">
                           ✓ Ready to upload item
@@ -668,7 +668,7 @@ const PrivateBookingModal = ({
                         <span>Please fill in all required fields</span>
                       )}
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex w-full justify-between md:w-2/3 md:justify-end gap-3 text-xs md:text-md">
                       <button
                         onClick={closeItemsForm}
                         className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
@@ -678,7 +678,7 @@ const PrivateBookingModal = ({
                       <button
                         onClick={handleItemSubmit}
                         disabled={!isFormValid || loading}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        className="flex items-center gap-1 md:gap-2 px-2 md:px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-xs md:text-md text-white rounded-2xl md:rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                       >
                         {itemLoading ? (
                           <Loader otherStyles={'text-white'} size={'7'} />
@@ -699,8 +699,8 @@ const PrivateBookingModal = ({
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-xs md:text-md text-wrap text-gray-600">
               {selectedService && selectedItem !== null ? (
                 <span className="text-green-600 font-medium">
                   ✓ Ready to submit
@@ -712,7 +712,7 @@ const PrivateBookingModal = ({
             <button
               onClick={handleSubmit}
               disabled={!selectedService || selectedItem === null}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs md:text-md rounded-2xl md:rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {loading ? (
                 <Loader otherStyles={'text-white'} size={'7'} />

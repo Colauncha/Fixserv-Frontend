@@ -304,7 +304,7 @@ const GuestSignUp = () => {
               )}
             </button>
 
-            <button
+            {/* <button
               type="button"
               className="w-full h-10 flex items-center justify-center gap-2 rounded-md shadow hover:bg-red-200 transition"
             >
@@ -314,13 +314,17 @@ const GuestSignUp = () => {
                 alt="Google"
                 className="w-6 h-6"
               />
-            </button>
+            </button> */}
           </div>
 
           <p className="text-sm mt-4 text-center">
             Already have an account?{' '}
             <button
-              onClick={() => navigate('/auth/login')}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/auth/login');
+              }}
+              type="button"
               className="text-blue-600 font-semibold cursor-pointer"
             >
               Log in

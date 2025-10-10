@@ -3,8 +3,18 @@ import { useLocation } from "react-router-dom";
 import PrivateBookingModal from "../Modals/PrivateBookingModal";
 import Fetch from "../../util/Fetch";
 import useAuth from "../../Auth/useAuth";
-import { Star, MapPin, Clock, Phone, Mail, Building, ChartNoAxesCombined, ChevronDown, ChevronUp, Cog  } from 'lucide-react';
+import {
+  Star,
+  MapPin,
+  Clock,
+  ChartNoAxesCombined,
+  ChevronDown,
+  ChevronUp,
+  Cog,
+  ArrowLeft,
+} from 'lucide-react';
 import CharProfilePic from '../CharProfilePic';
+import { useNavigate } from 'react-router-dom';
 
 const ClientSelection = () => {
   const [artisan, setArtisan] = useState(null);
@@ -18,6 +28,7 @@ const ClientSelection = () => {
   const location = useLocation();
   const { state } = useAuth();
   const artisanId = new URLSearchParams(location.search).get('artisanId');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const serviceId = new URLSearchParams(location.search).get('serviceId');
@@ -121,6 +132,20 @@ const ClientSelection = () => {
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5"></div>
         <div className="relative max-w-7xl mx-auto px-6 py-12">
+          {/* Back button */}
+          <div
+            className="flex items-center cursor-pointer gap-4 mb-8"
+            onClick={() => navigate('/client/home')}
+          >
+            <button className="p-2 hover:bg-white/80 rounded-xl transition-colors">
+              <ArrowLeft className="w-6 h-6 text-gray-600" />
+            </button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Back to Search
+              </h1>
+            </div>
+          </div>
           {/* Main Profile Section */}
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 mb-8">
             <div className="flex flex-col lg:flex-row gap-8">

@@ -99,8 +99,22 @@ function App() {
 
                 {/* Client Routes */}
                 <Route path="/client">
-                  <Route path="home" element={<ClientHomePage />} />
-                  <Route path="selection" element={<TechSelection />} />
+                  <Route
+                    path="home"
+                    element={
+                      <ProtectedRoute>
+                        <ClientHomePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="selection"
+                    element={
+                      <ProtectedRoute>
+                        <TechSelection />
+                      </ProtectedRoute>
+                    }
+                  />
                   {/* <Route path="dashboard" element={<ClientDashboard />} /> */}
                   <Route
                     path="dashboard"
@@ -146,7 +160,14 @@ function App() {
 
                 {/* Artisan Routes */}
                 <Route path="/artisans">
-                  <Route path="home" element={<ArtisanHomePage />} />
+                  <Route
+                    path="home"
+                    element={
+                      <ProtectedRoute>
+                        <ArtisanHomePage />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route
                     path="dashboard"
                     element={
