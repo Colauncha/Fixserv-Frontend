@@ -208,22 +208,30 @@ const DashboardNavbar = () => {
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-[#94B0F855] shadow-md">
       <nav className="flex flex-wrap items-center justify-between p-4">
-        
         <div className="flex justify-between items-center w-full md:w-auto">
           <div
             className="flex items-center space-x-2 text-xl font-JejuMyeongjo text-[#7A9DF7] cursor-pointer"
             onClick={() => navigate('/')}
           >
-            <span className="bg-[#779BE7] text-white w-10 h-10 flex items-center justify-center rounded-lg font-bold">FS</span>
+            <span className="bg-[#779BE7] text-white w-10 h-10 flex items-center justify-center rounded-lg font-bold">
+              FS
+            </span>
             <span>Fixserv</span>
           </div>
           <button className="md:hidden" onClick={toggleMenu}>
-            {menuOpen ? <X className="w-6 h-6 text-[#7A9DF7]" /> : <Menu className="w-6 h-6 text-[#7A9DF7]" />}
+            {menuOpen ? (
+              <X className="w-6 h-6 text-[#7A9DF7]" />
+            ) : (
+              <Menu className="w-6 h-6 text-[#7A9DF7]" />
+            )}
           </button>
         </div>
 
         {/* Desktop Search */}
-        <div ref={searchRef} className="relative hidden md:flex h-12 min-w-[300px] lg:min-w-[500px] shadow-lg bg-white border border-[#94b0f864] rounded-full items-center justify-between mt-4 md:mt-0 mx-auto">
+        <div
+          ref={searchRef}
+          className="relative hidden md:flex h-12 min-w-[300px] lg:min-w-[500px] shadow-lg bg-white border border-[#94b0f864] rounded-full items-center justify-between mt-4 md:mt-0 mx-auto"
+        >
           <input
             type="text"
             value={searchTerm}
@@ -238,36 +246,53 @@ const DashboardNavbar = () => {
         </div>
 
         {/* Right Icons */}
-        <div className="hidden md:flex items-center gap-8">
-          <div className="relative w-6 h-6 cursor-pointer" onClick={handlePublicListing} title="View History">
-            <Folder className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6 absolute" />
-            <Globe className="text-[#00FF9D] w-4 h-4 absolute top-3 left-4" />
+        <div className="hidden md:flex items-center gap-6">
+          <div
+            className="relative w-6 h-6 cursor-pointer"
+            onClick={handlePublicListing}
+            title={`${
+              userData?.role === 'CLIENT' ? 'Find Artisans' : 'Find Jobs'
+            }`}
+          >
+            <Globe className="text-[#00FF9D] w-6 h-6 relative" />
           </div>
           <div
-            className="relative cursor-pointer" title="Notifications"
+            className="relative cursor-pointer"
+            title="Notifications"
             onClick={handleNotify}
           >
             <Bell className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6" />
             <span className="absolute top-3 right-0 bg-[#00FF9D] w-3 h-3 rounded-full" />
           </div>
-          {!isDashboard && (
-            userData?.profilePicture ? (
+          {!isDashboard &&
+            (userData?.profilePicture ? (
               <img
                 src={userData.profilePicture}
                 onClick={handleUserDashboard}
                 title="Profile"
-                alt={userData.fullName || "User Profile"}
+                alt={userData.fullName || 'User Profile'}
                 className="w-8 h-8 rounded-full object-cover cursor-pointer"
               />
             ) : (
-              <CharProfilePic onClick={handleUserDashboard} size={'8'} username={userData?.fullName} otherStyles={`cursor-pointer`} />
-            )
-          )}
+              <CharProfilePic
+                onClick={handleUserDashboard}
+                size={'8'}
+                username={userData?.fullName}
+                otherStyles={`cursor-pointer`}
+              />
+            ))}
         </div>
 
         {/* Mobile Menu Search Part */}
-        <div className={`w-full md:hidden transition-all duration-300 ease-in-out overflow-hidden ${menuOpen ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
-          <div ref={searchRef} className="relative mt-10 mb-10 h-12 shadow-md bg-white border border-[#94b0f864] rounded-full flex items-center">
+        <div
+          className={`w-full md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
+            menuOpen ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div
+            ref={searchRef}
+            className="relative mt-10 mb-10 h-12 shadow-md bg-white border border-[#94b0f864] rounded-full flex items-center"
+          >
             <input
               type="text"
               value={searchTerm}
@@ -282,33 +307,41 @@ const DashboardNavbar = () => {
           </div>
 
           <div className="flex justify-end gap-10 items-center px-4 py-2 border-t border-[#eee]">
-            <div className="relative w-6 h-6 cursor-pointer" onClick={handlePublicListing} title="View History">
-              <Folder className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6 absolute" />
-              <Globe className="text-[#00FF9D] w-4 h-4 absolute top-3 left-4" />
+            <div
+              className="relative w-6 h-6 cursor-pointer"
+              onClick={handlePublicListing}
+              title="View History"
+            >
+              <Globe className="text-[#00FF9D] w-6 h-6 relative" />
             </div>
-            <div 
-            className="relative cursor-pointer"
-            onClick={handleNotify}
-            title="Notifications">
+            <div
+              className="relative cursor-pointer"
+              onClick={handleNotify}
+              title="Notifications"
+            >
               <Bell
                 className="text-[#7A9DF7] fill-[#7A9DF7] w-6 h-6"
                 onClick={handleNotify}
               />
               <span className="absolute top-3 right-0 bg-[#00FF9D] w-3 h-3 rounded-full" />
             </div>
-            {!isDashboard && (
-              userData?.profilePicture ? (
+            {!isDashboard &&
+              (userData?.profilePicture ? (
                 <img
                   src={userData.profilePicture}
                   onClick={handleUserDashboard}
                   title="Profile"
-                  alt={userData.fullName || "User Profile"}
+                  alt={userData.fullName || 'User Profile'}
                   className="w-8 h-8 rounded-full object-cover cursor-pointer"
                 />
               ) : (
-                <CharProfilePic onClick={handleUserDashboard} size={'8'} username={userData?.fullName} otherStyles={`cursor-pointer`} />
-              )
-            )}
+                <CharProfilePic
+                  onClick={handleUserDashboard}
+                  size={'8'}
+                  username={userData?.fullName}
+                  otherStyles={`cursor-pointer`}
+                />
+              ))}
           </div>
         </div>
       </nav>

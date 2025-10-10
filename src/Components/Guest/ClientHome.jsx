@@ -174,7 +174,7 @@ const ClientHome = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="mb-8">
+      <div className="mb-8 overflow-x-auto">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8">
             {tabs.map((tab) => {

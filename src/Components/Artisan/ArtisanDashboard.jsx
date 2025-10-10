@@ -351,7 +351,7 @@ const ModernProfile = () => {
                     <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
                       {userData.fullName}
                     </h1>
-                    <div className="flex items-center justify-center lg:justify-start gap-4 text-lg">
+                    <div className="flex flex-col md:flex-row items-center justify-center lg:justify-start gap-4 text-lg">
                       <div className="flex items-center gap-1 text-amber-500">
                         <Star className="w-5 h-5 fill-current" />
                         <span className="font-semibold text-gray-900">
@@ -388,7 +388,7 @@ const ModernProfile = () => {
               {widget === 'wallet' && (
                 <div className="flex items-center gap-3 lg:gap-4">
                   <ChevronLeft
-                    className="w-6 h-6 text-gray-400 hidden lg:block"
+                    className="w-6 h-6 text-gray-400"
                     onClick={() => toggleWidget(widget)}
                   />
                   <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 p-6 flex flex-col items-center justify-center w-56 hover:shadow-xl transition-shadow">
@@ -589,7 +589,7 @@ const ModernProfile = () => {
                     </div>
                   </div>
                   <ChevronRight
-                    className="w-6 h-6 text-gray-400 hidden lg:block"
+                    className="w-6 h-6 text-gray-400"
                     onClick={() => toggleWidget(widget)}
                   />
                 </div>

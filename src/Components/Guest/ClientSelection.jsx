@@ -134,14 +134,14 @@ const ClientSelection = () => {
         <div className="relative max-w-7xl mx-auto px-6 py-12">
           {/* Back button */}
           <div
-            className="flex items-center cursor-pointer gap-4 mb-8"
+            className="flex items-center cursor-pointer gap-2 mb-4"
             onClick={() => navigate('/client/home')}
           >
             <button className="p-2 hover:bg-white/80 rounded-xl transition-colors">
               <ArrowLeft className="w-6 h-6 text-gray-600" />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-md md:text-3xl font-bold text-gray-900">
                 Back to Search
               </h1>
             </div>
@@ -174,7 +174,7 @@ const ClientSelection = () => {
                     <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
                       {artisan.fullName}
                     </h1>
-                    <div className="flex items-center justify-center lg:justify-start gap-4 text-lg">
+                    <div className="flex flex-col md:flex-row items-center justify-center lg:justify-start gap-4 text-lg">
                       <div className="flex items-center gap-1 text-amber-500">
                         <Star className="w-5 h-5 fill-current" />
                         <span className="font-semibold text-gray-900">
@@ -369,7 +369,7 @@ const ClientSelection = () => {
               </div>
             </div>
             {/* Services Section */}
-            <div className="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+            <div className="w-full lg:col-span-2 overflow-x-auto bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
               <span className="flex items-center gap-2 mb-4">
                 <div className="p-2 rounded-lg bg-gradient-to-tr from-purple-100 to-blue-100">
                   <Cog className="w-5 h-5 text-blue-600" />
