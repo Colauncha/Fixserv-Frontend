@@ -49,6 +49,7 @@ import "react-toastify/dist/ReactToastify.css";
 import EmailVerification from "./Components/Auth/EmailVerificationPage"
 import EmailVerificationTwo from "./Components/Auth/EmailVerificationPageTwo"
 import TranxProvider from './Context/TranxContext';
+import Waitlist from "./Pages/Waitlist";
 
 
 function App() {
@@ -78,6 +79,8 @@ function App() {
                 <Route path="/terms-conditions" element={<TermsPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/notify" element={<Notification />} />
+                <Route path="/waitlist" element={<Waitlist />} />
+
                 {/* <Route path="/kyc_client" element={<KYC_Client />} /> */}
 
                 {/* Auth Routes */}

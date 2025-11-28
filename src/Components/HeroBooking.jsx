@@ -65,9 +65,9 @@ const HeroBooking = () => {
           <div className="flex w-full max-w-full h-[57px] rounded-2xl justify-center md:justify-start items-center">
             <button
               className="text-white px-6 h-full drop-shadow-xl w-[250px] bg-gradient-to-r from-[#7A9DF7] to-[#7A9Dd7] rounded-2xl cursor-pointer hover:to-[#7A9DF7] hover:from-[#7A9Dd7] transition duration-300 ease-in-out"
-              onClick={() => navigate("/client/home")}
+              onClick={() => navigate("/waitlist")}
             >
-              Book a Repair
+              Join the waitlist
             </button>
           </div>
         </div>
