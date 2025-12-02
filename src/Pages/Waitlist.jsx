@@ -238,7 +238,7 @@ const Waitlist = () => {
       <div className="w-full bg-[#F5F5F5] flex flex-col items-center py-20 px-4">
 
 
-        <div className="w-full max-w-5xl bg-[#1F4C73] rounded-md py-16 px-6 text-center text-white">
+        <div className="w-full max-w-5xl bg-[#2C4179] rounded-md py-16 px-6 text-center text-white">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
             Be the First to Experience FIXEV V2 🚀
           </h2>
@@ -254,9 +254,12 @@ const Waitlist = () => {
 
         <div className="w-full bg-[#F5F5F5] flex flex-col items-center py-20 px-4">
           <div className="w-full max-w-3xl bg-white p-10 rounded-lg shadow-md">
-            <h3 className="text-2xl font-bold text-center mb-8 text-[#1F4C73]">
-              Sign Up for Early Access
+            <h3 className="text-3xl font-bold text-center mb-2 text-[#000000]">
+              Join the Fixserv V2 Waitlist
             </h3>
+            <p className='text-center text-[#656565] mb-8'>
+              Enter your details to secure your spot.
+            </p>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -346,10 +349,10 @@ const Waitlist = () => {
                 {form.password && (
                   <p
                     className={`mt-1 text-sm ${passwordStrength === "Weak"
-                        ? "text-red-500"
-                        : passwordStrength === "Medium"
-                          ? "text-yellow-500"
-                          : "text-green-500"
+                      ? "text-red-500"
+                      : passwordStrength === "Medium"
+                        ? "text-yellow-500"
+                        : "text-green-500"
                       }`}
                   >
                     Password Strength: {passwordStrength}
@@ -432,14 +435,19 @@ const Waitlist = () => {
 
               {/* Submit */}
               <div className="md:col-span-2 flex justify-center mt-4">
+
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`px-12 py-3 rounded-md font-medium text-lg transition cursor-pointer
-    ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-[#1F4C73] text-white hover:bg-[#163956]"}`}
+                  className={`px-12 py-3 rounded-md font-medium text-lg transition cursor-pointer text-white
+    ${loading
+                      ? "bg-[#B3B3B3] cursor-not-allowed"
+                      : "bg-[#7A9DF7] hover:bg-[#5D84E9] active:bg-[#4766B8]"
+                    }`}
                 >
                   {loading ? "Submitting..." : "Submit"}
                 </button>
+
 
               </div>
 
