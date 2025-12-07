@@ -218,7 +218,7 @@ const Waitlist = () => {
       <ToastContainer position="top-center" />
 
       <div className="w-full bg-[#F5F5F5] flex flex-col items-center py-20 px-4">
-        <div className="w-full max-w-5xl bg-[#2C4179] rounded-md py-16 px-6 text-center text-white">
+        <div className="w-full max-w-5xl bg-[#7A9DF7] rounded-md py-16 px-6 text-center text-white">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
             Be the First to Experience FIXSERV V2 🚀
           </h2>
@@ -452,7 +452,7 @@ const Waitlist = () => {
               </div>
 
               {/* Submit */}
-              <div className="md:col-span-2 flex justify-center mt-4">
+              {/* <div className="md:col-span-2 flex flex-col align-center justify-center mt-4">
 
                 <button
                   type="submit"
@@ -461,12 +461,30 @@ const Waitlist = () => {
     ${
       loading
         ? 'bg-gray-400 cursor-not-allowed'
-        : 'bg-[#1F4C73] text-white hover:bg-[#163956]'
+        : 'bg-[#7A9DF7] text-white hover:bg-[#163956]'
     }`}
                 >
                   {loading ? 'Submitting...' : 'Submit'}
                 </button>
-              </div>
+                <p>By joining the waitlist, you agree to receive early access updates.</p>
+              </div> */}
+              <div className="md:col-span-2 flex flex-col items-center justify-center mt-4">
+  <button
+    type="submit"
+    disabled={loading}
+    className={`px-12 py-3 rounded-md font-medium text-lg transition cursor-pointer
+      ${loading
+        ? 'bg-gray-400 cursor-not-allowed'
+        : 'bg-[#7A9DF7] text-white hover:bg-[#163956]'}
+    `}
+  >
+    {loading ? 'Submitting...' : 'Submit'}
+  </button>
+
+  <p className="mt-2 text-sm text-gray-600 text-center">
+    By joining the waitlist, you agree to receive early access updates.
+  </p>
+</div>
             </form>
           </div>
         </div>
