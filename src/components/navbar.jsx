@@ -1,53 +1,146 @@
-import logo from "../assets/logo.svg";
+// import React from "react";
+// import { NavLink, useNavigate } from "react-router-dom";
+// import logo from "../assets/navbar logo/Navbar logo.png";
 
-function Navbar() {
+// const Navbar = () => {
+//   const navigate = useNavigate();
+
+//   const linkClass = ({ isActive }) =>
+//     isActive
+//       ? "text-[#3E83C4] font-semibold"
+//       : "text-black hover:text-[#3E83C4] transition";
+
+//   return (
+//     <header className="fixed top-0 left-0 w-full bg-white shadow-[0_4px_12px_rgba(62,131,196,0.15)] z-50">
+//       <nav className="flex items-center justify-between px-14 md:px-22 py-4">
+
+        
+//         {/* Logo */}
+//         <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
+//           <img src={logo} alt="Fixserv Logo" className="h-12 w-auto" />
+//         </div>
+
+//         {/* Nav Links */}
+//         <ul className="hidden md:flex items-center gap-20">
+
+//           <li>
+//             <NavLink to="/" className={linkClass}>
+//               HOME
+//             </NavLink>
+//           </li>
+//           <li>
+//             <NavLink to="/about" className={linkClass}>
+//               ABOUT
+//             </NavLink>
+//           </li>
+        
+//           <li>
+//             <NavLink to="/contactUs" className={linkClass}>
+//               CONTACT US
+//             </NavLink>
+//           </li>
+
+//         </ul>
+
+//         {/* CTA Button */}
+//         <button
+//           onClick={() => navigate("/sign-up", { replace: true })}
+//           className="border-2 border-[#3E83C4] text-[#3E83C4] px-6 py-2 rounded-xl font-medium hover:bg-[#3E83C4] hover:text-white transition cursor-pointer">
+          
+//           Get Started
+//         </button>
+//       </nav>
+//     </header>
+//   );
+// };
+
+// export default Navbar;
+
+
+
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import logo from "../assets/navbar logo/Navbar logo.png";
+import { Menu, X } from "lucide-react";
+
+const Navbar = () => {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+
+  const linkClass = ({ isActive }) =>
+    isActive
+      ? "text-[#3E83C4] font-semibold"
+      : "text-black hover:text-[#3E83C4] transition";
+
   return (
-    <header className="bg-white shadow-sm">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src={logo} alt="logo" className="w-10 h-10" />
-          <span className="text-4xl font-bold text-[#358350]">Evant</span>
+    <header className="fixed top-0 left-0 w-full bg-white shadow-[0_4px_12px_rgba(62,131,196,0.15)] z-50">
+      <nav className="flex items-center justify-between px-6 md:px-14 py-4">
+
+        {/* Logo */}
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => {
+            navigate("/");
+            setOpen(false);
+          }}
+        >
+          <img src={logo} alt="Fixserv Logo" className="h-12 w-auto" />
         </div>
-        <div className="flex gap-12">
-          <nav className="hidden md:flex items-center gap-6">
-            <a
-              href="#home"
-              className="text-[#19070B] hover:text-green-600 transition"
-            >
-              Home
-            </a>
-            <a
-              href="#about"
-              className="text-[#19070B] hover:text-green-600 transition"
-            >
-              About Us
-            </a>
-            <a
-              href="#services"
-              className="text-[#19070B] hover:text-green-600 transition"
-            >
-              Services
-            </a>
-            <a
-              href="#contact"
-              className="text-[#19070B] hover:text-green-600 transition"
-            >
-              Contact
-            </a>
-            <a
-              href="#investors"
-              className="text-[#19070B] hover:text-green-600 transition"
-            >
-              Investors
-            </a>
-          </nav>
-          <button className="bg-[#3A7750] text-white px-12 py-3 rounded-md hover:bg-green-700 transition">
+
+        {/* Desktop Links */}
+        <ul className="hidden md:flex items-center gap-20">
+          <li><NavLink to="/" className={linkClass}>HOME</NavLink></li>
+          <li><NavLink to="/about" className={linkClass}>ABOUT</NavLink></li>
+          <li><NavLink to="/contactUs" className={linkClass}>CONTACT US</NavLink></li>
+        </ul>
+
+        {/* Desktop CTA */}
+        <button
+          onClick={() => navigate("/sign-up", { replace: true })}
+          className="hidden md:block border-2 border-[#3E83C4] text-[#3E83C4] px-6 py-2 rounded-xl font-medium hover:bg-[#3E83C4] hover:text-white transition cursor-pointer"
+        >
+          Get Started
+        </button>
+
+        {/* Mobile Hamburger */}
+        <button
+          className="md:hidden text-[#3E83C4]"
+          onClick={() => setOpen(!open)}
+        >
+          {open ? <X size={28} /> : <Menu size={28} />}
+        </button>
+      </nav>
+
+      {/* Mobile Menu */}
+      <div
+        className={`md:hidden bg-white border-t transition-all duration-300 overflow-hidden ${
+          open ? "max-h-[400px]" : "max-h-0"
+        }`}
+      >
+        <ul className="flex flex-col items-center gap-6 py-6">
+          <li onClick={() => setOpen(false)}>
+            <NavLink to="/" className={linkClass}>HOME</NavLink>
+          </li>
+          <li onClick={() => setOpen(false)}>
+            <NavLink to="/about" className={linkClass}>ABOUT</NavLink>
+          </li>
+          <li onClick={() => setOpen(false)}>
+            <NavLink to="/contactUs" className={linkClass}>CONTACT US</NavLink>
+          </li>
+
+          <button
+            onClick={() => {
+              navigate("/sign-up", { replace: true });
+              setOpen(false);
+            }}
+            className="border-2 border-[#3E83C4] text-[#3E83C4] px-8 py-2 rounded-xl font-medium hover:bg-[#3E83C4] hover:text-white transition cursor-pointer"
+          >
             Get Started
           </button>
-        </div>
+        </ul>
       </div>
     </header>
   );
-}
+};
 
 export default Navbar;
