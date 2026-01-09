@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import bgImage from "../../assets/client images/client-home/clientbg.png";
 import bgOverlay from "../../assets/client images/client-home/bgoverlay.png";
-import johnOne from "../../assets/client images/client-home/johnone.png";
+import johnOne from "../../assets/client images/client-home/Johnone.png";
 import johnTwo from "../../assets/client images/client-home/johntwo.png";  
-import johnThree from "../../assets/client images/client-home/johnthree.png";
+import johnThree from "../../assets/client images/client-home/Johnthree.png";
 import starIcon from "../../assets/client images/client-home/star.png";
 import mark from "../../assets/client images/client-home/mark.png";
 

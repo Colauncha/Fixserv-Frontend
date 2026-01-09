@@ -2,8 +2,8 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import logo from "../../assets/navbar logo/Navbar logo.png";
-import profile from "../../assets/client images/alarm.png";
-import not from "../../assets/client images/profile.png";
+import profile from "../../assets/client images/Alarm.png";
+import not from "../../assets/client images/Profile.png";
 import { Menu, X } from "lucide-react";
 
 const ClientNavbar = () => {
