@@ -40,10 +40,10 @@ const ClientNavbar = () => {
 
         {/* Desktop Icons */}
         <div className="hidden md:flex items-center gap-4">
-          <button onClick={() => navigate("/notifications")} className="cursor-pointer">
+          <button onClick={() => navigate("/client/notifications")} className="cursor-pointer">
             <img src={not} alt="notification" className="h-6 w-6" />
           </button>
-          <button onClick={() => navigate("/profile")} className="cursor-pointer">
+          <button onClick={() => navigate("/client/profile")} className="cursor-pointer">
             <img src={profile} alt="profile" className="h-6 w-6" />
           </button>
         </div>
@@ -75,10 +75,10 @@ const ClientNavbar = () => {
           </li>
 
           <div className="flex gap-6 mt-2">
-            <button onClick={() => { navigate("/notifications"); setOpen(false); }}>
+            <button onClick={() => { navigate("/client/notifications"); setOpen(false); }}>
               <img src={not} alt="notification" className="h-6 w-6" />
             </button>
-            <button onClick={() => { navigate("/profile"); setOpen(false); }}>
+            <button onClick={() => { navigate("/client/profile"); setOpen(false); }}>
               <img src={profile} alt="profile" className="h-6 w-6" />
             </button>
           </div>

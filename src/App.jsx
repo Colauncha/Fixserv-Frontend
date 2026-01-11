@@ -13,6 +13,8 @@ import ClientLayout from "./layout/ClientLayout";
 import AuthLayout from "./layout/AuthLayout";
 import AdminLayout from "./layout/AdminLayout";
 import AdminOnboardingLayout from "./layout/AdminOnboardingLayout";
+import ArtisanLayout from "./layout/ArtisanLayout";
+
 
 // Public pages
 import Home from "./pages/Home";
@@ -43,6 +45,17 @@ import ClientHome from "./components/Client-Screens/ClientHome";
 import ClientRequest from "./components/Client-Screens/ClientRequest";
 import ClientHistory from "./components/Client-Screens/ClientHistory";
 
+// Artisan Dashboard Screens
+import Dashboard from "./components/Artisan Pages/Dashboard";
+import Jobs from "./components/Artisan Pages/Jobs";
+import Notification from "./components/Artisan Pages/Notification";
+import Wallet from "./components/Artisan Pages/Wallet";
+import Profile from "./components/Artisan Pages/Profile";
+import Settings from "./components/Artisan Pages/Settings";
+import Verification from "./components/Artisan Pages/Verification";
+import Help from "./components/Artisan Pages/Help";
+
+
 
 // Misc
 import Notfound from "./components/Notfound";
@@ -70,11 +83,12 @@ import VerifyArtisan from "./components/Admin-Auth/VerifyArtisan";
 import ManageUser from "./components/Admin-Auth/ManageUser";
 import MonitorTransaction from "./components/Admin-Auth/MonitorTransaction";
 import Disputes from "./components/Admin-Auth/Disputes";
-
-
-
-
-
+import ReviewRating from "./components/Client-Screens/ReviewRating";
+import PostVerificationOne from "./components/Artisan-Auth/PostVerificationOne";
+import PostVerificationTwo from "./components/Artisan-Auth/PostVerificationTwo";
+import UploadCertificate from "./components/Artisan-Auth/UploadCertificate";
+import CertificateReceived from "./components/Artisan-Auth/CertificateReceived";
+import ReferEarn from "./components/Client-Screens/ReferEarn";
 
 
 // import Text from "./pages/text";
@@ -108,6 +122,10 @@ const App = () => {
   <Route path="admin-forget" element={<AdminForget />} />
   <Route path="admin-reset" element={<AdminReset />} />
   <Route path="admin-confirm-signup" element={<AdminConfirmSignUp />} />
+  <Route path="verification-one" element={<PostVerificationOne />} />
+  <Route path="verification-two" element={<PostVerificationTwo />} />
+  <Route path="upload-certificate" element={<UploadCertificate />} />
+  <Route path="certificate-received" element={<CertificateReceived />} />
 </Route>
 
 
@@ -123,6 +141,7 @@ const App = () => {
           <Route path="profile" element={<UserProfile />} />
           <Route path="settings" element={<ProfileSettings />} />
           <Route path="notifications" element={<ClientNotification />} /> 
+          <Route path="refer-earn" element={<ReferEarn />} />
           <Route path="upload-item" element={<Additem />} />
           <Route path="rate-service" element={<RateServiceRepair />} />
           <Route path="referral" element={<ReferalPage />} />
@@ -130,8 +149,22 @@ const App = () => {
           <Route path="view" element={<ViewRepair />} />
           <Route path="request-repair" element={<RequestRepair />} />
           <Route path="technician" element={<Technican />} />
+          <Route path="review-rating" element={<ReviewRating />} />
 
         </Route>
+
+
+<Route path="/artisan" element={<ArtisanLayout />}>
+  <Route index element={<Dashboard />} />
+  <Route path="jobs" element={<Jobs />} />
+  <Route path="notification" element={<Notification />} />
+  <Route path="wallet" element={<Wallet />} />
+  <Route path="profile" element={<Profile />} />
+  <Route path="verification" element={<Verification />} />
+  <Route path="settings" element={<Settings />} />
+  <Route path="help" element={<Help />} />
+</Route>
+
 
        {/* ADMIN DASHBOARD ROUTES (WITH AdminNavbar) */}
 <Route path="/admin" element={<AdminLayout />}>

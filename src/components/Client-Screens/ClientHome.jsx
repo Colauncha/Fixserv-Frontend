@@ -243,7 +243,7 @@ const ClientHome = () => {
                   ))}
                 </div>
 
-                <button onClick={() => navigate("/artisan-profile")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer">
+                <button onClick={() => navigate("/client/artisan-profile")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer">
                   View Profile
                 </button>
               </div>
@@ -323,7 +323,7 @@ const ClientHome = () => {
                 ))}
               </div>
 
-              <button onClick={() => navigate("/artisan-profile")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer">
+              <button onClick={() => navigate("/client/artisan-profile")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer">
                 View Profile
               </button>
             </div>
@@ -409,7 +409,7 @@ const ClientHome = () => {
                 )}
               </div>
 
-              <button onClick={() => navigate("/artisan-profile")} className="mt-2 w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-2 rounded-md text-sm font-medium transition cursor-pointer">
+              <button onClick={() => navigate("/client/artisan-profile")} className="mt-2 w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-2 rounded-md text-sm font-medium transition cursor-pointer">
                 View Profile
               </button>
             </div>

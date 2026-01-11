@@ -94,7 +94,7 @@ const ClientBooking = () => {
 
     {/* Continue Button */}
     <div className="pt-4">
-      <button onClick={() => navigate("/booking-summary")} className="w-full md:w-48 mx-auto block bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md text-sm font-medium transition cursor-pointer">
+      <button onClick={() => navigate("/client/booking-summary")} className="w-full md:w-48 mx-auto block bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md text-sm font-medium transition cursor-pointer">
         Continue
       </button>
     </div>
