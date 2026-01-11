@@ -1,11 +1,7 @@
 import { Outlet } from "react-router-dom";
 import ClientNavbar from "../components/Client-Screens/ClientNavbar";
-<<<<<<< Updated upstream
 import Footer from "../components/footer";
-=======
-import Footer from "../components/Footer";
 import ScrollToTop from "../components/ScrollToTop";
->>>>>>> Stashed changes
 
 const ClientLayout = () => {
   return (

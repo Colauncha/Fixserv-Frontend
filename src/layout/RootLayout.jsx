@@ -1,12 +1,7 @@
 import { Outlet } from "react-router-dom";
-<<<<<<< Updated upstream
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-=======
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
 import ScrollToTop from "../components/ScrollToTop"
->>>>>>> Stashed changes
 
 const RootLayout = () => {
   return (
