@@ -40,7 +40,7 @@ const [selected, setSelected] = useState("Mastercard");
   
         {/* Header */}
         <div className="text-center mb-12">
-          <button onClick={() => navigate("/booking")} className="text-sm text-[#3e83c4] mb-6 flex items-center gap-1">
+          <button onClick={() => navigate("/client/booking")} className="text-sm text-[#3e83c4] mb-6 flex items-center gap-1">
             <ArrowLeft size={18} />
            Back
         </button>
@@ -387,7 +387,7 @@ const [selected, setSelected] = useState("Mastercard");
 
     <button
       // onClick={() => setActiveModal(null)}
-      onClick={() => navigate("/track-repair")}
+      onClick={() => navigate("/client/track-repair")}
       className="w-full bg-blue-600 text-white py-2 rounded-md"
     >
       Track Repair

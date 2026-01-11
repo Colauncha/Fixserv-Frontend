@@ -4,8 +4,12 @@ import item from "../../assets/client images/item.png";
 import description from "../../assets/client images/description.png";
 import itemphoto from "../../assets/client images/itemphoto.png";
 import upload from "../../assets/client images/upload.png";
+import { useNavigate } from "react-router-dom";
 
 const Additem = () => {
+
+  const navigate = useNavigate();
+
   return (
     <>
       {/* BACKDROP */}
@@ -29,7 +33,7 @@ const Additem = () => {
               </div>
             </div>
 
-            <button className="text-gray-400 hover:text-gray-600 text-lg">
+            <button onClick={() => navigate("/client/profile")} className="text-gray-400 hover:text-gray-600 text-lg">
               ×
             </button>
           </div>

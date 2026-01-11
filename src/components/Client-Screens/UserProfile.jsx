@@ -90,12 +90,12 @@ useEffect(() => {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => navigate("/settings")} className="flex items-center gap-2 bg-[#3E83C4] text-white px-5 py-2.5 rounded-md text-sm font-medium cursor-pointer">
+                <button onClick={() => navigate("/client/settings")} className="flex items-center gap-2 bg-[#3E83C4] text-white px-5 py-2.5 rounded-md text-sm font-medium cursor-pointer">
                   Edit Profile
                   <img src={edit} alt="" className="w-4 h-4" />
                 </button>
 
-                <button onClick={() => navigate("/referral")} className="border border-[#3E83C4] text-[#3E83C4] px-5 py-2.5 rounded-md text-sm font-medium  hover:bg-[#3E83C4] hover:text-[#fff] transition  cursor-pointer">
+                <button onClick={() => navigate("/client/referral")} className="border border-[#3E83C4] text-[#3E83C4] px-5 py-2.5 rounded-md text-sm font-medium  hover:bg-[#3E83C4] hover:text-[#fff] transition  cursor-pointer">
                   Refer & Earn
                 </button>
               </div>
@@ -659,7 +659,7 @@ useEffect(() => {
           Items Uploaded
         </h3>
 
-        <button onClick={() => navigate("/upload-item")} className="border border-[#3E83C4] text-[#3E83C4] px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer hover:bg-[#3E83C4] hover:text-white transition">
+        <button onClick={() => navigate("/client/upload-item")} className="border border-[#3E83C4] text-[#3E83C4] px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer hover:bg-[#3E83C4] hover:text-white transition">
           + Upload Item
         </button>
       </div>
@@ -815,7 +815,7 @@ useEffect(() => {
 
     {/* Logout Button */}
     <div className="mt-10">
-      <button className="flex items-center gap-2 bg-[#ED3528] text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition cursor-pointer">
+      <button onClick={() => navigate("/log-in")} className="flex items-center gap-2 bg-[#ED3528] text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition cursor-pointer">
         <img src={logOut} alt="logout" className="w-4 h-4" />
         Log Out
       </button>

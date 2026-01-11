@@ -10,7 +10,7 @@ import johnOne from "../../assets/client images/client-home/Johnone.png";
 import johnTwo from "../../assets/client images/client-home/johntwo.png";  
 import johnThree from "../../assets/client images/client-home/Johnthree.png";
 import starIcon from "../../assets/client images/client-home/star.png";
-import mark from "../../assets/client images/client-home/mark.png";
+// import mark from "../../assets/client images/client-home/mark.png";
 import { useNavigate } from "react-router-dom";
 
 const services = [
@@ -98,7 +98,7 @@ const ClientArtisanProfile = () => {
               <p>Location: <span className="font-medium">Surulere, Lagos</span></p>
             </div>
 
-            <button onClick={() => navigate("/booking")} className="mt-5 bg-white text-[#3E83C4] px-6 py-2 rounded-md font-medium text-sm hover:bg-gray-100 transition cursor-pointer">
+            <button onClick={() => navigate("/client/booking")} className="mt-5 bg-white text-[#3E83C4] px-6 py-2 rounded-md font-medium text-sm hover:bg-gray-100 transition cursor-pointer">
               Request Appointment
             </button>
           </div>
@@ -367,7 +367,7 @@ const ClientArtisanProfile = () => {
                     ))}
                   </div>
     
-                  <button onClick={() => navigate("/artisan-profile")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer">
+                  <button onClick={() => navigate("/client/artisan-profile")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer">
                     View Profile
                   </button>
                 </div>
