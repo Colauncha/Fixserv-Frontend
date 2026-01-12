@@ -42,6 +42,7 @@ const PostVerificationOne = () => {
 
         {/* Secondary Button */}
         <button
+        onClick={() => navigate("/artisan/profile")}
           className="w-full border border-[#3E83C4] text-[#3E83C4] cursor-pointer hover:bg-blue-50 font-medium py-3 rounded-lg transition"
         >
           Explore Service Now

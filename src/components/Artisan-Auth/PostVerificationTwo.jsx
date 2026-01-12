@@ -64,7 +64,7 @@ const PostVerificationTwo = () => {
             </div>
           </div>
 
-          <button onClick={() => navigate("/upload-certificate")} className="bg-[#3E83C4] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-600 cursor-pointer transition">
+          <button onClick={() => navigate("/artisan/profile")} className="bg-[#3E83C4] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-600 cursor-pointer transition">
             Go to Profile
           </button>
         </div>

@@ -120,7 +120,7 @@ const ArtisanLogIn = () => {
       {/* Submit */}
       <button
         type="submit"
-        onClick={() => navigate("/client")}
+        onClick={() => navigate("/artisan")}
         className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] 
                    text-white py-3 rounded-md font-medium transition cursor-pointer"
       >
