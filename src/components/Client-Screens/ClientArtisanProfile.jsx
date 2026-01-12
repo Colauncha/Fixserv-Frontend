@@ -10,7 +10,7 @@ import johnOne from "../../assets/client images/client-home/Johnone.png";
 import johnTwo from "../../assets/client images/client-home/johntwo.png";  
 import johnThree from "../../assets/client images/client-home/Johnthree.png";
 import starIcon from "../../assets/client images/client-home/star.png";
-import mark from "../../assets/client images/client-home/mark.png";
+// import mark from "../../assets/client images/client-home/mark.png";
 import { useNavigate } from "react-router-dom";
 
 const services = [
