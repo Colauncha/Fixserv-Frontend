@@ -11,10 +11,10 @@ const ArtisanLogIn = () => {
     const navigate = useNavigate();
   return (
         <div>
-            <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2 m-20 mt-8">
+            <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2 ">
     
     {/* LEFT — IMAGE PANEL */}
-    <div className="relative hidden lg:flex flex-col">
+    <div className="relative flex flex-col h-[350px] sm:h-[340px] lg:h-auto">
     
       {/* Background */}
       <img
@@ -28,26 +28,27 @@ const ArtisanLogIn = () => {
         className="absolute inset-0 w-full h-full object-cover"
       />
     
-      {/* TOP HEADER (logo aligned with right title) */}
-      <div className="relative z-10 px-38 pt-16">
-        <img src={signLogo} alt="Fixserv logo" className="h-10 w-auto" />
-      </div>
-    
-      {/* CENTER CONTENT */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-14 text-center text-white max-w-md mx-auto">
-        <h2 className="text-3xl font-bold leading-tight">
+        {/* Logo */}
+        <div className="relative z-10 px-6 sm:px-10 lg:px-36 pt-6 sm:pt-10 lg:pt-16">
+          <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
+        </div>
+
+        {/* Center Content */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 sm:px-10 lg:px-14 text-center text-white max-w-lg mx-auto">
+
+          <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-5 lg:mb-10 font-medium leading-tight">
           Welcome Back, Pro!
         </h2>
     
-        <p className="text-base mb-10 text-white opacity-90">
+        <p className="text-sm sm:text-base mb-20 sm:mb-12 text-white opacity-90">
           Pick up right where you left off
         </p>
     
-        <p className="text-base mb-4 text-white opacity-90">
+        <p className="text-sm sm:text-base mb-4 text-white opacity-90">
           If you are looking to request repairs
         </p>
     
-        <button onClick={() => navigate("/log-in")} className="border border-white text-[#ffffff] px-6 py-2 rounded-lg font-medium hover:bg-white hover:text-[#3E83C4] transition cursor-pointer">
+        <button onClick={() => navigate("/log-in")} className="border border-white text-[#ffffff] px-6 py-2 rounded-xl font-medium hover:bg-white hover:text-[#3E83C4] transition cursor-pointer">
           Join as an client
         </button>
       </div>
@@ -55,14 +56,14 @@ const ArtisanLogIn = () => {
     
     
       {/* RIGHT — FORM */}
-      <div className="flex items-center justify-center px-6 py-16">
+      <div className="flex items-center justify-center px-4 sm:px-6 py-10 sm:py-14 lg:py-16">
         <div className="w-full max-w-md">
     
           <h2 className="text-2xl font-semibold text-black text-center">
             Log In
           </h2>
           <p className="text-sm text-[#656565] text-center mt-2 mb-8">
-            Enter your details to log in your new Fixserv account
+            Enter your details to log in your Fixserv artisan account
           </p>
     
           {/* Google */}
@@ -110,7 +111,7 @@ const ArtisanLogIn = () => {
     
         <button
           type="button"
-          onClick={() => navigate("/forget-password")}
+          onClick={() => navigate("/artisan-forget")}
           className="text-sm text-[#3E83C4] hover:underline cursor-pointer"
         >
           Forgot password?

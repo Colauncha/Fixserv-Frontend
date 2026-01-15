@@ -73,19 +73,19 @@ const Home = () => {
         Nigeria&apos;s most trusted repair <br /> network.
       </h1>
       <p className="mt-6 text-xl md:text-2xl text-white max-w-4xl mx-auto">
-        Connecting you with skilled professionals for fast, reliable service
+        Connecting skilled professionals with clients for fast, reliable service.
       </p>
       <div className="mt-8 flex items-center justify-center gap-4 flex-wrap">
         <button
-      onClick={() => navigate("/log-in")}
+      onClick={() => navigate("sign-up")}
       className="bg-[#3E83C4] hover:bg-blue-600 text-white px-7 py-3 rounded-md font-medium transition cursor-pointer"
     >
-      Get Started
+      Find A Professional
     </button>
         <button 
-        onClick={() => navigate("/about")}
+        onClick={() => navigate("artisan-signup")}
         className="border-2 border-[#3E83C4] text-white hover:bg-[#3E83C4] px-7 py-3 rounded-md font-medium transition flex items-center gap-2 cursor-pointer">
-          Learn More →
+          Join as an Artisan
         </button>
       </div>
     </div>
@@ -253,7 +253,7 @@ const Home = () => {
          No more relying only on word of mouth. Grow your income, showcase your skills, and build your reputation online with every job you complete.
       </p>
       <div className="mt-10 flex items-center justify-center gap-4 flex-wrap">
-        <button onClick={() => navigate("/sign-up")} className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-7 py-3 rounded-md font-medium transition cursor-pointer">
+        <button onClick={() => navigate("artisan-signup")} className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-7 py-3 rounded-md font-medium transition cursor-pointer">
           Begin Your Journey
         </button>
        

@@ -15,7 +15,7 @@ const [showSuccess, setShowSuccess] = useState(false);
 
   return (
    <div>
-        <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2 m-20 mt-8">
+        <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
 
 {/* LEFT — IMAGE PANEL */}
 <div className="relative hidden lg:flex flex-col">

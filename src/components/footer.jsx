@@ -10,10 +10,15 @@ import { useNavigate } from "react-router-dom";
 const Footer = () => {
   const navigate = useNavigate();
   return (
-    <footer className="w-full bg-[#3E83C4] text-white pt-16 pb-6 mt-20">
+    // <footer className="w-full bg-[#3E83C4] text-white pt-16 pb-6 mt-20">
+
+    <footer className="w-full bg-[#3E83C4] text-white pt-10 sm:pt-12 lg:pt-16 pb-6 mt-12 sm:mt-16 lg:mt-20">
+
 
       {/* Main Content */}
-      <div className="max-w-8xl mx-auto px-16 md:px-24 grid grid-cols-1 md:grid-cols-[1fr_0.4fr_0.5fr_1.3fr] gap-48">
+      {/* <div className="max-w-8xl mx-auto px-16 md:px-24 grid grid-cols-1 md:grid-cols-[1fr_0.4fr_0.5fr_1.3fr] gap-48"> */}
+        <div className="max-w-8xl mx-auto px-6 sm:px-10 md:px-24 grid grid-cols-1 md:grid-cols-[1fr_0.4fr_0.5fr_1.3fr] gap-12 sm:gap-16 lg:gap-48">
+
 
         {/* Brand Column */}
         <div>
@@ -73,7 +78,9 @@ const Footer = () => {
       </div>
 
       {/* Divider */}
-<div className="max-w-8xl mx-auto px-16 md:px-24 mt-14">
+{/* <div className="max-w-8xl mx-auto px-16 md:px-24 mt-14"> */}
+  <div className="max-w-8xl mx-auto px-6 sm:px-10 md:px-24 mt-10 sm:mt-12 lg:mt-14">
+
   <div className="w-full border-t border-[#7CB2E4]"></div>
 </div>
 
