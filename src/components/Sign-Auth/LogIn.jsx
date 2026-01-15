@@ -12,10 +12,12 @@ const LogIn = () => {
   const navigate = useNavigate();
   return (
     <div>
-        <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2 m-20 mt-8">
+    <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+
 
 {/* LEFT — IMAGE PANEL */}
-<div className="relative hidden lg:flex flex-col">
+<div className="relative flex flex-col min-h-[340px] sm:min-h-[340px] lg:min-h-full">
+
 
   {/* Background */}
   <img
@@ -29,26 +31,27 @@ const LogIn = () => {
     className="absolute inset-0 w-full h-full object-cover"
   />
 
-  {/* TOP HEADER (logo aligned with right title) */}
-  <div className="relative z-10 px-38 pt-16">
-    <img src={signLogo} alt="Fixserv logo" className="h-10 w-auto" />
-  </div>
+        {/* Logo */}
+        <div className="relative z-10 px-6 sm:px-10 lg:px-36 pt-6 sm:pt-10 lg:pt-16">
+          <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
+        </div>
 
-  {/* CENTER CONTENT */}
-  <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-14 text-center text-white max-w-md mx-auto">
-    <h2 className="text-3xl font-bold leading-tight">
+        {/* Center Content */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 sm:px-10 lg:px-14 text-center text-white max-w-lg mx-auto">
+
+          <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-5 lg:mb-10 font-medium leading-tight">
       Welcome Back!
     </h2>
 
-    <p className="text-base mb-10 text-white opacity-90">
+    <p className="text-sm sm:text-base mb-16 sm:mb-12  text-white opacity-90">
       Let’s help you get it fixed
     </p>
 
-    <p className="text-base mb-4 text-white opacity-90">
+    <p className="text-sm sm:text-base mb-4 sm:mb-6  text-white opacity-90">
       Are you a professional looking to offer your services?
     </p>
 
-    <button onClick={() => navigate("/artisan-login")} className="border border-white text-[#ffffff] px-6 py-2 rounded-lg font-medium hover:bg-white hover:text-[#3E83C4] transition cursor-pointer">
+    <button onClick={() => navigate("/artisan-login")} className="border border-white px-5 sm:px-6 py-2 rounded-2xl font-medium hover:bg-white hover:text-[#3E83C4] transition">
       Join as an artisan
     </button>
   </div>
@@ -56,8 +59,8 @@ const LogIn = () => {
 
 
   {/* RIGHT — FORM */}
-  <div className="flex items-center justify-center px-6 py-16">
-    <div className="w-full max-w-md">
+      <div className="flex items-center justify-center px-4 sm:px-6 py-10 sm:py-14 lg:py-16">
+        <div className="w-full max-w-md">
 
       <h2 className="text-2xl font-semibold text-black text-center">
         Welcome to Fixserv
@@ -78,7 +81,8 @@ const LogIn = () => {
         Sign up with Apple
       </button>
 
-      <div className="flex items-center justify-center gap-4 mb-6">
+<div className="flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12 lg:py-16">
+
   <div className="w-6 h-px bg-[#B3B3B3]" />
   <span className="text-sm text-[#B3B3B3]">Or</span>
   <div className="w-6 h-px bg-[#B3B3B3]" />

@@ -10,10 +10,10 @@ const AdminForget = () => {
 
   return (
       <div>
-                <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2 m-20 mt-8">
+                <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
         
         {/* LEFT — IMAGE PANEL */}
-        <div className="relative hidden lg:flex flex-col">
+      <div className="relative flex flex-col h-[300px] sm:h-[340px] lg:h-auto">
         
           {/* Background */}
           <img
@@ -27,22 +27,36 @@ const AdminForget = () => {
             className="absolute inset-0 w-full h-full object-cover"
           />
         
-          {/* TOP HEADER (logo aligned with right title) */}
-          <div className="relative z-10 px-38 pt-16">
+          {/* TOP HEADER (logo aligned with right title)
+          <div className="relative z-10 px-40 pt-16">
             <img src={signLogo} alt="Fixserv logo" className="h-10 w-auto" />
-          </div>
+          </div> */}
+
+                  {/* Logo */}
+                  <div className="relative z-10 px-6 sm:px-10 lg:px-36 pt-6 sm:pt-10 lg:pt-16">
+                    <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
+                  </div>
+
+                          {/* Center Content */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 sm:px-10 lg:px-14 text-center text-white max-w-lg mx-auto">
+
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-medium leading-tight">
+            Opps!
+          </h2>
         
           {/* CENTER CONTENT */}
-          <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-14 text-center text-white max-w-lg mx-auto">
+          {/* <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-14 text-center text-white max-w-lg mx-auto">
             <h2 className="text-4xl font-medium leading-tight">
               Opps!
-            </h2>
+            </h2> */}
+
+
         
-            <p className="text-2xl mb-8 opacity-90 text-white">
+            <p className="text-lg sm:text-xl lg:text-2xl mb-8 sm:mb-6 opacity-90 text-white">
               Locked out?
             </p>
         
-            <p className="text-base mb-10 opacity-90 text-white">
+            <p className="text-sm sm:text-base mb-4 sm:mb-6 opacity-90 text-white">
               Don’t stress. We’ll send you a reset link so you can jump right back in.
             </p>
         
@@ -52,7 +66,7 @@ const AdminForget = () => {
         
         
           {/* RIGHT — FORM */}
-          <div className="flex items-center justify-center px-6 py-16">
+      <div className="flex items-center justify-center px-4 sm:px-6 py-10 sm:py-14 lg:py-16">
             <div className="w-full max-w-md">
                 <button onClick={() => navigate("/artisan-login")} className="text-sm text-[#3E83C4] flex items-center gap-1 hover:underline mb-10 cursor-pointer">
           ← Back
