@@ -1,4 +1,4 @@
-import React,{ useState } from "react";
+import React,{ useState, useEffect } from "react";
 import PraiseImg from "../../assets/client images/client-home/PraiseAzobu.png";
 import camera from "../../assets/client images/client-home/capture.png";
 import profile from "../../assets/client images/client-home/person.png";
@@ -16,9 +16,93 @@ import success from "../../assets/client images/client-home/success.png";
 import fund from "../../assets/client images/client-home/fundlock.png";
 
 import { useNavigate } from "react-router-dom";
+import { getAuthUser, getAuthToken } from "../../utils/auth";
 
 
 const ProfileSettings = () => {
+
+  const [profileImage, setProfileImage] = useState(PraiseImg);
+const [uploading, setUploading] = useState(false);
+
+
+const handleProfileUpload = async (file) => {
+  if (!file) return;
+
+  if (file.size > 1024 * 1024) {
+    alert("Image must not be more than 1MB");
+    return;
+  }
+
+  const user = getAuthUser();
+  const token = getAuthToken();
+
+  if (!user?.id) return;
+
+  const formData = new FormData();
+  formData.append("profilePicture", file);
+
+  try {
+    setUploading(true);
+
+    const res = await fetch(
+      `https://user-management-h4hg.onrender.com/api/upload/${user.id}/profile-picture`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Upload failed");
+    }
+
+    setProfileImage(data.profilePicture || URL.createObjectURL(file));
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    setUploading(false);
+  }
+};
+
+const [profileData, setProfileData] = useState({
+  fullName: "",
+  email: "",
+  phone: "",
+});
+
+useEffect(() => {
+  const fetchProfile = async () => {
+    const user = getAuthUser();
+    const token = getAuthToken();
+
+    if (!user?.id) return;
+
+    const res = await fetch(
+      `https://user-management-h4hg.onrender.com/api/admin/user/${user.id}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    const data = await res.json();
+
+    setProfileData({
+      fullName: data?.data?.fullName || "",
+      email: data?.data?.email || "",
+      phone: data?.data?.phone || "",
+    });
+  };
+
+  fetchProfile();
+}, []);
+
+
+
 
   const navigate = useNavigate();
 
@@ -52,7 +136,7 @@ const ProfileSettings = () => {
 
   const percentage = ((value - min) / (max - min)) * 100;
 
-  const [pendingAction, setPendingAction] = useState(null);
+  // const [pendingAction, setPendingAction] = useState(null);
   const [showLockModal, setShowLockModal] = useState(false);
 const [showUnlockModal, setShowUnlockModal] = useState(false);
 const [showSuccess, setShowSuccess] = useState(null); 
@@ -84,17 +168,33 @@ const [showAddSuccess, setShowAddSuccess] = useState(false);
 
   {/* Image + upload icon */}
   <div className="relative w-[200px] h-[200px]">
-    <img
+    {/* <img
       src={PraiseImg}
       alt="Profile"
       className="w-full h-full object-cover"
     />
 
-    {/* Camera upload icon */}
+    
     <label className="absolute bottom-0 right-0 p-2 cursor-pointer">
       <img src={camera} alt="Upload" className="w-12 h-12" />
       <input type="file" className="hidden" />
-    </label>
+    </label> */}
+    <img
+  src={profileImage}
+  alt="Profile"
+  className="w-full h-full object-cover rounded-2xl"
+/>
+
+<label className="absolute bottom-0 right-0 p-2 cursor-pointer">
+  <img src={camera} alt="Upload" className="w-12 h-12" />
+  <input
+    type="file"
+    accept="image/*"
+    className="hidden"
+    onChange={(e) => handleProfileUpload(e.target.files[0])}
+  />
+</label>
+
   </div>
 
   {/* Profile Picture Title */}
@@ -136,8 +236,11 @@ const [showAddSuccess, setShowAddSuccess] = useState(false);
         Name
       </label>
       <input
+      value={profileData.fullName}
+  onChange={(e) =>
+    setProfileData({ ...profileData, fullName: e.target.value })
+  }
         type="text"
-        value="Praise Azobu"
         className="w-full border border-[#9BAAB9] rounded-md px-3 py-2 text-sm outline-none"
       />
     </div>
@@ -148,10 +251,12 @@ const [showAddSuccess, setShowAddSuccess] = useState(false);
         Email Address
       </label>
       <input
-        type="email"
-        value="praiseoazobu@gmail.com"
-        className="w-full border border-[#9BAAB9] rounded-md px-3 py-2 text-sm outline-none"
-      />
+  type="email"
+  value={profileData.email}
+  disabled
+  className="w-full border border-[#9BAAB9] rounded-md px-3 py-2 text-sm outline-none bg-gray-100 cursor-not-allowed"
+/>
+
     </div>
 
     {/* Service Preference */}
@@ -186,7 +291,10 @@ const [showAddSuccess, setShowAddSuccess] = useState(false);
       </label>
       <input
         type="text"
-        value="0801234567"
+  value={profileData.phone}
+  onChange={(e) =>
+    setProfileData({ ...profileData, phone: e.target.value })
+  }
         className="w-full border border-[#9BAAB9] rounded-md px-3 py-2 text-sm outline-none"
       />
     </div>
@@ -194,7 +302,7 @@ const [showAddSuccess, setShowAddSuccess] = useState(false);
 
   {/* Update Button */}
   <div className="flex justify-end mt-6">
-    <button className="bg-blue-600 text-white text-sm px-6 py-2 rounded-md cursor-pointer">
+    <button  className="bg-blue-600 text-white text-sm px-6 py-2 rounded-md cursor-pointer">
       Update
     </button>
   </div>
@@ -276,9 +384,13 @@ const [showAddSuccess, setShowAddSuccess] = useState(false);
 
   {/* Update Button */}
   <div className="flex justify-end mt-6">
-    <button className="bg-[#3E83C4] text-white text-sm px-6 py-2 rounded-md">
-      Update
-    </button>
+    <button
+  onClick={() => alert("Profile update API coming soon")}
+  className="bg-[#3E83C4] text-white text-sm px-6 py-2 rounded-md"
+>
+  Update
+</button>
+
   </div>
 </div>
 </section>
@@ -479,7 +591,7 @@ const [showAddSuccess, setShowAddSuccess] = useState(false);
 
   {/* Update Button */}
   <div className="flex justify-end">
-    <button className="bg-[#3E83C4] text-white text-sm px-6 py-2 rounded-md hover:bg-[#356bb3] cursor-pointer">
+    <button onClick={() => alert("Profile update API coming soon")} className="bg-[#3E83C4] text-white text-sm px-6 py-2 rounded-md hover:bg-[#356bb3] cursor-pointer">
       Update
     </button>
   </div>

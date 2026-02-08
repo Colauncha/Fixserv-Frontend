@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useEffect } from "react";
+import WelcomeBonus from "./WelcomeBonus"; 
+
 import bgImage from "../../assets/client images/client-home/clientbg.png";
 import bgOverlay from "../../assets/client images/client-home/bgoverlay.png";
 import johnOne from "../../assets/client images/client-home/Johnone.png";
@@ -25,12 +28,116 @@ import { useNavigate } from 'react-router-dom';
 
 
 const ClientHome = () => {
+
+const user = JSON.parse(localStorage.getItem("fixserv_user"));
+const firstName = user?.fullName?.split(" ")[0];
+
+
+const [searchQuery, setSearchQuery] = useState("");
+const [searchLoading, setSearchLoading] = useState(false);
+const [searchError, setSearchError] = useState("");
+
+
+
+const handleSearch = async () => {
+  if (!searchQuery.trim()) return;
+
+  try {
+    setSearchLoading(true);
+    setSearchError("");
+
+    const res = await fetch(
+      `https://search-and-discovery.onrender.com/api/search?keyword=${encodeURIComponent(
+        searchQuery
+      )}&isAvailableNow=true`
+    );
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error("Search failed");
+    }
+
+    // ✅ Prefer artisans from search response
+    const artisansFromSearch = data.data?.artisans?.data || [];
+
+    setApiArtisans(artisansFromSearch);
+
+  } catch (err) {
+    setSearchError(err.message);
+  } finally {
+    setSearchLoading(false);
+  }
+};
+
+
+
   
   const navigate = useNavigate();
+
+  const [showWelcomeBonus, setShowWelcomeBonus] = useState(false);
+
+useEffect(() => {
+  const shouldShow = localStorage.getItem("showWelcomeBonus");
+
+  if (shouldShow === "true") {
+    setShowWelcomeBonus(true);
+    localStorage.removeItem("showWelcomeBonus"); // show once
+  }
+}, []);
+
 
   const categories = ["Phone", "Tablet", "Laptop", "Home Appliances"];
 
   const [activeCategory, setActiveCategory] = useState("Phone");
+
+  const [apiArtisans, setApiArtisans] = useState([]);
+const [loadingArtisans, setLoadingArtisans] = useState(false);
+
+useEffect(() => {
+  const fetchArtisans = async () => {
+    try {
+      setLoadingArtisans(true);
+
+      const token = localStorage.getItem("fixserv_token");
+
+      const res = await fetch(
+        "https://user-management-h4hg.onrender.com/api/admin/getAll?role=ARTISAN",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to fetch artisans");
+      }
+
+      setApiArtisans(data.users || []);
+    } catch (err) {
+      console.error("Error fetching artisans:", err);
+    } finally {
+      setLoadingArtisans(false);
+    }
+  };
+
+  fetchArtisans();
+}, []);
+
+const mappedApiArtisans = apiArtisans.map((artisan) => ({
+  id: artisan.id || artisan._id,
+  name: artisan.fullName || artisan.businessName || "Unnamed Artisan",
+  location: artisan.location || "Unknown location",
+  rating: artisan.rating || 0,
+  skills: artisan.skills || artisan.skillSet || [],
+  image: johnOne,
+  available: true,
+}));
+
+
 
 
   const artisans = [
@@ -140,43 +247,63 @@ const ClientHome = () => {
           <h1 className="text-3xl md:text-4xl font-semibold mb-3">
             Hi Praise, What are you fixing today?
           </h1>
+          <h1 className="text-3xl md:text-4xl font-semibold mb-3">
+  Hi {firstName}, What are you fixing today?
+</h1>
+<h1 className="text-3xl md:text-4xl font-semibold mb-3">
+  Hi {firstName || "there"}, What are you fixing today?
+</h1>
+
+
 
           {/* Subtitle */}
           <p className="text-sm md:text-base text-[#D9D9D9] mb-8">
             Connect with skilled and trusted professionals in minutes.
           </p>
 
-          {/* Search Bar */}
-          <div className="flex w-full max-w-2xl mx-auto bg-white rounded-lg overflow-hidden shadow-lg">
-            
-            {/* Input */}
-            <div className="flex items-center flex-1 px-4">
-              <svg
-                className="w-5 h-5 text-gray-400 mr-2"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
-                />
-              </svg>
+{/* Search Bar */}
+<form
+  onSubmit={(e) => {
+    e.preventDefault();
+    handleSearch();
+  }}
+  className="flex w-full max-w-2xl mx-auto bg-white rounded-lg overflow-hidden shadow-lg"
+>
+  {/* Input */}
+  <div className="flex items-center flex-1 px-4">
+    <svg
+      className="w-5 h-5 text-gray-400 mr-2"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
+      />
+    </svg>
 
-              <input
-                type="text"
-                placeholder="What do you need?"
-                className="w-full py-3 text-sm text-[#D9D9D9] focus:outline-none"
-              />
-            </div>
+    <input
+      type="text"
+      placeholder="What do you need?"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="w-full py-3 text-sm text-black focus:outline-none"
+    />
+  </div>
 
-            {/* Button */}
-            <button className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-8 text-sm font-medium transition cursor-pointer">
-              Search
-            </button>
-          </div>
+  {/* Button */}
+  <button
+    type="submit"
+    disabled={searchLoading}
+    className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-8 text-sm font-medium transition disabled:opacity-60"
+  >
+    {searchLoading ? "Searching..." : "Search"}
+  </button>
+</form>
+
         </div>
       </section>
 
@@ -188,70 +315,93 @@ const ClientHome = () => {
       Top Artisans near you
     </h2>
 
+    {!loadingArtisans && !searchLoading && mappedApiArtisans.length === 0 && (
+  <p className="text-sm text-gray-500">
+    No artisans found for “{searchQuery}”
+  </p>
+)}
+
+
     {/* Marquee Wrapper */}
     <div className="relative w-full overflow-hidden">
       <div className="flex w-max gap-8 marquee">
+  {[...Array(2)].map((_, loopIndex) => (
+    <React.Fragment key={loopIndex}>
+      {loadingArtisans ? (
+        <p className="text-sm text-gray-500 px-4">
+          Loading artisans...
+        </p>
+      ) : (
+        mappedApiArtisans.slice(0, 6).map((artisan) => (
+          <div
+            key={`${loopIndex}-${artisan.id}`}
+            className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
+          >
+            <div className="relative">
+              <img
+                src={artisan.image}
+                alt={artisan.name}
+                className="w-full h-60 object-cover rounded-lg"
+              />
 
-        {[...Array(2)].map((_, loopIndex) =>
-          [johnOne, johnTwo, johnThree, johnOne].map((img, index) => (
-            <div
-              key={`${loopIndex}-${index}`}
-              className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
-            >
-              <div className="relative">
-                <img
-                  src={img}
-                  alt="Artisan"
-                  className="w-full h-60 object-cover rounded-lg"
-                />
+              <span className="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                Early User
+              </span>
+            </div>
 
-                <span className="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                  Early User
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-black">
+                    {artisan.name}
+                  </h3>
+                  <img src={mark} alt="verified" className="w-4 h-4" />
+                </div>
+
+                <span className="text-xs text-[#43A047] bg-[#C9E8CA] px-2 py-0.5 rounded-full">
+                  Available
                 </span>
               </div>
 
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-black">John Adewale</h3>
-                    <img src={mark} alt="verified" className="w-4 h-4" />
-                  </div>
+              <p className="text-sm text-[#535353] mb-2">
+                {artisan.location}
+              </p>
 
-                  <span className="text-xs text-[#43A047] bg-[#C9E8CA] px-2 py-0.5 rounded-full">
-                    Available
-                  </span>
-                </div>
-
-                <p className="text-sm text-[#535353]-500 mb-2">
-                  Electronics Technicians
-                </p>
-
-                <div className="flex items-center gap-1 text-sm mb-3">
-                  <img src={starIcon} alt="star" className="w-4 h-4" />
-                  <span className="font-medium text-black">4.7</span>
-                  <span className="text-black">(89 reviews)</span>
-                </div>
-
-                <div className="flex gap-2 mb-4">
-                  {["Phone", "Tablet", "Laptop"].map((skill) => (
-                    <span
-                      key={skill}
-                      className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-
-                <button onClick={() => navigate("/client/artisan-profile")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer">
-                  View Profile
-                </button>
+              <div className="flex items-center gap-1 text-sm mb-3">
+                <img src={starIcon} alt="star" className="w-4 h-4" />
+                <span className="font-medium text-black">
+                  {artisan.rating}
+                </span>
               </div>
-            </div>
-          ))
-        )}
 
-      </div>
+              <div className="flex gap-2 mb-4">
+                {artisan.skills.slice(0, 3).map((skill) => (
+                  <span
+                    key={skill}
+                    className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+
+              <button
+                // onClick={() => navigate("/client/artisan-profile")}
+                onClick={() =>
+    navigate(`/client/artisan-profile/${artisan.id}`)
+  }
+                className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition"
+              >
+                View Profile
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </React.Fragment>
+  ))}
+</div>
+
     </div>
   </div>
 </section>
@@ -266,73 +416,33 @@ const ClientHome = () => {
   </h2>
 
   {/* Marquee Wrapper */}
-  <div className="relative w-full overflow-hidden">
-    <div className="flex w-max gap-8 marquee">
-
-      {/* DUPLICATE CONTENT FOR SEAMLESS LOOP */}
-      {[...Array(2)].map((_, loopIndex) =>
-        [johnOne, johnTwo, johnThree, johnOne].map((img, index) => (
-          <div
-            key={`${loopIndex}-${index}`}
-            className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
-          >
-            {/* Image */}
-            <div className="relative">
-              <img
-                src={img}
-                alt="Artisan"
-                className="w-full h-60 object-cover rounded-lg"
-              />
-
-            
+{/* Marquee Wrapper */}
+<div className="relative w-full overflow-hidden">
+  <div className="flex w-max gap-8 marquee">
+    {[...Array(2)].map((_, loopIndex) => (
+      <React.Fragment key={loopIndex}>
+        {loadingArtisans ? (
+          <p className="text-sm text-gray-500 px-4">
+            Loading artisans...
+          </p>
+        ) : (
+          mappedApiArtisans.slice(0, 6).map((artisan) => (
+            <div
+              key={`${loopIndex}-${artisan.id}`}
+              className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
+            >
+              {/* CARD CONTENT */}
             </div>
-
-            {/* Info */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-black">
-                    John Adewale
-                  </h3>
-                  {/* <img src={mark} alt="verified" className="w-4 h-4" /> */}
-                </div>
-
-                <span className="text-xs text-[#43A047] bg-[#C9E8CA] px-2 py-0.5 rounded-full">
-                  Available
-                </span>
-              </div>
-
-              <p className="text-sm text-[#535353]-500 mb-2">
-                Electronics Technicians
-              </p>
-
-              <div className="flex items-center gap-1 text-sm mb-3">
-                <img src={starIcon} alt="star" className="w-4 h-4" />
-                <span className="font-medium text-black">4.7</span>
-                <span className="text-black">(89 reviews)</span>
-              </div>
-
-              <div className="flex gap-2 mb-4">
-                {["Phone", "Tablet", "Laptop"].map((skill) => (
-                  <span
-                    key={skill}
-                    className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-
-              <button onClick={() => navigate("/client/artisan-profile")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer">
-                View Profile
-              </button>
-            </div>
-          </div>
-        ))
-      )}
-    </div>
+          ))
+        )}
+      </React.Fragment>
+    ))}
   </div>
-  </div>
+</div>
+</div>
+
+
+
 </section>
 
 
@@ -409,7 +519,8 @@ const ClientHome = () => {
                 )}
               </div>
 
-              <button onClick={() => navigate("/client/artisan-profile")} className="mt-2 w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-2 rounded-md text-sm font-medium transition cursor-pointer">
+              <button onClick={() =>
+    navigate(`/client/artisan-profile/${artisan.id}`)} className="mt-2 w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-2 rounded-md text-sm font-medium transition cursor-pointer">
                 View Profile
               </button>
             </div>
@@ -458,7 +569,15 @@ const ClientHome = () => {
   </div>
 </section>
 
+
+{showWelcomeBonus && (
+  <WelcomeBonus onClose={() => setShowWelcomeBonus(false)} />
+)}
+
 </div>
+
+
+
   )
 }
 

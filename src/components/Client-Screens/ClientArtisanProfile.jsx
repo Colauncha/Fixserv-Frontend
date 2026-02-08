@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import profileImage from "../../assets/client images/client-home/profile.png";
 import tick from "../../assets/client images/client-home/tick.png";
 import share from "../../assets/client images/client-home/share.png";
@@ -12,6 +12,9 @@ import johnThree from "../../assets/client images/client-home/Johnthree.png";
 import starIcon from "../../assets/client images/client-home/star.png";
 // import mark from "../../assets/client images/client-home/mark.png";
 import { useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
+
+
 
 const services = [
   {
@@ -49,8 +52,104 @@ const services = [
 const ClientArtisanProfile = () => {
 
   const navigate = useNavigate();
+  const [artisan, setArtisan] = useState(null);
+const [loadingArtisan, setLoadingArtisan] = useState(true);
+
 
   const [activeTab, setActiveTab] = useState("services");
+
+  const [recommendedArtisans, setRecommendedArtisans] = useState([]);
+const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+
+const { artisanId } = useParams();
+
+useEffect(() => {
+  const fetchArtisan = async () => {
+    try {
+      const token = localStorage.getItem("fixserv_token");
+
+      const res = await fetch(
+        `https://user-management-h4hg.onrender.com/api/admin/user/${artisanId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.message || "Failed to fetch artisan");
+      }
+
+      const artisanData = {
+        ...json.data,
+        id: json.data.id || json.data._id,
+      };
+
+      setArtisan(artisanData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingArtisan(false);
+    }
+  };
+
+  fetchArtisan();
+}, [artisanId]);
+
+useEffect(() => {
+  const fetchRecommendedArtisans = async () => {
+    try {
+      setLoadingRecommendations(true);
+
+      const token = localStorage.getItem("fixserv_token");
+
+      const res = await fetch(
+        "https://user-management-h4hg.onrender.com/api/admin/getAll?role=ARTISAN",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch artisans");
+      }
+
+      setRecommendedArtisans(data.data || []);
+    } catch (err) {
+      console.error("Recommendation error:", err);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
+  fetchRecommendedArtisans();
+}, []);
+
+const mappedRecommendations = recommendedArtisans
+.filter((a) => String(a._id || a.id) !== String(artisanId))
+  .map((artisan) => ({
+    id: artisan.id,
+    name: artisan.fullName || "Unnamed Artisan",
+    location: artisan.location || "Unknown location",
+    rating: artisan.rating || 0,
+    skills: artisan.skills || [],
+    image: artisan.profileImage || johnOne
+  }));
+
+    if (loadingArtisan || !artisan) {
+    return (
+      <div className="py-20 text-center text-gray-500">
+        Loading artisan profile...
+      </div>
+    );
+  }
 
 
   return (
@@ -83,8 +182,9 @@ const ClientArtisanProfile = () => {
           {/* CENTER – DETAILS */}
           <div className="flex-1 text-white">
             <div className="flex items-center gap-4">
+              
               <h2 className="text-2xl font-semibold">
-                John Adewale
+                {artisan.fullName}
               </h2>
               <img src={tick} alt="verified" className="w-5 h-5" />
             </div>
@@ -95,10 +195,10 @@ const ClientArtisanProfile = () => {
 
             <div className="mt-3 space-y-1 text-sm opacity-90">
               <p>Experience: <span className="font-medium">5+ years</span></p>
-              <p>Location: <span className="font-medium">Surulere, Lagos</span></p>
+              <p>Location: <span className="font-medium">{artisan.location}</span></p>
             </div>
 
-            <button onClick={() => navigate("/client/booking")} className="mt-5 bg-white text-[#3E83C4] px-6 py-2 rounded-md font-medium text-sm hover:bg-gray-100 transition cursor-pointer">
+            <button onClick={() => navigate(`/client/booking/${artisan.id}`, {state: { artisan }})} className="mt-5 bg-white text-[#3E83C4] px-6 py-2 rounded-md font-medium text-sm hover:bg-gray-100 transition cursor-pointer">
               Request Appointment
             </button>
           </div>
@@ -138,7 +238,11 @@ const ClientArtisanProfile = () => {
       ★
     </span>
   </span>
-  <span className="text-white">4.7 (89 reviews)</span>
+  <span className="text-white">
+  {artisan.rating || 0} ({artisan.reviews || 0} reviews)
+</span>
+
+  {/* <span className="text-white">4.7 (89 reviews)</span> */}
 </div>
 
 
@@ -314,66 +418,73 @@ const ClientArtisanProfile = () => {
         <div className="flex w-max gap-8 marquee">
     
           {/* DUPLICATE CONTENT FOR SEAMLESS LOOP */}
-          {[...Array(2)].map((_, loopIndex) =>
-            [johnOne, johnTwo, johnThree, johnOne].map((img, index) => (
-              <div
-                key={`${loopIndex}-${index}`}
-                className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
-              >
-                {/* Image */}
-                <div className="relative">
-                  <img
-                    src={img}
-                    alt="Artisan"
-                    className="w-full h-60 object-cover rounded-lg"
-                  />
-    
-                
-                </div>
-    
-                {/* Info */}
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-black">
-                        John Adewale
-                      </h3>
-                      {/* <img src={mark} alt="verified" className="w-4 h-4" /> */}
-                    </div>
-    
-                    <span className="text-xs text-[#43A047] bg-[#C9E8CA] px-2 py-0.5 rounded-full">
-                      Available
-                    </span>
-                  </div>
-    
-                  <p className="text-sm text-[#535353]-500 mb-2">
-                    Electronics Technicians
-                  </p>
-    
-                  <div className="flex items-center gap-1 text-sm mb-3">
-                    <img src={starIcon} alt="star" className="w-4 h-4" />
-                    <span className="font-medium text-black">4.7</span>
-                    <span className="text-black">(89 reviews)</span>
-                  </div>
-    
-                  <div className="flex gap-2 mb-4">
-                    {["Phone", "Tablet", "Laptop"].map((skill) => (
-                      <span
-                        key={skill}
-                        className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-    
-                  <button onClick={() => navigate("/client/artisan-profile")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer">
-                    View Profile
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
+          {loadingRecommendations ? (
+  <p className="text-sm text-gray-500 px-4">
+    Loading recommendations...
+  </p>
+) : (
+  mappedRecommendations.slice(0, 6).map((artisan) => (
+    <div
+      key={artisan.id}
+      className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
+    >
+      {/* Image */}
+      <div className="relative">
+        <img
+          src={artisan.image}
+          alt={artisan.name}
+          className="w-full h-60 object-cover rounded-lg"
+        />
+      </div>
+
+      {/* Info */}
+      <div className="mt-4">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-medium text-black">
+            {artisan.name}
+          </h3>
+
+          <span className="text-xs text-[#43A047] bg-[#C9E8CA] px-2 py-0.5 rounded-full">
+            Available
+          </span>
+        </div>
+
+        <p className="text-sm text-[#535353] mb-2">
+          {artisan.location}
+        </p>
+
+        <div className="flex items-center gap-1 text-sm mb-3">
+          <img src={starIcon} alt="star" className="w-4 h-4" />
+          <span className="font-medium text-black">
+            {artisan.rating}
+          </span>
+        </div>
+
+        <div className="flex gap-2 mb-4">
+          {artisan.skills.slice(0, 3).map((skill) => (
+            <span
+              key={skill}
+              className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
+
+        <button
+          onClick={() =>
+            navigate(`/client/artisan-profile/${artisan.id}`)
+          }
+          className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer"
+        >
+          View Profile
+        </button>
+      </div>
+    </div>
+  ))
+)}
+
+          
         </div>
       </div>
       </div>

@@ -1,12 +1,134 @@
-import React from 'react'
+import React, { useState } from 'react'
 import signLogo from '../../assets/sign/sign logo.png';
 import signImage from '../../assets/sign/sign image.png';
 import signOverlay from '../../assets/sign/sign overlay.png';
 import googleLogo from '../../assets/sign/google logo.png';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
+
 
 const AdminLogIn = () => {
     const navigate = useNavigate();
+      const [showPassword, setShowPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+const [formData, setFormData] = useState({
+  email: "",
+  password: "",
+});
+
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+
+const handleChange = (e) => {
+  const { name, value } = e.target;
+  setFormData((prev) => ({ ...prev, [name]: value }));
+};
+
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setError("");
+
+  try {
+    setLoading(true);
+
+    const res = await fetch(
+      "https://user-management-h4hg.onrender.com/api/admin/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Login failed");
+    }
+    
+    if (data.user.role !== "ADMIN") {
+  throw new Error("Unauthorized access");
+}
+
+    // ✅ Save token (temporary: localStorage)
+    localStorage.setItem("adminToken", data.token);
+    localStorage.setItem("adminUser", JSON.stringify(data.user));
+
+    // ✅ Redirect to admin dashboard
+    navigate("/admin");
+
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const googleAdminLogin = useGoogleLogin({
+  onSuccess: async (tokenResponse) => {
+    try {
+      setError("");
+      setLoading(true);
+
+      const res = await fetch(
+        "https://user-management-h4hg.onrender.com/api/admin/google-login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            idToken: tokenResponse.access_token,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Google login failed");
+      }
+
+      /**
+       * EXPECTED RESPONSE
+       * {
+       *   token: "...",
+       *   user: { id, email, role: "ADMIN" }
+       * }
+       */
+
+      // 🔐 ENFORCE ADMIN ROLE
+      if (data.user.role !== "ADMIN") {
+        throw new Error("Unauthorized access");
+      }
+
+      // ✅ SAVE AUTH
+      localStorage.setItem("adminToken", data.token);
+      localStorage.setItem("adminUser", JSON.stringify(data.user));
+
+      // ✅ REDIRECT
+      navigate("/admin");
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  },
+
+  onError: () => {
+    setError("Google authentication cancelled");
+  },
+});
+
+
+
   return (
       <div>
                 <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
@@ -27,7 +149,7 @@ const AdminLogIn = () => {
           />
         
         {/* Logo */}
-        <div className="relative z-10 px-6 sm:px-10 lg:px-36 pt-6 sm:pt-10 lg:pt-16">
+        <div className="relative z-10 px-6 sm:px-10 lg:px-40 pt-6 sm:pt-10 lg:pt-16">
           <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
         </div>
         
@@ -47,7 +169,7 @@ const AdminLogIn = () => {
         
         
           {/* RIGHT — FORM */}
-          <div className="flex items-center justify-center px-6 py-16">
+      <div className="flex items-center justify-center px-4 sm:px-6 py-10 sm:py-14 lg:py-16">
             <div className="w-full max-w-md">
         
               <h2 className="text-2xl font-semibold text-black text-center">
@@ -58,13 +180,18 @@ const AdminLogIn = () => {
               </p>
         
               {/* Google */}
-              <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4">
-                <img src={googleLogo} alt="Google" className="w-5 h-5" />
-                Sign up with Google
-              </button>
+              <button
+  type="button"
+  onClick={() => googleAdminLogin()}
+  className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4"
+>
+  <img src={googleLogo} alt="Google" className="w-5 h-5" />
+  Sign in with Google
+</button>
+
         
                       
-              <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="flex items-center justify-center gap-4 mb-6 mt-6">
           <div className="w-6 h-px bg-[#B3B3B3]" />
           <span className="text-sm text-[#B3B3B3]">Or</span>
           <div className="w-6 h-px bg-[#B3B3B3]" />
@@ -77,19 +204,41 @@ const AdminLogIn = () => {
         
                
         
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
-                />
+              <input
+  type="email"
+  name="email"
+  placeholder="Email Address"
+  value={formData.email}
+  onChange={handleChange}
+  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm"
+/>
+
         
         
                 <label htmlFor="password">Password:</label>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
-                />
+                {/* Password */}
+           <div className="relative">
+<input
+  type={showPassword ? "text" : "password"}
+  name="password"
+  placeholder="Password"
+  value={formData.password}
+  onChange={handleChange}
+  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 pr-12 text-sm"
+/>
+
+
+  <button
+    type="button"
+    onClick={() => setShowPassword(!showPassword)}
+    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+  >
+    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+  </button>
+</div>
+
+
+
         
                 
         
@@ -113,9 +262,21 @@ const AdminLogIn = () => {
     </button>
   </div>
         
-                <button onClick={() => navigate("/client")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md font-medium transition cursor-pointer">
+                {/* <button onClick={() => navigate("/client")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md font-medium transition cursor-pointer">
                   Sign In
-                </button>
+                </button> */}
+                {error && (
+  <p className="text-sm text-red-500 text-center">{error}</p>
+)}
+
+                <button
+  onClick={handleLogin}
+  disabled={loading}
+  className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md font-medium transition disabled:opacity-60"
+>
+  {loading ? "Signing In..." : "Sign In"}
+</button>
+
     
           <p className='text-sm text-center text-black bottom-0'>Protected by enterprise-grade security</p>
               </form>

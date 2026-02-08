@@ -7,10 +7,28 @@ import ongoing from "../../assets/Artisan Images/ongoing.png";
 import completed from "../../assets/Artisan Images/completed.png";
 import uncompleted from "../../assets/Artisan Images/uncompleted.png";
 import scalearrow from "../../assets/Artisan Images/scalearrows.png";
+import { getAuthUser } from "../../utils/auth";
 
 const Dashboard = () => {
-
+  const artisan = getAuthUser();
   const [activeTab, setActiveTab] = useState("Job Requests");
+
+  if (!artisan) {
+    return null; // or loader / redirect
+  }
+
+  const [jobs, setJobs] = useState([]); 
+
+  useEffect(() => {
+  fetch("{{ARTISAN_JOBS_ENDPOINT}}", {
+    headers: {
+      Authorization: `Bearer ${getAuthToken()}`
+    }
+  })
+    .then(res => res.json())
+    .then(data => setJobs(data.jobs || []));
+}, []);
+
 
 
   return (
@@ -20,12 +38,12 @@ const Dashboard = () => {
       <div className="flex justify-between p-4 items-center">
         <div>
           <h1 className="text-2xl font-semibold text-black">Dashboard</h1>
-          <p className="text-sm text-gray-600 mt-1">Welcome Adebayo</p>
+          <p className="text-sm text-gray-600 mt-1">Welcome {artisan.fullname}</p>
         </div>
 
         <div className="flex items-center gap-4">
           <img src={not} className="w-11 h-9 cursor-pointer" />
-          <img src={profile} className="w-9 h-9 rounded-full cursor-pointer" />
+          <img src={artisan.profileImage || profile} className="w-9 h-9 rounded-full cursor-pointer" />
         </div>
       </div>
        {/* Divider */}
@@ -43,7 +61,7 @@ const Dashboard = () => {
         <p className="text-sm opacity-90">Total Amount</p>
         <img src={total} className="w-8" />
       </div>
-      <h2 className="text-2xl font-semibold">NGN 55000</h2>
+      <h2 className="text-2xl font-semibold">NGN {artisan.wallet?.balance || 0}</h2>
       <div className="flex items-center gap-1 mt-3 text-xs">
         <img src={scalearrow} className="w-4" />
         <span>+15% this week</span>
@@ -56,7 +74,7 @@ const Dashboard = () => {
         <p className="text-sm text-gray-600">Total Jobs</p>
         <img src={totaljobs} className="w-8" />
       </div>
-      <h2 className="text-2xl font-semibold">20</h2>
+      <h2 className="text-2xl font-semibold">{artisan.stats?.totalJobs || 0}</h2>
       <div className="flex items-center gap-1 mt-3 text-xs text-gray-600">
         <img src={scalearrow} className="w-4" />
         <span>+12% this week</span>
@@ -69,7 +87,7 @@ const Dashboard = () => {
         <p className="text-sm">Ongoing Jobs</p>
         <img src={ongoing} className="w-8" />
       </div>
-      <h2 className="text-2xl font-semibold">10</h2>
+      <h2 className="text-2xl font-semibold">{artisan.stats?.ongoingJobs || 0}</h2>
       <div className="flex items-center gap-1 mt-3 text-xs">
         <img src={scalearrow} className="w-4" />
         <span>+30% this week</span>
@@ -82,7 +100,7 @@ const Dashboard = () => {
         <p className="text-sm opacity-90">Completed Jobs</p>
         <img src={completed} className="w-8" />
       </div>
-      <h2 className="text-2xl font-semibold">50</h2>
+      <h2 className="text-2xl font-semibold">{artisan.stats?.completedJobs || 0}</h2>
       <div className="flex items-center gap-1 mt-3 text-xs">
         <img src={scalearrow} className="w-4" />
         <span>+70% this week</span>
@@ -95,7 +113,7 @@ const Dashboard = () => {
         <p className="text-sm opacity-90">Uncompleted Jobs</p>
         <img src={uncompleted} className="w-8" />
       </div>
-      <h2 className="text-2xl font-semibold">03</h2>
+      <h2 className="text-2xl font-semibold">{artisan.stats?.uncompletedJobs || 0}</h2>
       <div className="flex items-center gap-1 mt-3 text-xs">
         <img src={scalearrow} className="w-4" />
         <span>-20% this week</span>
@@ -138,34 +156,32 @@ const Dashboard = () => {
   <div className="space-y-6 p-6 border border-blue-200 rounded-xl">
 
 
-    <div className="border border-blue-200 rounded-xl p-5">
-
-      <div className="flex justify-between items-center pb-3 border-b">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#3E83C4] text-white flex items-center justify-center font-semibold">
-            K
-          </div>
-          <p className="font-semibold">Kunle Juwon</p>
-          <span className="text-sm text-gray-400">Two months ago</span>
+{jobs.map(job => (
+  <div key={job.id} className="border border-blue-200 rounded-xl p-5">
+    <div className="flex justify-between items-center pb-3 border-b">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-[#3E83C4] text-white flex items-center justify-center font-semibold">
+          {job.clientName.charAt(0)}
         </div>
-
-        <span className="text-gray-500 text-sm">Booked</span>
+        <p className="font-semibold">{job.clientName}</p>
+        <span className="text-sm text-gray-400">{job.createdAt}</span>
       </div>
+      <span className="text-gray-500 text-sm">{job.status}</span>
+    </div>
 
-      <div className="grid md:grid-cols-2 gap-6 mt-4 text-sm">
-
-        <div className="space-y-3">
-          <p><span className="font-medium">Repair Type :</span> Refrigerator repair</p>
-          <p><span className="font-medium">Location :</span> 2 Fatai Doherty Close, Lagos</p>
-        </div>
-
-        <div className="space-y-3">
-          <p><span className="font-medium">Duration :</span> 2 weeks</p>
-          <p><span className="font-medium">Price :</span> 50 thousand naira</p>
-        </div>
-
+    <div className="grid md:grid-cols-2 gap-6 mt-4 text-sm">
+      <div>
+        <p><b>Repair Type:</b> {job.service}</p>
+        <p><b>Location:</b> {job.location}</p>
+      </div>
+      <div>
+        <p><b>Duration:</b> {job.duration}</p>
+        <p><b>Price:</b> NGN {job.price}</p>
       </div>
     </div>
+  </div>
+))}
+
 
 
     <div className="border border-blue-200 rounded-xl p-5">

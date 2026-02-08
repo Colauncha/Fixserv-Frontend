@@ -1,14 +1,18 @@
-import React from 'react'
+import React, { useState } from 'react'
 import signLogo from '../../assets/sign/sign logo.png';
 import signImage from '../../assets/sign/sign image.png';
 import signOverlay from '../../assets/sign/sign overlay.png';
 import googleLogo from '../../assets/sign/google logo.png';
 import appleLogo from '../../assets/sign/apple logo.png';
+import { Eye, EyeOff } from "lucide-react";
 
 import { useNavigate } from 'react-router-dom';
 
 const ArtisanLogIn = () => {
     const navigate = useNavigate();
+
+      const [showPassword, setShowPassword] = useState(false);
+
   return (
         <div>
             <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2 ">
@@ -36,13 +40,13 @@ const ArtisanLogIn = () => {
         {/* Center Content */}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 sm:px-10 lg:px-14 text-center text-white max-w-lg mx-auto">
 
-          <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-5 lg:mb-10 font-medium leading-tight">
+          {/* <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-5 lg:mb-10 font-medium leading-tight">
           Welcome Back, Pro!
         </h2>
     
         <p className="text-sm sm:text-base mb-20 sm:mb-12 text-white opacity-90">
           Pick up right where you left off
-        </p>
+        </p> */}
     
         <p className="text-sm sm:text-base mb-4 text-white opacity-90">
           If you are looking to request repairs
@@ -91,12 +95,22 @@ const ArtisanLogIn = () => {
       />
     
       {/* Password */}
-      <input
-        type="password"
-        placeholder="Password"
-        className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm 
-                   focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+ <div className="relative">
+  <input
+    type={showPassword ? "text" : "password"}
+    placeholder="Password"
+    className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 pr-12 text-sm
+               focus:outline-none focus:border-blue-500"
+  />
+
+  <button
+    type="button"
+    onClick={() => setShowPassword(!showPassword)}
+    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+  >
+    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+  </button>
+</div>
     
       {/* Remember & Forgot */}
       <div className="flex items-center justify-between mb-12">
