@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from "react";
 import signLogo from '../../assets/sign/sign logo.png';
 import signImage from '../../assets/sign/sign image.png';
 import signOverlay from '../../assets/sign/sign overlay.png';
@@ -7,6 +7,51 @@ import { useNavigate } from 'react-router-dom';
 
 const AdminForget = () => {
     const navigate = useNavigate();
+    const [email, setEmail] = useState("");
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+const [success, setSuccess] = useState("");
+
+const handleForgotPassword = async (e) => {
+  e.preventDefault();
+  setError("");
+  setSuccess("");
+
+  if (!email) {
+    setError("Please enter your email address");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const res = await fetch(
+      "https://user-management-h4hg.onrender.com/api/admin/forgot-password",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to send reset email");
+    }
+
+    setSuccess("A password reset link has been sent to your email.");
+
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   return (
       <div>
@@ -33,7 +78,7 @@ const AdminForget = () => {
           </div> */}
 
                   {/* Logo */}
-                  <div className="relative z-10 px-6 sm:px-10 lg:px-36 pt-6 sm:pt-10 lg:pt-16">
+                  <div className="relative z-10 px-6 sm:px-10 lg:px-42 pt-6 sm:pt-10 lg:pt-16">
                     <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
                   </div>
 
@@ -68,7 +113,7 @@ const AdminForget = () => {
           {/* RIGHT — FORM */}
       <div className="flex items-center justify-center px-4 sm:px-6 py-10 sm:py-14 lg:py-16">
             <div className="w-full max-w-md">
-                <button onClick={() => navigate("/artisan-login")} className="text-sm text-[#3E83C4] flex items-center gap-1 hover:underline mb-10 cursor-pointer">
+                <button onClick={() => navigate(-1)} className="text-sm text-[#3E83C4] flex items-center gap-1 hover:underline mb-10 cursor-pointer">
           ← Back
         </button>
         
@@ -83,32 +128,49 @@ const AdminForget = () => {
         
         
               {/* Form */}
-              <form className="space-y-4">
-                
-        
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
-                />
-        
-        
-               
-        
-            
-      
-        
-                <button onClick={() => navigate("/client")} className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md font-medium transition cursor-pointer">
-                  Send Email
-                </button>
-    
-                <p className="text-sm text-center text-black">
-            Already have a Fixserv account?{" "}
-            <a href="/admin-login" className="text-[#3E83C4] hover:underline font-medium">
-              Log In
-            </a>
-          </p>
-              </form>
+              <form className="space-y-4" onSubmit={handleForgotPassword}>
+
+  <input
+    type="email"
+    placeholder="Email Address"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm
+               focus:outline-none focus:border-blue-500"
+  />
+
+  {/* Error */}
+  {error && (
+    <p className="text-sm text-red-500 text-center">{error}</p>
+  )}
+
+  {/* Success */}
+  {success && (
+    <p className="text-sm text-green-600 text-center">{success}</p>
+  )}
+
+  <button
+    type="submit"
+    disabled={loading}
+    className="w-full bg-[#3E83C4] hover:bg-[#2d75b8]
+               text-white py-3 rounded-md font-medium transition
+               disabled:opacity-60"
+  >
+    {loading ? "Sending..." : "Send Email"}
+  </button>
+
+  <p className="text-sm text-center text-black">
+    Already have a Fixserv account?{" "}
+    <a
+      href="/admin-login"
+      className="text-[#3E83C4] hover:underline font-medium"
+    >
+      Log In
+    </a>
+  </p>
+
+</form>
+
             </div>
           </div>
         </section>

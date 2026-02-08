@@ -1,5 +1,5 @@
 import React, { useState }  from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import profileImage from "../../assets/client images/client-home/profile.png";
 import mark from "../../assets/client images/client-home/mark.png";
@@ -30,6 +30,18 @@ const paymentMethods = [
 
 const [selected, setSelected] = useState("Mastercard");
 
+const location = useLocation();
+
+const artisan = location.state?.artisan;
+const booking = location.state?.booking;
+
+if (!artisan || !booking) {
+  return (
+    <div className="py-20 text-center text-gray-500">
+      Booking details not found. Please start again.
+    </div>
+  );
+}
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -40,7 +52,7 @@ const [selected, setSelected] = useState("Mastercard");
   
         {/* Header */}
         <div className="text-center mb-12">
-          <button onClick={() => navigate("/client/booking")} className="text-sm text-[#3e83c4] mb-6 flex items-center gap-1">
+          <button onClick={() => navigate(-1)} className="text-sm text-[#3e83c4] mb-6 flex items-center gap-1">
             <ArrowLeft size={18} />
            Back
         </button>
@@ -67,7 +79,10 @@ const [selected, setSelected] = useState("Mastercard");
               />
           
               <div className="flex items-center gap-2">
-                <h2 className="font-semibold text-black text-3xl">John Adewale</h2>
+                <h2 className="font-semibold text-black text-3xl">
+  {artisan.fullName}
+</h2>
+
                 <img src={mark} alt="verified" className="w-6 h-6" />
               </div>
           
@@ -108,18 +123,37 @@ const [selected, setSelected] = useState("Mastercard");
           {/* RIGHT — Booking Summary */}
 
           <div className="pt-2">
-  <h2 className="text-lg font-semibold text-black mb-6">
-    Battery Replacement
-  </h2>
+<h2 className="text-lg font-semibold text-black mb-6">
+  {booking.service}
+</h2>
 
   <div className="space-y-3 text-lg text-black">
 
     <p><span className="text-[#656565]">Booking ID:</span> FX1230</p>
-    <p><span className="text-[#656565]">Device Type:</span> Phone</p>
-    <p><span className="text-[#656565]">Device Brand:</span> iPhone</p>
-    <p><span className="text-[#656565]">Device Model:</span> iPhone 12 Pro - Black</p>
-    <p><span className="text-[#656565]">Issue description:</span> My phone dies quickly, overheats when charging</p>
-    <p><span className="text-[#656565]">Location:</span> 23, Allen Avenue, Ikeja, Lagos.</p>
+<p>
+  <span className="text-[#656565]">Device Type:</span>{" "}
+  {booking.deviceType}
+</p>
+
+<p>
+  <span className="text-[#656565]">Device Brand:</span>{" "}
+  {booking.brand}
+</p>
+
+<p>
+  <span className="text-[#656565]">Device Model:</span>{" "}
+  {booking.model}
+</p>
+
+<p>
+  <span className="text-[#656565]">Issue description:</span>{" "}
+  {booking.issue}
+</p>
+
+<p>
+  <span className="text-[#656565]">Location:</span>{" "}
+  {booking.location}
+</p>
     <div className="pt-6 space-y-2">
       <p><span className="text-[#656565]">Service Cost:</span> ₦7,000.00</p>
       <p><span className="text-[#656565]">Platform Fee:</span> ₦500.00</p>
@@ -387,7 +421,7 @@ const [selected, setSelected] = useState("Mastercard");
 
     <button
       // onClick={() => setActiveModal(null)}
-      onClick={() => navigate("/client/track-repair")}
+      onClick={() => navigate("/client/track-repair", { state: { booking, artisan }})}
       className="w-full bg-blue-600 text-white py-2 rounded-md"
     >
       Track Repair

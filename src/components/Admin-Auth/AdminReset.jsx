@@ -4,10 +4,77 @@ import signImage from '../../assets/sign/sign image.png';
 import signOverlay from '../../assets/sign/sign overlay.png';
 import { useNavigate } from "react-router-dom";
 import correct from "../../assets/client images/correct.png"
+import { Eye, EyeOff } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+
 
 const AdminReset = () => {
     const navigate = useNavigate();
 const [showSuccess, setShowSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+const [searchParams] = useSearchParams();
+const token = searchParams.get("token");
+
+const [password, setPassword] = useState("");
+const [confirmPassword, setConfirmPassword] = useState("");
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+
+const handleResetPassword = async (e) => {
+  e.preventDefault();
+  setError("");
+
+  if (!password || !confirmPassword) {
+    setError("Please fill in all fields");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError("Passwords do not match");
+    return;
+  }
+
+  if (!token) {
+    setError("Invalid or expired reset token");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const res = await fetch(
+      `https://user-management-h4hg.onrender.com/api/admin/reset-password?token=${token}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          newPassword: password,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Password reset failed");
+    }
+
+    // SUCCESS
+    setShowSuccess(true);
+
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
   return (
        <div>
             <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2 ">
@@ -28,7 +95,7 @@ const [showSuccess, setShowSuccess] = useState(false);
       />
     
         {/* Logo */}
-        <div className="relative z-10 px-6 sm:px-10 lg:px-36 pt-6 sm:pt-10 lg:pt-16">
+        <div className="relative z-10 px-6 sm:px-10 lg:px-40 pt-6 sm:pt-10 lg:pt-16">
           <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
         </div>
     
@@ -71,41 +138,66 @@ const [showSuccess, setShowSuccess] = useState(false);
     
           {/* Form */}
           {/* <form className="space-y-5"> */}
-            <form
-      className="space-y-5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        setShowSuccess(true);
-      }}
+<form className="space-y-5" onSubmit={handleResetPassword}>
+
+  {/* Password */}
+  <div className="relative">
+    <input
+      type={showPassword ? "text" : "password"}
+      placeholder="Password"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 pr-12 text-sm
+                 focus:outline-none focus:border-blue-500"
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
     >
-    
-      
-    
-      {/* Password */}
-      <input
-        type="password"
-        placeholder="Password"
-        className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm 
-                   focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-      {/* Confirm Password */}
-      <input
-        type="password"
-        placeholder="Confirm Password"
-        className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm 
-                   focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-    
-      {/* Submit */}
-      <button
-        type="submit"
-        className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] 
-                   text-white py-3 rounded-md font-medium transition cursor-pointer"
-      >
-        Reset Password
-      </button>
-    
-    </form>
+      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+    </button>
+  </div>
+
+  {/* Confirm Password */}
+  <div className="relative">
+    <input
+      type={showConfirmPassword ? "text" : "password"}
+      placeholder="Confirm Password"
+      value={confirmPassword}
+      onChange={(e) => setConfirmPassword(e.target.value)}
+      className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 pr-12 text-sm
+                 focus:outline-none focus:border-blue-500"
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+    >
+      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+    </button>
+  </div>
+
+  {/* Error */}
+  {error && (
+    <p className="text-sm text-red-500 text-center">{error}</p>
+  )}
+
+  {/* Submit */}
+  <button
+    type="submit"
+    disabled={loading}
+    className="w-full bg-[#3E83C4] hover:bg-[#2d75b8]
+               text-white py-3 rounded-md font-medium transition
+               disabled:opacity-60"
+  >
+    {loading ? "Resetting..." : "Reset Password"}
+  </button>
+
+</form>
+
     
         </div>
       </div>

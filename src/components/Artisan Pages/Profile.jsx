@@ -1,4 +1,5 @@
-import React from "react";
+import { useEffect, useState } from "react";
+import { getAuthToken } from "../../utils/auth";
 import star from "../../assets/Artisan Images/star.png";
 import location from "../../assets/Artisan Images/location.png";
 import badge from "../../assets/Artisan Images/badge.png";
@@ -7,6 +8,42 @@ import not from "../../assets/Artisan Images/not.png";
 import profile from "../../assets/Artisan Images/adebayo.png";
 
 const Profile = () => {
+  const [artisan, setArtisan] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch(
+          "https://user-management-h4hg.onrender.com/api/artisan/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${getAuthToken()}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+        setArtisan(data);
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+  return <p className="p-6 text-gray-500">Loading profile...</p>;
+}
+
+if (!artisan) {
+  return <p className="p-6 text-red-500">Failed to load profile</p>;
+}
+
+
   return (
     <div className="w-full pr-4">
 
@@ -29,7 +66,7 @@ const Profile = () => {
           {/* Profile Image */}
           <div className="relative w-44 h-44">
             <img
-              src={profileImg}
+              src={artisan.profileImage ||profileImg}
               className="w-full h-full rounded-full object-cover border-[6px] border-[#3E83C4]"
             />
 
@@ -40,16 +77,16 @@ const Profile = () => {
 
           {/* Name & Info */}
 <div className="flex flex-col justify-center">
-  <h2 className="text-2xl font-semibold mb-1">Adebayo Olu</h2>
+  <h2 className="text-2xl font-semibold mb-1">{artisan.fullName}</h2>
 
   <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
     <img src={star} className="w-4" />
-    <span>4.5 (15)</span>
+    <span>{artisan.rating} ({artisan.reviewsCount})</span>
   </div>
 
   <div className="flex items-center gap-2 text-sm text-gray-600">
     <img src={location} className="w-4" />
-    <span>Ikeja, Lagos State</span>
+    <span>{artisan.location}</span>
   </div>
 </div>
 
@@ -59,15 +96,14 @@ const Profile = () => {
         <div className="mt-8 max-w-xl">
           <h3 className="font-semibold mb-1">About me</h3>
           <p className="text-sm text-gray-600 leading-relaxed">
-            I'm a skilled artisan specializing in electrical gadgets.
-            I have over 5 years of hands experience working with clients who value quality, honesty, and timely service.
+            {artisan.about}
           </p>
         </div>
 
         {/* Skills */}
         <div className="mt-6">
           <h3 className="font-semibold mb-1">Skills</h3>
-          <p className="text-sm text-gray-600">Electronics Technician</p>
+          <p className="text-sm text-gray-600">{artisan.skills?.join(", ")}</p>
         </div>
 
         {/* Edit Button */}
@@ -82,25 +118,26 @@ const Profile = () => {
 
   <div className="space-y-4 text-sm text-gray-500">
 
-    <p>
-      <span className="font-medium text-gray-700">Phone :</span>{" "}
-      +234 904454667
-    </p>
+<p>
+  <span className="font-medium text-gray-700">Phone :</span>{" "}
+  {artisan.phone}
+</p>
 
-    <p>
-      <span className="font-medium text-gray-700">Email :</span>{" "}
-      adebayoou233@gmail.com
-    </p>
+<p>
+  <span className="font-medium text-gray-700">Email :</span>{" "}
+  {artisan.email}
+</p>
 
-    <p>
-      <span className="font-medium text-gray-700">Address :</span>{" "}
-      Mr Daniel Izuchukwu Nwoye, 8, My Street, Ilassan Lekki, Lagos
-    </p>
+<p>
+  <span className="font-medium text-gray-700">Address :</span>{" "}
+  {artisan.address}
+</p>
 
-    <p>
-      <span className="font-medium text-gray-700">Available Work Locations :</span>{" "}
-      Anywhere in Lagos
-    </p>
+<p>
+  <span className="font-medium text-gray-700">Available Work Locations :</span>{" "}
+  {artisan.workLocations}
+</p>
+
 
   </div>
 

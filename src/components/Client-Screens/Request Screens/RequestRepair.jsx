@@ -13,6 +13,62 @@ const RequestRepair = () => {
     reader.readAsDataURL(file);
   };
 
+  const [formData, setFormData] = useState({
+  title: "",
+  description: "",
+  price: "",
+  estimatedDuration: "",
+});
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+
+const handleSubmit = async () => {
+  setError("");
+
+  const { title, description, price, estimatedDuration } = formData;
+
+  if (!title || !description || !price || !estimatedDuration) {
+    setError("All fields are required");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const res = await fetch(
+      "https://service-management-1tz6.onrender.com/api/service/createService",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("fixserv_token")}`,
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          price: Number(price),
+          estimatedDuration,
+          rating: 0,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to create service");
+    }
+
+    alert("Service created successfully 🎉");
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
   return (
     <div className="w-full">
 
@@ -30,14 +86,44 @@ const RequestRepair = () => {
           {/* Form */}
           <div className="max-w-3xl space-y-5">
 
-            {["Device Type", "Device Brand", "Device Model", "Location", "Service Required"].map((item) => (
-              <input
-                key={item}
-                type="text"
-                placeholder={item}
-                className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-              />
-            ))}
+{/* Simple fields */}
+{["Device Type", "Location", "Service Required"].map((item) => (
+  <input
+    key={item}
+    type="text"
+    placeholder={item}
+    className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
+  />
+))}
+
+{/* Controlled form inputs */}
+<input
+  name="title"
+  value={formData.title}
+  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+  placeholder="Service Title"
+  className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
+/>
+
+<input
+  name="estimatedDuration"
+  value={formData.estimatedDuration}
+  onChange={(e) =>
+    setFormData({ ...formData, estimatedDuration: e.target.value })
+  }
+  placeholder="Estimated Duration"
+  className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
+/>
+
+<input
+  type="number"
+  name="price"
+  value={formData.price}
+  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+  placeholder="Service Price"
+  className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
+/>
+
 
             {/* Upload */}
             <div>
@@ -74,10 +160,16 @@ const RequestRepair = () => {
             <div className="mt-8 space-y-5 max-w-3xl">
 
               <textarea
-                rows={5}
-                placeholder="Issue Description"
-                className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
-              />
+  rows={5}
+  name="description"
+  value={formData.description}
+  onChange={(e) =>
+    setFormData({ ...formData, description: e.target.value })
+  }
+  placeholder="Service Description"
+  className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
+/>
+
 
               <textarea
                 rows={3}
@@ -92,6 +184,20 @@ const RequestRepair = () => {
                 >
                   Continue
                 </button>
+                <button
+  onClick={handleSubmit}
+  disabled={loading}
+  className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-16 py-2.5 rounded-md text-sm font-medium transition"
+>
+  {loading ? "Creating..." : "Create Service"}
+</button>
+
+{error && (
+  <p className="text-red-500 text-sm text-center mt-3">
+    {error}
+  </p>
+)}
+
               </div>
 
             </div>

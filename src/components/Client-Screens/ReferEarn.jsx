@@ -47,7 +47,7 @@ const ReferEarn = ({ onClose }) => {
           {/* Close Button */}
           <button
             // onClick={onClose}
-            onClick={() => navigate("/client/profile")}
+            onClick={() => navigate("/client")}
             className="absolute top-1 right-4 text-gray-500 hover:text-gray-700 w-7 h-7 flex items-center justify-center cursor-pointer"
           >
             ✕

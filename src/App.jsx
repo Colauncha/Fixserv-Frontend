@@ -89,9 +89,15 @@ import PostVerificationTwo from "./components/Artisan-Auth/PostVerificationTwo";
 import UploadCertificate from "./components/Artisan-Auth/UploadCertificate";
 import CertificateReceived from "./components/Artisan-Auth/CertificateReceived";
 import ReferEarn from "./components/Client-Screens/ReferEarn";
+import Artisans from "./components/Admin-Auth/Artisans";
+import AdminClients from "./components/Admin-Auth/AdminClients";
 
 
 // import Text from "./pages/text";
+
+//routes 
+import ProtectedRoute from "./routes/ProtectedRoute";
+import VerifyEmail from "./components/Sign-Auth/VerifyEmail";
 
 
 const App = () => {
@@ -126,11 +132,44 @@ const App = () => {
   <Route path="verification-two" element={<PostVerificationTwo />} />
   <Route path="upload-certificate" element={<UploadCertificate />} />
   <Route path="certificate-received" element={<CertificateReceived />} />
+  <Route path="verification" element={<VerifyEmail />} />
+</Route>
+
+        {/* CLIENT ROUTES */}
+<Route element={<ProtectedRoute allowedRoles={["CLIENT"]} />}>
+  <Route path="/client" element={<ClientLayout />}>
+    <Route index element={<ClientHome />} />
+    <Route path="client-request" element={<ClientRequest />} />
+    <Route path="history" element={<ClientHistory />} />
+     {/* <Route path="/client/artisan-profile/:artisanId" element={<ClientArtisanProfile />} /> */}
+      <Route
+      path="artisan-profile/:artisanId"
+      element={<ClientArtisanProfile />}
+    />
+    {/* <Route path="artisan-profile" element={<ClientArtisanProfile />} /> */}
+          <Route path="booking/:artisanId" element={<ClientBooking />} />
+
+          {/* <Route path="booking" element={<ClientBooking />} /> */}
+          <Route path="booking-summary" element={<BookingSummary />} />
+          <Route path="track-repair" element={<TrackRepair />} />
+          <Route path="profile" element={<UserProfile />} />
+          <Route path="settings" element={<ProfileSettings />} />
+          <Route path="notifications" element={<ClientNotification />} /> 
+          <Route path="refer-earn" element={<ReferEarn />} />
+          <Route path="upload-item" element={<Additem />} />
+          <Route path="rate-service" element={<RateServiceRepair />} />
+          <Route path="referral" element={<ReferalPage />} />
+          <Route path="repair" element={<RepairHistory />} />
+          <Route path="view" element={<ViewRepair />} />
+          <Route path="request-repair" element={<RequestRepair />} />
+          <Route path="technician" element={<Technican />} />
+          <Route path="review-rating" element={<ReviewRating />} />
+
+   </Route>
 </Route>
 
 
-        {/* CLIENT ROUTES */}
-        <Route path="/client" element={<ClientLayout />}>
+        {/* <Route path="/client" element={<ClientLayout />}>
           <Route index element={<ClientHome />} />
           <Route path="client-request" element={<ClientRequest />} />
           <Route path="history" element={<ClientHistory />} />
@@ -151,10 +190,24 @@ const App = () => {
           <Route path="technician" element={<Technican />} />
           <Route path="review-rating" element={<ReviewRating />} />
 
-        </Route>
+        </Route> */}
 
 
-<Route path="/artisan" element={<ArtisanLayout />}>
+{/* Artisan Routes */}
+<Route element={<ProtectedRoute allowedRoles={["ARTISAN"]} />}>
+  <Route path="/artisan" element={<ArtisanLayout />}>
+    <Route index element={<Dashboard />} />
+    <Route path="jobs" element={<Jobs />} />
+  <Route path="notification" element={<Notification />} />
+  <Route path="wallet" element={<Wallet />} />
+  <Route path="profile" element={<Profile />} />
+  <Route path="verification" element={<Verification />} />
+  <Route path="settings" element={<Settings />} />
+  <Route path="help" element={<Help />} />
+  </Route>
+</Route>
+
+{/* <Route path="/artisan" element={<ArtisanLayout />}>
   <Route index element={<Dashboard />} />
   <Route path="jobs" element={<Jobs />} />
   <Route path="notification" element={<Notification />} />
@@ -163,26 +216,51 @@ const App = () => {
   <Route path="verification" element={<Verification />} />
   <Route path="settings" element={<Settings />} />
   <Route path="help" element={<Help />} />
-</Route>
+</Route> */}
 
 
        {/* ADMIN DASHBOARD ROUTES (WITH AdminNavbar) */}
-<Route path="/admin" element={<AdminLayout />}>
+       <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+  <Route path="/admin" element={<AdminLayout />}>
+    <Route index element={<AdminDashboard />} />
+    <Route path="verify-artisan" element={<VerifyArtisan />} />
+    <Route path="manage-user" element={<ManageUser />} />
+    <Route path="monitor-transaction" element={<MonitorTransaction />} />
+      <Route path="disputes" element={<Disputes />} />
+    <Route path="artisans" element={<Artisans />} />
+    <Route path="clients" element={<AdminClients />} />
+  </Route>
+</Route>
+{/* <Route path="/admin" element={<AdminLayout />}>
   <Route index element={<AdminDashboard />} />
   <Route path="verify-artisan" element={<VerifyArtisan />} />
   <Route path="manage-user" element={<ManageUser />} />
   <Route path="monitor-transaction" element={<MonitorTransaction />} />
   <Route path="disputes" element={<Disputes />} />
-</Route>
+<Route path="artisans" element={<Artisans />} />
+<Route path="clients" element={<AdminClients />} />
+<Route path="/admin/artisans" element={<Artisans />} />
+
+</Route> */}
 
 {/* ADMIN ONBOARDING ROUTES (WITHOUT AdminNavbar) */}
-<Route path="/admin" element={<AdminOnboardingLayout />}>
+<Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+  <Route path="/admin" element={<AdminOnboardingLayout />}>
+    <Route path="admin-post-verification" element={<AdminPostVerification />} />
+    <Route path="admin-setup" element={<AdminSetUp />} />
+    <Route path="admin-setup-two" element={<AdminSetUpTwo />} />
+    <Route path="admin-setup-three" element={<AdminSetUpThree />} />
+    <Route path="admin-setup-four" element={<AdminSetUpFour />} />
+  </Route>
+</Route>
+
+{/* <Route path="/admin" element={<AdminOnboardingLayout />}>
   <Route path="admin-post-verification" element={<AdminPostVerification />} />
   <Route path="admin-setup" element={<AdminSetUp />} />
   <Route path="admin-setup-two" element={<AdminSetUpTwo />} />
   <Route path="admin-setup-three" element={<AdminSetUpThree />} />
   <Route path="admin-setup-four" element={<AdminSetUpFour />} />
-</Route>
+</Route> */}
 
       </>
     )

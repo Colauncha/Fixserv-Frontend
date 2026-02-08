@@ -1,15 +1,118 @@
-import React from 'react'
-
+import React, { useState } from 'react'
 import signLogo from '../../assets/sign/sign logo.png';
 import signImage from '../../assets/sign/sign image.png';
 import signOverlay from '../../assets/sign/sign overlay.png';
 import googleLogo from '../../assets/sign/google logo.png';
 import appleLogo from '../../assets/sign/apple logo.png';
+import { Eye, EyeOff } from "lucide-react";
 
 import { useNavigate } from 'react-router-dom';
 
 const LogIn = () => {
   const navigate = useNavigate();
+
+  const [showPassword, setShowPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+const [formData, setFormData] = useState({
+  email: "",
+  password: "",
+});
+
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+
+  if (!formData.email || !formData.password) {
+    setError("Email and password are required");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const res = await fetch(
+      "https://user-management-h4hg.onrender.com/api/admin/login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password.trim(),
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+//     console.log("✅ LOGIN RESPONSE:", data);
+
+//     if (!res.ok) {
+//       throw new Error(data.message || "Login failed");
+//     }
+
+//     console.log("✅ SAVING USER TO LOCALSTORAGE");
+
+//     // ✅ Save auth
+//    localStorage.setItem(
+//   "fixserv_user",
+//   JSON.stringify({
+//     id: data.user.id,
+//     fullName: data.user.fullName,
+//     email: data.user.email,
+//     role: data.user.role,
+//   })
+// );
+
+// localStorage.setItem("fixserv_token", data.token);
+
+
+// console.log("📦 STORED USER:", localStorage.getItem("fixserv_user"));
+
+//     localStorage.setItem("fixserv_role", data.user?.role || "CLIENT");
+
+//     // ✅ Go to dashboard
+//     navigate("/client");
+
+//   } catch (err) {
+//     setError(err.message);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+console.log("✅ LOGIN RESPONSE:", data);
+console.log("✅ SAVING USER TO LOCALSTORAGE");
+
+const user = data.data.response;
+const token = data.data.BearerToken;
+
+localStorage.setItem(
+  "fixserv_user",
+  JSON.stringify({
+    id: user._id,          // 🔥 IMPORTANT
+    fullName: user.fullName,
+    email: user.email,
+    role: user.role,
+  })
+);
+
+localStorage.setItem("fixserv_token", token);
+localStorage.setItem("fixserv_role", user.role);
+
+navigate("/client");
+
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   return (
     <div>
     <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
@@ -37,15 +140,15 @@ const LogIn = () => {
         </div>
 
         {/* Center Content */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 sm:px-10 lg:px-14 text-center text-white max-w-lg mx-auto">
+        {/* <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 sm:px-10 lg:px-14 text-center text-white max-w-lg mx-auto">
 
-          <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-5 lg:mb-10 font-medium leading-tight">
+          * <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-5 lg:mb-10 font-medium leading-tight">
       Welcome Back!
     </h2>
 
     <p className="text-sm sm:text-base mb-16 sm:mb-12  text-white opacity-90">
       Let’s help you get it fixed
-    </p>
+    </p> *
 
     <p className="text-sm sm:text-base mb-4 sm:mb-6  text-white opacity-90">
       Are you a professional looking to offer your services?
@@ -54,7 +157,24 @@ const LogIn = () => {
     <button onClick={() => navigate("/artisan-login")} className="border border-white px-5 sm:px-6 py-2 rounded-2xl font-medium hover:bg-white hover:text-[#3E83C4] transition">
       Join as an artisan
     </button>
-  </div>
+  </div> */}
+          <div className="
+  relative z-10 flex-1 flex flex-col items-center justify-center
+  mb-8 sm:mb-12 lg:mb-10
+  px-6 sm:px-10 lg:px-14
+  text-center text-white max-w-lg mx-auto
+">
+  <p className="text-sm sm:text-base mb-6 opacity-90">
+    Are you a skilled professional? Looking to offer your services?
+  </p>
+
+  <button
+    onClick={() => navigate('/artisan-signup')}
+    className="border border-white px-6 py-2 rounded-2xl font-medium hover:bg-white hover:text-[#3E83C4] cursor-pointer transition"
+  >
+    Join as an artisan
+  </button>
+</div>
 </div>
 
 
@@ -63,10 +183,10 @@ const LogIn = () => {
         <div className="w-full max-w-md">
 
       <h2 className="text-2xl font-semibold text-black text-center">
-        Welcome to Fixserv
+        Log In
       </h2>
       <p className="text-sm text-[#656565] text-center mt-2 mb-8">
-        Enter your details to set up your new Fixserv account
+        Enter your details to log in your Fixserv client account
       </p>
 
       {/* Google */}
@@ -81,7 +201,9 @@ const LogIn = () => {
         Sign up with Apple
       </button>
 
-<div className="flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12 lg:py-16">
+{/* <div className="flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12 lg:py-16"> */}
+          {/* Divider */}
+          <div className="flex items-center justify-center gap-4 mb-6">
 
   <div className="w-6 h-px bg-[#B3B3B3]" />
   <span className="text-sm text-[#B3B3B3]">Or</span>
@@ -89,23 +211,48 @@ const LogIn = () => {
 </div>
 
       {/* Form */}
-      <form className="space-y-5">
+      <form className="space-y-5" onSubmit={handleSubmit}>
+
 
   {/* Email */}
-  <input
-    type="email"
-    placeholder="Email Address"
-    className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm 
-               focus:outline-none focus:ring-2 focus:ring-blue-500"
-  />
+<input
+  type="email"
+  placeholder="Email Address"
+  value={formData.email}
+  onChange={(e) =>
+    setFormData({ ...formData, email: e.target.value })
+  }
+  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm"
+/>
+
 
   {/* Password */}
-  <input
+  {/* <input
     type="password"
     placeholder="Password"
     className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm 
                focus:outline-none focus:ring-2 focus:ring-blue-500"
-  />
+  /> */}
+             <div className="relative">
+<input
+  type={showPassword ? "text" : "password"}
+  placeholder="Password"
+  value={formData.password}
+  onChange={(e) =>
+    setFormData({ ...formData, password: e.target.value })
+  }
+  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 pr-12 text-sm"
+/>
+
+  
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+    >
+      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+    </button>
+  </div>
 
   {/* Remember & Forgot */}
   <div className="flex items-center justify-between mb-12">
@@ -128,14 +275,20 @@ const LogIn = () => {
   </div>
 
   {/* Submit */}
-  <button
-    type="submit"
-    onClick={() => navigate("/client")}
-    className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] 
-               text-white py-3 rounded-md font-medium transition cursor-pointer"
-  >
-    Log In
-  </button>
+  {error && (
+  <p className="text-sm text-red-500 text-center mt-2">
+    {error}
+  </p>
+)}
+
+<button
+  type="submit"
+  disabled={loading}
+  className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md"
+>
+  {loading ? "Logging in..." : "Log In"}
+</button>
+
 
   {/* Footer */}
   <p className="text-sm text-center text-black">

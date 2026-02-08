@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import earnedIcon from "../../assets/Artisan Images/earned icon.png";
 import withdrawerIcon from "../../assets/Artisan Images/withdrawal icon.png";
 import pendingIcon from "../../assets/Artisan Images/pending icon.png";
@@ -6,6 +6,12 @@ import failedIcon from "../../assets/Artisan Images/failed icon.png";
 import not from "../../assets/Artisan Images/not.png";
 import profile from "../../assets/Artisan Images/adebayo.png";
 import { useNavigate } from "react-router-dom";
+import { getWithdrawalHistory } from "../../api/wallet";
+import { resolveAccount } from "../../api/wallet";
+
+import { initiateWithdrawal } from "../../api/wallet";
+import { getAuthUser } from "../../utils/auth"
+
 
 const activities = [
   {
@@ -57,7 +63,32 @@ const activities = [
 
 const Wallet = () => {
 
+const user = getAuthUser();
+const userId = user?.id;
+
+  const [withdrawals, setWithdrawals] = useState([]);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+useEffect(() => {
+  if (!userId) return;
+  fetchWithdrawals();
+}, [page, userId]);
+
+
+  const fetchWithdrawals = async () => {
+    try {
+      setLoading(true);
+      const data = await getWithdrawalHistory(userId, page, 10);
+      setWithdrawals(data?.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 const itemsPerPage = 3;
 
 const totalPages = Math.ceil(activities.length / itemsPerPage);
@@ -67,17 +98,143 @@ const currentData = activities.slice(
   page * itemsPerPage
 );
 
-// const [showWithdraw, setShowWithdraw] = useState(false);
-// const [showSuccess, setShowSuccess] = useState(false);
+const [amount, setAmount] = useState("");
+const [accountNumber, setAccountNumber] = useState("");
+const [bankCode, setBankCode] = useState("");
+const [pin, setPin] = useState("");
+const [accountName, setAccountName] = useState("");
+
+
 const [screen, setScreen] = useState("home");
 
 const navigate = useNavigate();
 
+const [agreed, setAgreed] = useState(false);
+
+const canWithdraw =
+  amount &&
+  accountNumber.length === 10 &&
+  bankCode &&
+  accountName &&
+  pin;
 
 
-        const withdrawalAmount = 50000;
+const withdrawalAmount = Number(amount || 0);
+
+const [withdrawing, setWithdrawing] = useState(false);
+
+
+
 const fee = 50;
 const netAmount = withdrawalAmount - fee;
+
+// const handleSubmit = async (e) => {
+//   e.preventDefault();
+//   setError("");
+
+//   if (!agreed) {
+//     setError("You must agree to the Terms & Conditions");
+//     return;
+//   }
+
+//   if (formData.password !== formData.confirmPassword) {
+//     setError("Passwords do not match");
+//     return;
+//   }
+
+//   try {
+//     setLoading(true);
+
+//     const payload = {
+//       email: formData.email.trim(),
+//       password: formData.password,
+//       fullName: formData.fullName.trim(),
+//       role: "ADMIN",
+//       adminData: {
+//         permissions: formData.permissions,
+//       },
+//     };
+
+//     const res = await fetch(
+//       "https://user-management-h4hg.onrender.com/api/users/register",
+//       {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(payload),
+//       }
+//     );
+
+//     const data = await res.json();
+
+//     if (!res.ok) {
+//       throw new Error(data.message || "Registration failed");
+//     }
+
+//     // optional, safe
+//     localStorage.setItem("fixserv_role", "ADMIN");
+
+//     navigate("/admin-login");
+//   } catch (err) {
+//     setError(err.message);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+const handleResolveAccount = async () => {
+  if (accountNumber.length !== 10 || !bankCode) return;
+
+  try {
+    const res = await resolveAccount({ accountNumber, bankCode });
+    setAccountName(res?.data?.accountName);
+  } catch (err) {
+    setAccountName("");
+    console.error("Account resolution failed");
+  }
+};
+
+// const handleWithdraw = async () => {
+//   try {
+//     await initiateWithdrawal({
+//       userId,
+//       amount: Number(amount),
+//       accountNumber,
+//       bankCode,
+//       pin,
+//     });
+
+//     fetchWithdrawals(); // refresh history
+//     alert("Withdrawal initiated successfully");
+//   } catch (err) {
+//     alert("Withdrawal failed");
+//   }
+// };
+
+const handleWithdraw = async () => {
+  if (withdrawing) return;
+  setWithdrawing(true);
+
+  try {
+    await initiateWithdrawal({
+      userId,
+      amount: Number(amount),
+      accountNumber,
+      bankCode,
+      pin,
+    });
+
+    fetchWithdrawals();
+    setScreen("success");
+  } catch (err) {
+    console.error(err);
+    setScreen("failed");
+  } finally {
+    setWithdrawing(false);
+  }
+};
+
+
+
+
 
 
   return (
@@ -253,6 +410,14 @@ const netAmount = withdrawalAmount - fee;
             <p className="text-sm text-gray-500 mb-1">Amount to withdraw</p>
             <div className="border border-blue-200 bg-[#E5EFF9] px-4 py-3 rounded-lg">NGN 50,000.00</div>
           </div>
+          <input
+  type="number"
+  placeholder="Enter amount"
+  value={amount}
+  onChange={(e) => setAmount(e.target.value)}
+  className="w-full border border-blue-200 px-4 py-3 rounded-lg text-sm"
+/>
+
 
           <div className="flex justify-between items-center">
             <p className="text-sm">Select Withdrawal Method</p>
@@ -274,6 +439,43 @@ const netAmount = withdrawalAmount - fee;
             </div>
             <div className="w-4 h-4 rounded-full border" />
           </div>
+          <div className="space-y-2">
+  <input
+    placeholder="Account Number"
+    value={accountNumber}
+    onChange={(e) => setAccountNumber(e.target.value)}
+    onBlur={handleResolveAccount}
+    className="w-full border border-blue-200 px-4 py-2 rounded-lg text-sm"
+  />
+
+<select
+  value={bankCode}
+  onChange={(e) => setBankCode(e.target.value)}
+  className="w-full border border-blue-200 px-4 py-2 rounded-lg text-sm"
+>
+  <option value="">Select Bank</option>
+  <option value="058">GTBank</option>
+  <option value="057">Zenith Bank</option>
+  <option value="033">UBA</option>
+</select>
+
+<input
+  type="password"
+  placeholder="Enter PIN"
+  value={pin}
+  onChange={(e) => setPin(e.target.value)}
+  className="w-full border border-blue-200 px-4 py-2 rounded-lg text-sm"
+/>
+
+
+
+  {accountName && (
+    <p className="text-green-600 text-sm">
+      Account Name: {accountName}
+    </p>
+  )}
+</div>
+
         </div>
       </div>
 
@@ -319,15 +521,17 @@ const netAmount = withdrawalAmount - fee;
 >
   Withdraw Now
 </button> */}
+
+
 <button
-  onClick={() => {
-    const isSuccess = Math.random() > 0.5; // simulate result
-    setScreen(isSuccess ? "success" : "failed");
-  }}
-  className="w-full mt-4 cursor-pointer bg-[#3E83C4] text-white py-3 rounded-lg"
+  onClick={handleWithdraw}
+  disabled={!canWithdraw}
+  className={`w-full mt-4 py-3 rounded-lg text-white
+    ${canWithdraw ? "bg-[#3E83C4]" : "bg-gray-300 cursor-not-allowed"}`}
 >
   Withdraw Now
 </button>
+
 
 
       </div>
@@ -341,41 +545,44 @@ const netAmount = withdrawalAmount - fee;
     Recent Withdrawals
   </div>
 
-  <div className="grid grid-cols-4 px-6 py-3 text-sm bg-[#f7f7f7] text-black">
-    <span>Date</span>
-    <span>Amount</span>
-    <span>Destination</span>
-    <span>Status</span>
-  </div>
+  {!withdrawals.length && !loading && (
+  <p className="p-6 text-sm text-gray-400">
+    No withdrawals yet
+  </p>
+)}
 
-  {[
-    { date: "October 23, 2025", amount: "NGN 25,000.00", bank: "Zenith Bank **** 1234", status: "Completed" },
-    { date: "October 15, 2025", amount: "NGN 45,000.00", bank: "Zenith Bank **** 1234", status: "Completed" },
-    { date: "September 29, 2025", amount: "NGN 15,000.00", bank: "Sterling Bank **** 5734", status: "Failed" },
-  ].map((item, i) => (
-    <div
-      key={i}
-      className="grid grid-cols-4 px-6 py-4 text-sm border-t border-blue-200 items-center"
+{withdrawals.map((item, i) => (
+  <div
+    key={i}
+    className="grid grid-cols-4 px-6 py-4 text-sm border-t border-blue-200 items-center"
+  >
+    <span className="text-gray-600">
+      {new Date(item.createdAt).toLocaleDateString()}
+    </span>
+
+    <span>NGN {Number(item.amount).toLocaleString()}</span>
+
+    <span>{item.bankName || "—"}</span>
+
+    <span
+      className={`inline-block px-3 py-1 rounded-full text-xs w-fit
+        ${item.status === "SUCCESS"
+          ? "bg-green-100 text-green-600"
+          : item.status === "PENDING"
+          ? "bg-yellow-100 text-yellow-600"
+          : "bg-red-100 text-red-600"}`}
     >
-      <span className="text-gray-600">{item.date}</span>
-      <span>{item.amount}</span>
-      <span>{item.bank}</span>
+      {item.status}
+    </span>
+  </div>
+))}
 
-      <span
-        className={`inline-block px-3 py-1 rounded-full text-xs w-fit
-          ${item.status === "Completed"
-            ? "bg-green-100 text-green-600"
-            : "bg-red-100 text-red-600"}`}
-      >
-        {item.status}
-      </span>
-    </div>
-  ))}
   
 </div>
 
   </div>
 )}
+
 {screen === "success" && (
   <div className="w-full p-6">
 

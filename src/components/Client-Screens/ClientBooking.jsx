@@ -1,12 +1,52 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import profileImage from "../../assets/client images/client-home/profile.png";
 import mark from "../../assets/client images/client-home/mark.png";
 import star from "../../assets/client images/client-home/star.png";
 import upload from "../../assets/client images/client-home/upload.png";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+
 
 const ClientBooking = () => {
   const navigate = useNavigate();
+  const { artisanId } = useParams();
+  const location = useLocation();
+const artisan = location.state?.artisan;
+const [artisanData, setArtisanData] = useState(artisan);
+const [loading, setLoading] = useState(!artisan);
+
+useEffect(() => {
+  if (!artisan && artisanId) {
+    const fetchArtisan = async () => {
+      try {
+        const token = localStorage.getItem("fixserv_token");
+        const res = await fetch(
+          `https://user-management-h4hg.onrender.com/api/admin/user/${artisanId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const data = await res.json();
+        setArtisanData(data);
+      } catch (err) {
+        console.error("Failed to load artisan", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArtisan();
+  }
+}, [artisan, artisanId]);
+
+if (loading || !artisanData) {
+  return (
+    <div className="py-20 text-center text-gray-500">
+      Loading booking details...
+    </div>
+  );
+}
+
+
   return (
     <div className="w-full">
       {/* <section className="w-full px-8 md:px-20 py-14"> */}
@@ -119,7 +159,9 @@ const ClientBooking = () => {
 />
 
     <div className="flex items-center gap-2 mt-2">
-      <h3 className="font-semibold text-black">John Adewale</h3>
+      <h3 className="font-semibold text-black">
+  {artisanData.fullName}
+</h3>
       <img src={mark} alt="verified" className="w-4 h-4" />
     </div>
 
@@ -151,8 +193,11 @@ const ClientBooking = () => {
         Experience: <span className="font-medium text-black">5+ years</span>
       </p>
       <p>
-        Location: <span className="font-medium text-black">Surulere, Lagos</span>
-      </p>
+  Location:{" "}
+  <span className="font-medium text-black">
+    {artisanData.location}
+  </span>
+</p>
     </div>
 
   </div>

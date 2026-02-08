@@ -295,6 +295,7 @@ import { CheckCircle2, Circle, ArrowLeft, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import failure from "../../assets/client images/client-home/cancel.png";
 import success from "../../assets/client images/client-home/success.png";
+import { useLocation } from "react-router-dom";
 
 const stepsData = [
   "Request Received",
@@ -370,6 +371,18 @@ const TrackRepair = () => {
   };
 
   const navigate = useNavigate();
+
+  const location = useLocation();
+const booking = location.state?.booking;
+const artisan = location.state?.artisan;
+
+if (!booking) {
+  return (
+    <div className="py-20 text-center text-gray-500">
+      Repair details not found.
+    </div>
+  );
+}
 
   return (
    <section className="w-full py-14 overflow-hidden bg-white relative">
@@ -612,21 +625,21 @@ const TrackRepair = () => {
 {/* Repair Info */}
 <div className="mt-8 text-center space-y-2">
   <h3 className="font-semibold text-2xl">
-    Repair ID: <span className="font-semibold">#FX2341</span>
-  </h3>
+  Repair ID: <span className="font-semibold">#{booking.id}</span>
+</h3>
 
-  <p className="text-lg font-normal text-black">
-    iPhone 12 Pro - Black
-  </p>
+<p className="text-lg font-normal text-black">
+  {booking.deviceModel}
+</p>
 </div>
 
 {/* Status */}
 <div className="flex justify-center items-center gap-2 mt-3">
   <p className="text-sm text-[#535353]">Status:</p>
 
-  <span className="bg-[#F6E4C7] text-[#F99F10] text-xs px-3 py-[2px] rounded-full">
-    In progress
-  </span>
+<span className="bg-[#F6E4C7] text-[#F99F10] text-xs px-3 py-[2px] rounded-full">
+  {booking.status}
+</span>
 </div>
 
 <p className="text-sm text-center text-[#7A7A7A] mt-2">
