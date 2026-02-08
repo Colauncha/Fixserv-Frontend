@@ -128,7 +128,7 @@
 
 // export default JobsBoard;
 
-import { useState } from "react";
+
 import { useEffect, useState } from "react";
 import { getAuthToken } from "../../utils/auth";
 
@@ -214,7 +214,7 @@ const filteredJobs = jobs.filter(job => job.status === activeStatus);
             </div>
             <p className="font-semibold">{job.clientName}</p>
             <span className="text-sm text-gray-400">
-              {job.createdAt}
+              {new Date(job.createdAt).toLocaleDateString()}
             </span>
           </div>
 
