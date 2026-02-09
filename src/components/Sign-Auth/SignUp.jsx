@@ -30,6 +30,9 @@ const [error, setError] = useState("");
 
 const [agreed, setAgreed] = useState(false);
 
+const [fieldErrors, setFieldErrors] = useState({});
+
+
 
 const handleChange = (e) => {
   setFormData({
@@ -40,27 +43,34 @@ const handleChange = (e) => {
 
 const handleSubmit = async () => {
   setError("");
+  const errors = {};
 
   const { firstName, lastName, email, password, confirmPassword, location } = formData;
 
-  if (!firstName || !lastName || !email || !password || !location) {
-    setError("All fields are required");
-    return;
-  }
+  if (!firstName.trim()) errors.firstName = "First name is required";
+  if (!lastName.trim()) errors.lastName = "Last name is required";
+  if (!email.trim()) errors.email = "Email is required";
+  if (!location.trim()) errors.location = "Location is required";
+  if (!password) errors.password = "Password is required";
+  if (!confirmPassword) errors.confirmPassword = "Confirm your password";
 
-  if (password !== confirmPassword) {
-    setError("Passwords do not match");
-    return;
+  if (password && confirmPassword && password !== confirmPassword) {
+    errors.confirmPassword = "Passwords do not match";
   }
 
   if (!agreed) {
-    setError("You must agree to the Terms & Conditions");
+    errors.agreed = "You must agree to the Terms & Conditions";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    setFieldErrors(errors);
     return;
   }
 
+  setFieldErrors({});
+
   try {
     setLoading(true);
-
     const res = await fetch(
       "https://user-management-h4hg.onrender.com/api/users/register",
       {
@@ -153,6 +163,8 @@ const login = useGoogleLogin({
   onSuccess: handleGoogleSuccess,
   onError: handleGoogleError,
 });
+
+
 
 
   return (
@@ -265,52 +277,74 @@ const login = useGoogleLogin({
 }}>
 
 
-           <input
+
+<input
   name="firstName"
   value={formData.firstName}
   onChange={handleChange}
   placeholder="First Name"
-  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm"
-/>
+  className={`w-full rounded-md px-4 py-3 text-sm border 
+    ${fieldErrors.firstName ? "border-red-500" : "border-[#9BAAB9]"}`}
+ />
+{fieldErrors.firstName && (
+  <p className="text-xs text-red-500 mt-1">{fieldErrors.firstName}</p>
+)}
 
 <input
   name="lastName"
   value={formData.lastName}
   onChange={handleChange}
-  type="text"
   placeholder="Last Name"
-  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm"
-/>
+  className={`w-full rounded-md px-4 py-3 text-sm border 
+    ${fieldErrors.lastName ? "border-red-500" : "border-[#9BAAB9]"}`}
+ />
+{fieldErrors.lastName && (
+  <p className="text-xs text-red-500 mt-1">{fieldErrors.lastName}</p>
+)}
 
 <input
   name="email"
+  type="email"
   value={formData.email}
   onChange={handleChange}
   placeholder="Email Address"
-  type="email"
-  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm"
+  className={`w-full rounded-md px-4 py-3 text-sm border 
+    ${fieldErrors.email ? "border-red-500" : "border-[#9BAAB9]"}`}
 />
+{fieldErrors.email && (
+  <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+)}
+
 
 <input
   name="location"
   value={formData.location}
   onChange={handleChange}
-  type="text"
   placeholder="Location"
-  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm"
+  className={`w-full rounded-md px-4 py-3 text-sm border 
+    ${fieldErrors.location ? "border-red-500" : "border-[#9BAAB9]"}`}
 />
+{fieldErrors.location && (
+  <p className="text-xs text-red-500 mt-1">{fieldErrors.location}</p>
+)}
+
 
 
 {/* Password */}
 <div className="relative">
-  <input
-    type={showPassword ? "text" : "password"}
-    name="password"
-    value={formData.password}
-    onChange={handleChange}
-    placeholder="Password"
-    className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 pr-12 text-sm"
-  />
+<input
+  type={showPassword ? "text" : "password"}
+  name="password"
+  value={formData.password}
+  onChange={handleChange}
+  placeholder="Password"
+  className={`w-full rounded-md px-4 py-3 pr-12 text-sm border 
+    ${fieldErrors.password ? "border-red-500" : "border-[#9BAAB9]"}`}
+/>
+{fieldErrors.password && (
+  <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
+)}
+
 
   <button
     type="button"
@@ -353,21 +387,25 @@ const login = useGoogleLogin({
 
 
             {/* Terms */}
-            <label className="flex items-start gap-2 text-sm text-gray-600">
-              <input
-  type="checkbox"
-  checked={agreed}
-  onChange={(e) => setAgreed(e.target.checked)}
-  className="mt-1"
-/>
+<label className="flex items-start gap-2 text-sm text-gray-600">
+  <input
+    type="checkbox"
+    checked={agreed}
+    onChange={(e) => setAgreed(e.target.checked)}
+    className="mt-1"
+  />
+  <span>
+    I agree to the{" "}
+    <span className="text-[#3E83C4] cursor-pointer">Terms & Conditions</span>{" "}
+    and{" "}
+    <span className="text-[#3E83C4] cursor-pointer">Privacy Policy</span>
+  </span>
+</label>
 
-              <span>
-                I agree to the{" "}
-                <span className="text-[#3E83C4] cursor-pointer">Terms & Conditions</span>{" "}
-                and{" "}
-                <span className="text-[#3E83C4] cursor-pointer">Privacy Policy</span>
-              </span>
-            </label>
+{fieldErrors.agreed && (
+  <p className="text-xs text-red-500 mt-1">{fieldErrors.agreed}</p>
+)}
+
 
 
 {/* <button
@@ -387,14 +425,23 @@ const login = useGoogleLogin({
   </p>
 )}
 
-
 <button
+  type="submit"
+  disabled={loading}
+  className="w-full cursor-pointer bg-[#3E83C4] text-white py-3 rounded-md"
+>
+  {loading ? "Creating account..." : "Sign Up as a Client"}
+</button>
+
+
+
+{/* <button
   type="submit"
  disabled={loading || !agreed}
   className="w-full cursor-pointer bg-[#3E83C4] text-white py-3 rounded-md"
 >
   {loading ? "Creating account..." : "Sign Up as a Client"}
-</button>
+</button> */}
 
 
 

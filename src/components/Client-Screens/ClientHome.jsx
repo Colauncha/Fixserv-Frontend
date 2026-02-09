@@ -58,7 +58,7 @@ const handleSearch = async () => {
       throw new Error("Search failed");
     }
 
-    // ✅ Prefer artisans from search response
+
     const artisansFromSearch = data.data?.artisans?.data || [];
 
     setApiArtisans(artisansFromSearch);
@@ -82,7 +82,7 @@ useEffect(() => {
 
   if (shouldShow === "true") {
     setShowWelcomeBonus(true);
-    localStorage.removeItem("showWelcomeBonus"); // show once
+    localStorage.removeItem("showWelcomeBonus"); 
   }
 }, []);
 
@@ -416,7 +416,7 @@ const mappedApiArtisans = apiArtisans.map((artisan) => ({
   </h2>
 
   {/* Marquee Wrapper */}
-{/* Marquee Wrapper */}
+
 <div className="relative w-full overflow-hidden">
   <div className="flex w-max gap-8 marquee">
     {[...Array(2)].map((_, loopIndex) => (
@@ -431,7 +431,7 @@ const mappedApiArtisans = apiArtisans.map((artisan) => ({
               key={`${loopIndex}-${artisan.id}`}
               className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
             >
-              {/* CARD CONTENT */}
+          
             </div>
           ))
         )}
@@ -471,7 +471,7 @@ const mappedApiArtisans = apiArtisans.map((artisan) => ({
       ))}
     </div>
 
-    {/* ARTISANS GRID — now same width as category */}
+    {/* ARTISANS GRID */}
     <div className="relative w-full mt-10">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
 
@@ -537,21 +537,21 @@ const mappedApiArtisans = apiArtisans.map((artisan) => ({
 
 <section className="relative w-full flex items-center justify-center mt-4 mb-8 py-14 overflow-hidden">
   
-  {/* Background image */}
+
   <img
     src={bannerBg}
     alt="Banner background"
     className="absolute inset-0 w-full h-full object-cover z-0"
   />
 
-  {/* Overlay (ON TOP of background) */}
+
   <img
     src={bannerOverlay}
     alt="Banner overlay"
     className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none"
   />
 
-  {/* Content */}
+
   <div className="relative z-20 text-center w-full px-6">
     <h5 className="text-white text-lg md:text-xl lg:text-2xl font-bold leading-tight">
       Need Help?

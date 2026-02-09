@@ -338,9 +338,6 @@ if (!artisan || !booking) {
 
   {/* Actions */}
   <div className="mt-14 text-center space-y-4">
-    {/* <button className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-16 py-3 rounded-md text-sm font-medium transition">
-      Make Payment
-    </button> */}
     <button
   onClick={() => setActiveModal("wallet")}
   className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-16 py-3 rounded-md text-sm font-medium transition cursor-pointer"
@@ -350,9 +347,6 @@ if (!artisan || !booking) {
 
 
     <div>
-      {/* <button className="text-sm text-blue-600">
-        Cancel Booking
-      </button> */}
       <button
   onClick={() => setActiveModal("cancel")}
   className="text-sm text-blue-600 cursor-pointer"

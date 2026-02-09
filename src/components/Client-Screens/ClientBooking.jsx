@@ -38,6 +38,15 @@ useEffect(() => {
   }
 }, [artisan, artisanId]);
 
+useEffect(() => {
+  if (artisan) {
+    setArtisanData(artisan);
+    setLoading(false);
+  }
+}, [artisan]);
+
+
+
 if (loading || !artisanData) {
   return (
     <div className="py-20 text-center text-gray-500">
@@ -49,8 +58,6 @@ if (loading || !artisanData) {
 
   return (
     <div className="w-full">
-      {/* <section className="w-full px-8 md:px-20 py-14"> */}
-      {/* <section className="w-full px-24 md:px-53 py-14"> */}
               <section className="w-full py-14 overflow-hidden">
             <div className="max-w-7xl mx-auto px-2 md:px-6">
         
@@ -80,6 +87,10 @@ if (loading || !artisanData) {
     <input
       type="text"
       placeholder="Device Brand"
+      value={bookingData.brand}
+      onChange={(e) =>
+    setBookingData({ ...bookingData, brand: e.target.value })
+  }
       className="w-full border rounded-md px-4 py-3 text-sm outline-none border-[#5F8EBA] focus:border-[#3e83c4]"
     />
 
@@ -134,7 +145,7 @@ if (loading || !artisanData) {
 
     {/* Continue Button */}
     <div className="pt-4">
-      <button onClick={() => navigate("/client/booking-summary")} className="w-full md:w-48 mx-auto block bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md text-sm font-medium transition cursor-pointer">
+      <button onClick={() => navigate("/client/booking-summary", {state: {artisan:artisanData, booking:bookingData, }, })} className="w-full md:w-48 mx-auto block bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md text-sm font-medium transition cursor-pointer">
         Continue
       </button>
     </div>
@@ -144,8 +155,6 @@ if (loading || !artisanData) {
 
 
           {/* RIGHT – ARTISAN CARD */}
-         {/* <div className="bg-blue-50 rounded-xl p-4 h-fit"> */}
-          {/* <div className="bg-blue-50 rounded-xl px-0.5 py-4 h-fit"> */}
             <div className="bg-[#EEF6FF] rounded-xl px-6 py-4 w-fit h-fit mx-auto">
 
 
