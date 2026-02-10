@@ -177,7 +177,7 @@ const login = useGoogleLogin({
         <img src={signOverlay} className="absolute inset-0 w-full h-full object-cover" />
 
         {/* Logo */}
-        <div className="relative z-10 px-6 sm:px-10 lg:px-40 pt-6 sm:pt-10 lg:pt-16">
+        <div className="relative z-10 px-6 sm:px-10 lg:px-48 pt-6 sm:pt-10 lg:pt-16">
           <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
         </div>
          {/* Center Content */}
@@ -257,7 +257,7 @@ const login = useGoogleLogin({
 
 
 
-          <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-6">
+          <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-6 cursor-pointer">
             <img src={appleLogo} className="w-5 h-5" />
             Sign up with Apple
           </button>

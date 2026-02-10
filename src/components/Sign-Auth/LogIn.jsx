@@ -7,6 +7,8 @@ import appleLogo from '../../assets/sign/apple logo.png';
 import { Eye, EyeOff } from "lucide-react";
 
 import { useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from "@react-oauth/google";
+
 
 const LogIn = () => {
   const navigate = useNavigate();
@@ -22,14 +24,37 @@ const [formData, setFormData] = useState({
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
 
+const [fieldErrors, setFieldErrors] = useState({
+  email: "",
+  password: "",
+});
+
+
 const handleSubmit = async (e) => {
   e.preventDefault();
   setError("");
 
-  if (!formData.email || !formData.password) {
-    setError("Email and password are required");
-    return;
-  }
+const newErrors = {
+  email: "",
+  password: "",
+};
+
+if (!formData.email.trim()) {
+  newErrors.email = "Email is required";
+}
+
+if (!formData.password.trim()) {
+  newErrors.password = "Password is required";
+}
+
+if (newErrors.email || newErrors.password) {
+  setFieldErrors(newErrors);
+  return;
+}
+
+// clear errors if valid
+setFieldErrors({ email: "", password: "" });
+
 
   try {
     setLoading(true);
@@ -112,6 +137,59 @@ navigate("/client");
   }
 };
 
+const googleLogin = useGoogleLogin({
+  flow: "implicit", // gives us id_token
+  onSuccess: async (tokenResponse) => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        "https://user-management-h4hg.onrender.com/api/admin/google-login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            idToken: tokenResponse.id_token, // 🔥 THIS is what backend wants
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Google login failed");
+      }
+
+      const user = data.data.response;
+      const token = data.data.BearerToken;
+
+      // ✅ Save same way as normal login
+      localStorage.setItem(
+        "fixserv_user",
+        JSON.stringify({
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+        })
+      );
+
+      localStorage.setItem("fixserv_token", token);
+      localStorage.setItem("fixserv_role", user.role);
+
+      navigate("/client");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  },
+  onError: () => {
+    setError("Google login failed");
+  },
+});
+
+
 
   return (
     <div>
@@ -190,13 +268,22 @@ navigate("/client");
       </p>
 
       {/* Google */}
-      <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4">
+      {/* <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md cursor-pointer mb-4">
         <img src={googleLogo} alt="Google" className="w-5 h-5" />
         Sign up with Google
-      </button>
+      </button> */}
+
+      <button
+  onClick={() => googleLogin()}
+  className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md cursor-pointer mb-4"
+>
+  <img src={googleLogo} alt="Google" className="w-5 h-5" />
+  Sign up with Google
+</button>
+
 
       {/* Apple */}
-      <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-6">
+      <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-6 cursor-pointer">
         <img src={appleLogo} alt="Apple" className="w-5 h-5" />
         Sign up with Apple
       </button>
@@ -219,11 +306,21 @@ navigate("/client");
   type="email"
   placeholder="Email Address"
   value={formData.email}
-  onChange={(e) =>
-    setFormData({ ...formData, email: e.target.value })
-  }
-  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm"
+  onChange={(e) => {
+    setFormData({ ...formData, email: e.target.value });
+    setFieldErrors({ ...fieldErrors, email: "" });
+  }}
+  className={`w-full border rounded-md px-4 py-3 text-sm
+    ${fieldErrors.email ? "border-red-500" : "border-[#9BAAB9]"}
+  `}
 />
+
+{fieldErrors.email && (
+  <p className="text-xs text-red-500 mt-1">
+    {fieldErrors.email}
+  </p>
+)}
+
 
 
   {/* Password */}
@@ -238,11 +335,21 @@ navigate("/client");
   type={showPassword ? "text" : "password"}
   placeholder="Password"
   value={formData.password}
-  onChange={(e) =>
-    setFormData({ ...formData, password: e.target.value })
-  }
-  className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 pr-12 text-sm"
+  onChange={(e) => {
+    setFormData({ ...formData, password: e.target.value });
+    setFieldErrors({ ...fieldErrors, password: "" });
+  }}
+  className={`w-full border rounded-md px-4 py-3 pr-12 text-sm
+    ${fieldErrors.password ? "border-red-500" : "border-[#9BAAB9]"}
+  `}
 />
+
+{fieldErrors.password && (
+  <p className="text-xs text-red-500 mt-1">
+    {fieldErrors.password}
+  </p>
+)}
+  
 
   
     <button
@@ -284,7 +391,7 @@ navigate("/client");
 <button
   type="submit"
   disabled={loading}
-  className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md"
+  className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md cursor-pointer"
 >
   {loading ? "Logging in..." : "Log In"}
 </button>
