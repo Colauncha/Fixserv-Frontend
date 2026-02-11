@@ -5,6 +5,8 @@ import signOverlay from '../../assets/sign/sign overlay.png';
 import googleLogo from '../../assets/sign/google logo.png';
 import appleLogo from '../../assets/sign/apple logo.png';
 import { Eye, EyeOff } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
+
 
 import { useNavigate } from 'react-router-dom';
 
@@ -12,6 +14,140 @@ const ArtisanLogIn = () => {
     const navigate = useNavigate();
 
       const [showPassword, setShowPassword] = useState(false);
+
+      const [formData, setFormData] = useState({
+  email: "",
+  password: "",
+});
+
+const [fieldErrors, setFieldErrors] = useState({
+  email: "",
+  password: "",
+});
+
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+
+  const newErrors = { email: "", password: "" };
+
+  if (!formData.email.trim()) {
+    newErrors.email = "Email is required";
+  }
+
+  if (!formData.password.trim()) {
+    newErrors.password = "Password is required";
+  }
+
+  if (newErrors.email || newErrors.password) {
+    setFieldErrors(newErrors);
+    return;
+  }
+
+  setFieldErrors({ email: "", password: "" });
+
+  try {
+    setLoading(true);
+
+    const res = await fetch(
+      "https://user-management-h4hg.onrender.com/api/admin/login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password.trim(),
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Login failed");
+    }
+
+    const user = data.data.response;
+    const token = data.data.BearerToken;
+
+    localStorage.setItem(
+      "fixserv_user",
+      JSON.stringify({
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      })
+    );
+
+    localStorage.setItem("fixserv_token", token);
+    localStorage.setItem("fixserv_role", user.role);
+
+if (user.role === "ARTISAN") {
+  navigate("/artisan");
+} else {
+  navigate("/artisan-login");
+}
+
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const googleLogin = useGoogleLogin({
+  flow: "implicit",
+  onSuccess: async (tokenResponse) => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        "https://user-management-h4hg.onrender.com/api/admin/google-login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            idToken: tokenResponse.id_token,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Google login failed");
+      }
+
+      const user = data.data.response;
+      const token = data.data.BearerToken;
+
+      localStorage.setItem(
+        "fixserv_user",
+        JSON.stringify({
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+        })
+      );
+
+      localStorage.setItem("fixserv_token", token);
+      localStorage.setItem("fixserv_role", user.role);
+
+      navigate("/artisan");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  },
+  onError: () => setError("Google login failed"),
+});
+
 
   return (
         <div>
@@ -71,10 +207,14 @@ const ArtisanLogIn = () => {
           </p>
     
           {/* Google */}
-          <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4">
-            <img src={googleLogo} alt="Google" className="w-5 h-5" />
-            Sign up with Google
-          </button>
+          <button
+  onClick={() => googleLogin()}
+  className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4"
+>
+  <img src={googleLogo} alt="Google" className="w-5 h-5" />
+  Sign in with Google
+</button>
+
     
               
           <div className="flex items-center justify-center gap-4 mb-6">
@@ -84,32 +224,55 @@ const ArtisanLogIn = () => {
     </div>
     
           {/* Form */}
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleSubmit}>
     
       {/* Email */}
       <input
-        type="email"
-        placeholder="Email Address"
-        className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm 
-                   focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+  type="email"
+  placeholder="Email Address"
+  value={formData.email}
+  onChange={(e) => {
+    setFormData({ ...formData, email: e.target.value });
+    setFieldErrors({ ...fieldErrors, email: "" });
+  }}
+  className={`w-full border rounded-md px-4 py-3 text-sm
+    ${fieldErrors.email ? "border-red-500" : "border-[#9BAAB9]"}
+  `}
+/>
+
+{fieldErrors.email && (
+  <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+)}
+
     
       {/* Password */}
  <div className="relative">
   <input
-    type={showPassword ? "text" : "password"}
-    placeholder="Password"
-    className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 pr-12 text-sm
-               focus:outline-none focus:border-blue-500"
-  />
+  type={showPassword ? "text" : "password"}
+  placeholder="Password"
+  value={formData.password}
+  onChange={(e) => {
+    setFormData({ ...formData, password: e.target.value });
+    setFieldErrors({ ...fieldErrors, password: "" });
+  }}
+  className={`w-full border rounded-md px-4 py-3 pr-12 text-sm
+    ${fieldErrors.password ? "border-red-500" : "border-[#9BAAB9]"}
+  `}
+/>
 
-  <button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-  >
-    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-  </button>
+{fieldErrors.password && (
+  <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
+)}
+
+{error && (
+  <p className="text-sm text-red-500 text-center mt-2">
+    {error}
+  </p>
+)}
+
+
+
+
 </div>
     
       {/* Remember & Forgot */}
@@ -133,20 +296,31 @@ const ArtisanLogIn = () => {
       </div>
     
       {/* Submit */}
-      <button
+      {/* <button
         type="submit"
         onClick={() => navigate("/artisan")}
         className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] 
                    text-white py-3 rounded-md font-medium transition cursor-pointer"
       >
         Log In
-      </button>
+      </button> */}
+<button
+  type="submit"
+  disabled={loading}
+  // disabled={loading || !formData.email || !formData.password}
+
+  className="w-full bg-[#3E83C4] hover:bg-[#2d75b8]
+             text-white py-3 rounded-md font-medium transition cursor-pointer"
+>
+  {loading ? "Logging in..." : "Log In"}
+</button>
+
     
       {/* Footer */}
       <p className="text-sm text-center text-black">
         Don’t have a Fixserv account?{" "}
         <a href="/artisan-signup" className="text-[#3E83C4] hover:underline font-medium">
-          Sign Up
+          Sign Up dev
         </a>
       </p>
     
