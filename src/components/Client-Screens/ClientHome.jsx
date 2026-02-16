@@ -32,12 +32,49 @@ const ClientHome = () => {
 const user = JSON.parse(localStorage.getItem("fixserv_user"));
 const firstName = user?.fullName?.split(" ")[0];
 
+  
+  const navigate = useNavigate();
 
 const [searchQuery, setSearchQuery] = useState("");
 const [searchLoading, setSearchLoading] = useState(false);
 const [searchError, setSearchError] = useState("");
 
+const [searchResults, setSearchResults] = useState([]);
+const [isSearching, setIsSearching] = useState(false);
 
+
+
+
+// const handleSearch = async () => {
+//   if (!searchQuery.trim()) return;
+
+//   try {
+//     setSearchLoading(true);
+//     setSearchError("");
+
+//     const res = await fetch(
+//       `https://search-and-discovery.onrender.com/api/search?keyword=${encodeURIComponent(
+//         searchQuery
+//       )}&isAvailableNow=true`
+//     );
+
+//     const data = await res.json();
+
+//     if (!res.ok || !data.success) {
+//       throw new Error("Search failed");
+//     }
+
+
+//     const artisansFromSearch = data.data?.artisans?.data || [];
+
+//     setApiArtisans(artisansFromSearch);
+
+//   } catch (err) {
+//     setSearchError(err.message);
+//   } finally {
+//     setSearchLoading(false);
+//   }
+// };
 
 const handleSearch = async () => {
   if (!searchQuery.trim()) return;
@@ -45,6 +82,7 @@ const handleSearch = async () => {
   try {
     setSearchLoading(true);
     setSearchError("");
+    setIsSearching(true);
 
     const res = await fetch(
       `https://search-and-discovery.onrender.com/api/search?keyword=${encodeURIComponent(
@@ -58,22 +96,15 @@ const handleSearch = async () => {
       throw new Error("Search failed");
     }
 
-
     const artisansFromSearch = data.data?.artisans?.data || [];
 
-    setApiArtisans(artisansFromSearch);
-
+    setSearchResults(artisansFromSearch);
   } catch (err) {
     setSearchError(err.message);
   } finally {
     setSearchLoading(false);
   }
 };
-
-
-
-  
-  const navigate = useNavigate();
 
   const [showWelcomeBonus, setShowWelcomeBonus] = useState(false);
 
@@ -127,7 +158,19 @@ useEffect(() => {
   fetchArtisans();
 }, []);
 
-const mappedApiArtisans = apiArtisans.map((artisan) => ({
+// const mappedApiArtisans = apiArtisans.map((artisan) => ({
+//   id: artisan.id || artisan._id,
+//   name: artisan.fullName || artisan.businessName || "Unnamed Artisan",
+//   location: artisan.location || "Unknown location",
+//   rating: artisan.rating || 0,
+//   skills: artisan.skills || artisan.skillSet || [],
+//   image: johnOne,
+//   available: true,
+// }));
+
+const artisansToDisplay = isSearching ? searchResults : apiArtisans;
+
+const mappedApiArtisans = artisansToDisplay.map((artisan) => ({
   id: artisan.id || artisan._id,
   name: artisan.fullName || artisan.businessName || "Unnamed Artisan",
   location: artisan.location || "Unknown location",
@@ -136,7 +179,6 @@ const mappedApiArtisans = apiArtisans.map((artisan) => ({
   image: johnOne,
   available: true,
 }));
-
 
 
 
@@ -244,12 +286,6 @@ const mappedApiArtisans = apiArtisans.map((artisan) => ({
         <div className="relative z-10 w-full max-w-4xl px-6 text-center text-white">
           
           {/* Heading */}
-          <h1 className="text-3xl md:text-4xl font-semibold mb-3">
-            Hi Praise, What are you fixing today?
-          </h1>
-          <h1 className="text-3xl md:text-4xl font-semibold mb-3">
-  Hi {firstName}, What are you fixing today?
-</h1>
 <h1 className="text-3xl md:text-4xl font-semibold mb-3">
   Hi {firstName || "there"}, What are you fixing today?
 </h1>
@@ -289,7 +325,17 @@ const mappedApiArtisans = apiArtisans.map((artisan) => ({
       type="text"
       placeholder="What do you need?"
       value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
+      // onChange={(e) => setSearchQuery(e.target.value)}
+      onChange={(e) => {
+  const value = e.target.value;
+  setSearchQuery(value);
+
+  if (!value.trim()) {
+    setIsSearching(false);
+    setSearchResults([]);
+  }
+}}
+
       className="w-full py-3 text-sm text-black focus:outline-none"
     />
   </div>

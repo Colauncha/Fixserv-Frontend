@@ -70,7 +70,7 @@ import RepairHistory from "./components/Client-Screens/Repair Screens/RepairHist
 import ViewRepair from "./components/Client-Screens/Repair Screens/ViewRepair";
 import RequestRepair from "./components/Client-Screens/Request Screens/RequestRepair";
 import Technican from "./components/Client-Screens/Request Screens/Technican";
-import ClientNotification from "./components/Client-Screens/ClientNotification";
+// import ClientNotification from "./components/Client-Screens/ClientNotification";
 import Additem from "./components/Client-Screens/Additem";
 import RateServiceRepair from "./components/Client-Screens/RateServiceRepair";
 import AdminPostVerification from "./components/Admin-Auth/AdminPostVerification";
@@ -97,6 +97,7 @@ import AdminClients from "./components/Admin-Auth/AdminClients";
 
 //routes 
 import ProtectedRoute from "./routes/ProtectedRoute";
+import PublicOnlyRoute from "./routes/PublicOnlyRoute";
 import VerifyEmail from "./components/Sign-Auth/VerifyEmail";
 
 
@@ -114,7 +115,9 @@ const App = () => {
 </Route>
 
 {/* AUTH ROUTES — no navbar, no footer */}
+
 <Route element={<AuthLayout />}>
+<Route element={<PublicOnlyRoute />}>
   <Route path="sign-up" element={<SignUp />} />
   <Route path="log-in" element={<LogIn />} />
   <Route path="forget-password" element={<ForgetPassword />} />
@@ -133,6 +136,7 @@ const App = () => {
   <Route path="upload-certificate" element={<UploadCertificate />} />
   <Route path="certificate-received" element={<CertificateReceived />} />
   <Route path="verification" element={<VerifyEmail />} />
+</Route>
 </Route>
 
         {/* CLIENT ROUTES */}
@@ -154,7 +158,7 @@ const App = () => {
           <Route path="track-repair" element={<TrackRepair />} />
           <Route path="profile" element={<UserProfile />} />
           <Route path="settings" element={<ProfileSettings />} />
-          <Route path="notifications" element={<ClientNotification />} /> 
+          {/* <Route path="notifications" element={<ClientNotification />} />  */}
           <Route path="refer-earn" element={<ReferEarn />} />
           <Route path="upload-item" element={<Additem />} />
           <Route path="rate-service" element={<RateServiceRepair />} />
@@ -220,31 +224,28 @@ const App = () => {
 
 
        {/* ADMIN DASHBOARD ROUTES (WITH AdminNavbar) */}
-       <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+<Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
   <Route path="/admin" element={<AdminLayout />}>
     <Route index element={<AdminDashboard />} />
     <Route path="verify-artisan" element={<VerifyArtisan />} />
     <Route path="manage-user" element={<ManageUser />} />
-    <Route path="monitor-transaction" element={<MonitorTransaction />} />
+        <Route path="monitor-transaction" element={<MonitorTransaction />} />
       <Route path="disputes" element={<Disputes />} />
     <Route path="artisans" element={<Artisans />} />
     <Route path="clients" element={<AdminClients />} />
   </Route>
-</Route>
-{/* <Route path="/admin" element={<AdminLayout />}>
-  <Route index element={<AdminDashboard />} />
-  <Route path="verify-artisan" element={<VerifyArtisan />} />
-  <Route path="manage-user" element={<ManageUser />} />
-  <Route path="monitor-transaction" element={<MonitorTransaction />} />
-  <Route path="disputes" element={<Disputes />} />
-<Route path="artisans" element={<Artisans />} />
-<Route path="clients" element={<AdminClients />} />
-<Route path="/admin/artisans" element={<Artisans />} />
 
-</Route> */}
 
 {/* ADMIN ONBOARDING ROUTES (WITHOUT AdminNavbar) */}
-<Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+  <Route path="/admin/onboarding" element={<AdminOnboardingLayout />}>
+    <Route path="post-verification" element={<AdminPostVerification />} />
+    <Route path="setup" element={<AdminSetUp />} />
+    <Route path="setup-two" element={<AdminSetUpTwo />} />
+        <Route path="setup-three" element={<AdminSetUpThree />} />
+    <Route path="setup-four" element={<AdminSetUpFour />} />
+  </Route>
+</Route>
+{/* <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
   <Route path="/admin" element={<AdminOnboardingLayout />}>
     <Route path="admin-post-verification" element={<AdminPostVerification />} />
     <Route path="admin-setup" element={<AdminSetUp />} />
@@ -252,15 +253,9 @@ const App = () => {
     <Route path="admin-setup-three" element={<AdminSetUpThree />} />
     <Route path="admin-setup-four" element={<AdminSetUpFour />} />
   </Route>
-</Route>
-
-{/* <Route path="/admin" element={<AdminOnboardingLayout />}>
-  <Route path="admin-post-verification" element={<AdminPostVerification />} />
-  <Route path="admin-setup" element={<AdminSetUp />} />
-  <Route path="admin-setup-two" element={<AdminSetUpTwo />} />
-  <Route path="admin-setup-three" element={<AdminSetUpThree />} />
-  <Route path="admin-setup-four" element={<AdminSetUpFour />} />
 </Route> */}
+<Route path="*" element={<Notfound />} />
+
 
       </>
     )

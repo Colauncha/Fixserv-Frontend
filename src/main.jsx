@@ -43,23 +43,45 @@
 //   </StrictMode>
 // );
 
+//Recent Updates
+// import React from "react";
+// import ReactDOM from "react-dom/client";
+// import App from "./App";
+// import "./index.css";
+// import { GoogleOAuthProvider } from "@react-oauth/google";
+
+// const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+// console.log("🔥 GOOGLE CLIENT ID:", clientId);
+
+// ReactDOM.createRoot(document.getElementById("root")).render(
+
+//     <GoogleOAuthProvider clientId={clientId}>
+//       <App />
+//     </GoogleOAuthProvider>
+
+// );
+
+//after AuthContext loading state fix
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { AuthProvider } from "./context/AuthContext";
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 console.log("🔥 GOOGLE CLIENT ID:", clientId);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-
-    <GoogleOAuthProvider clientId={clientId}>
+  <GoogleOAuthProvider clientId={clientId}>
+    <AuthProvider>
       <App />
-    </GoogleOAuthProvider>
-
+    </AuthProvider>
+  </GoogleOAuthProvider>
 );
+
 
 // import React from "react";
 // import ReactDOM from "react-dom/client";

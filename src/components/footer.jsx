@@ -10,18 +10,28 @@ import { useNavigate } from "react-router-dom";
 const Footer = () => {
   const navigate = useNavigate();
   return (
-    // <footer className="w-full bg-[#3E83C4] text-white pt-16 pb-6 mt-20">
 
-    <footer className="w-full bg-[#3E83C4] text-white pt-10 sm:pt-12 lg:pt-16 pb-6 mt-12 sm:mt-16 lg:mt-20">
+    // <footer className="w-full bg-[#3E83C4] text-white pt-10 sm:pt-12 lg:pt-16 pb-6 mt-12 sm:mt-16 lg:mt-20">
+
+      <footer className="w-full bg-[#3E83C4] text-white pt-12 sm:pt-14 lg:pt-16 pb-8 mt-16">
+
 
 
       {/* Main Content */}
-      {/* <div className="max-w-8xl mx-auto px-16 md:px-24 grid grid-cols-1 md:grid-cols-[1fr_0.4fr_0.5fr_1.3fr] gap-48"> */}
-        <div className="max-w-8xl mx-auto px-6 sm:px-10 md:px-24 grid grid-cols-1 md:grid-cols-[1fr_0.4fr_0.5fr_1.3fr] gap-12 sm:gap-16 lg:gap-48">
+
+{/* <div className="max-w-8xl mx-auto px-6 sm:px-10 md:px-16 lg:px-24 
+grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 
+gap-6 md:gap-8 lg:gap-12"> */}
+
+<div className="max-w-8xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20
+grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
+gap-x-8 sm:gap-x-10 lg:gap-x-14 xl:gap-x-20
+gap-y-10">
+
 
 
         {/* Brand Column */}
-        <div>
+        <div className="min-w-0">
           <img src={logo} alt="Fixserv" className="h-12 mb-4" />
           <p className="text-sm leading-relaxed mb-6">
             Connecting you with verified technicians for fast, reliable service
@@ -37,9 +47,10 @@ const Footer = () => {
         </div>
 
         {/* Quick Links */}
-        <div>
-          <h4 className="font-semibold mb-6">Quick Links</h4>
-          <ul className="space-y-5 text-sm">
+        <div className="min-w-0 lg:pl-10 xl:pl-16">
+
+          <h4 className="font-semibold mb-6 whitespace-nowrap">Quick Links</h4>
+          <ul className="space-y-5 text-sm whitespace-nowrap">
             <li onClick={() => navigate("/")} className="cursor-pointer hover:opacity-80">Home</li>
             <li onClick={() => navigate("/about")} className="cursor-pointer hover:opacity-80">About Us</li>
             <li onClick={() => navigate("/contactUs")} className="cursor-pointer hover:opacity-80">Contact Us</li>
@@ -47,9 +58,9 @@ const Footer = () => {
         </div>
 
         {/* Resources */}
-        <div>
-          <h4 className="font-semibold mb-6">Resources</h4>
-          <ul className="space-y-5 text-sm">
+        <div className="min-w-0">
+          <h4 className="font-semibold mb-6 whitespace-nowrap">Resources</h4>
+          <ul className="space-y-5 text-sm whitespace-nowrap">
             <li className="cursor-pointer hover:opacity-80">Help & Support</li>
             <li className="cursor-pointer hover:opacity-80">Terms & Conditions</li>
             <li className="cursor-pointer hover:opacity-80">Privacy Policy</li>
@@ -62,18 +73,20 @@ const Footer = () => {
           <p className="text-sm mb-4">
             Stay updated on new listings, tips, and housing deals.
           </p>
-          <div className="flex w-full max-w-sm bg-white rounded-sm overflow-hidden">
+          <div className="w-full">
+  <div className="flex w-full bg-white rounded-md overflow-hidden shadow-sm">
+    <input
+      type="email"
+      placeholder="example@gmail.com"
+      className="flex-1 min-w-0 px-4 py-2.5 text-sm text-gray-700 outline-none"
+    />
 
-            <input
-              type="email"
-              placeholder="example@gmail.com"
-              className="flex-1 px-3 py-2 text-sm text-gray-700 outline-none"
-            />
+    <button className="shrink-0 bg-[#346DA3] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#2667a2] transition cursor-pointer">
+      Subscribe
+    </button>
+  </div>
+</div>
 
-            <button className="bg-[#346DA3] px-4 text-xs font-medium text-white hover:bg-[#2667a2] transition cursor-pointer">
-              Subscribe
-            </button>
-          </div>
         </div>
       </div>
 
