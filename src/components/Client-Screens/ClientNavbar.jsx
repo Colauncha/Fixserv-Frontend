@@ -5,10 +5,14 @@ import logo from "../../assets/navbar logo/Navbar logo.png";
 import profile from "../../assets/client images/Alarm.png";
 import not from "../../assets/client images/Profile.png";
 import { Menu, X } from "lucide-react";
+import ClientNotification from "../Client-Screens/ClientNotification";
+
 
 const ClientNavbar = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
 
   const linkClass = ({ isActive }) =>
     isActive
@@ -16,6 +20,7 @@ const ClientNavbar = () => {
       : "text-black hover:text-[#3E83C4] transition";
 
   return (
+    <>
     <header className="fixed top-0 left-0 w-full bg-white shadow-[0_4px_12px_rgba(62,131,196,0.15)] z-50">
       <nav className="flex items-center justify-between px-6 md:px-14 py-4">
 
@@ -40,7 +45,7 @@ const ClientNavbar = () => {
 
         {/* Desktop Icons */}
         <div className="hidden md:flex items-center gap-4">
-          <button onClick={() => navigate("/client/notifications")} className="cursor-pointer">
+          <button onClick={() => setShowNotifications(true)} className="cursor-pointer">  
             <img src={not} alt="notification" className="h-6 w-6" />
           </button>
           <button onClick={() => navigate("/client/profile")} className="cursor-pointer">
@@ -75,7 +80,12 @@ const ClientNavbar = () => {
           </li>
 
           <div className="flex gap-6 mt-2">
-            <button onClick={() => { navigate("/client/notifications"); setOpen(false); }}>
+            {/* <button onClick={() => { navigate("/client/notifications"); setOpen(false); }}> */}
+            <button onClick={() => { 
+  setShowNotifications(true); 
+  setOpen(false); 
+}}>
+
               <img src={not} alt="notification" className="h-6 w-6" />
             </button>
             <button onClick={() => { navigate("/client/profile"); setOpen(false); }}>
@@ -84,7 +94,14 @@ const ClientNavbar = () => {
           </div>
         </ul>
       </div>
+
     </header>
+      {/* {showNotifications && (
+  <ClientNotification
+    onClose={() => setShowNotifications(false)}
+  />
+)} */}
+</>
   );
 };
 

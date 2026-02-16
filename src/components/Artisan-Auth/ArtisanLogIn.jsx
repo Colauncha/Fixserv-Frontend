@@ -151,10 +151,10 @@ const googleLogin = useGoogleLogin({
 
   return (
         <div>
-            <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2 ">
+    <section className="h-screen grid grid-cols-1 lg:grid-cols-[40%_60%]">
     
     {/* LEFT — IMAGE PANEL */}
-    <div className="relative flex flex-col h-[350px] sm:h-[340px] lg:h-auto">
+<div className="relative flex flex-col min-h-[340px] sm:min-h-[340px] lg:min-h-full">
     
       {/* Background */}
       <img
@@ -169,7 +169,7 @@ const googleLogin = useGoogleLogin({
       />
     
         {/* Logo */}
-        <div className="relative z-10 px-6 sm:px-10 lg:px-36 pt-6 sm:pt-10 lg:pt-16">
+        <div className="relative z-10 px-6 sm:px-10 lg:px-49 pt-6 sm:pt-10 lg:pt-16">
           <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
         </div>
 
@@ -196,8 +196,12 @@ const googleLogin = useGoogleLogin({
     
     
       {/* RIGHT — FORM */}
-      <div className="flex items-center justify-center px-4 sm:px-6 py-10 sm:py-14 lg:py-16">
-        <div className="w-full max-w-md">
+           <div className="flex items-center justify-center 
+                px-6 sm:px-10 lg:px-16 
+                py-10 sm:py-14 lg:py-16">
+
+          {/* <div className="w-full max-w-2xl"> */}
+          <div className="w-full max-w-xl">
     
           <h2 className="text-2xl font-semibold text-black text-center">
             Log In

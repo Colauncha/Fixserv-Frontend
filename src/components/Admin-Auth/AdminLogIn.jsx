@@ -131,10 +131,10 @@ const googleAdminLogin = useGoogleLogin({
 
   return (
       <div>
-                <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+                <section className="h-screen grid grid-cols-1 lg:grid-cols-[40%_60%]">
         
         {/* LEFT — IMAGE PANEL */}
-        <div className="relative flex flex-col h-[300px] sm:h-[340px] lg:h-auto">
+        <div className="relative flex flex-col min-h-[340px] sm:min-h-[340px] lg:min-h-full">
         
           {/* Background */}
           <img
@@ -169,8 +169,12 @@ const googleAdminLogin = useGoogleLogin({
         
         
           {/* RIGHT — FORM */}
-      <div className="flex items-center justify-center px-4 sm:px-6 py-10 sm:py-14 lg:py-16">
-            <div className="w-full max-w-md">
+      <div className="flex items-center justify-center 
+                px-6 sm:px-10 lg:px-16 
+                py-10 sm:py-14 lg:py-16">
+
+          {/* <div className="w-full max-w-2xl"> */}
+          <div className="w-full max-w-xl">
         
               <h2 className="text-2xl font-semibold text-black text-center">
                 Admin Portal
