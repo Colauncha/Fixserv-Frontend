@@ -52,6 +52,7 @@ import Notification from "./components/Artisan Pages/Notification";
 import Wallet from "./components/Artisan Pages/Wallet";
 import Profile from "./components/Artisan Pages/Profile";
 import Settings from "./components/Artisan Pages/Settings";
+import VerifyArtisanEmail from "./components/Artisan-Auth/VerifyArtisanEmail";
 import Verification from "./components/Artisan Pages/Verification";
 import Help from "./components/Artisan Pages/Help";
 
@@ -135,7 +136,9 @@ const App = () => {
   <Route path="verification-two" element={<PostVerificationTwo />} />
   <Route path="upload-certificate" element={<UploadCertificate />} />
   <Route path="certificate-received" element={<CertificateReceived />} />
+  <Route path="artisan-verification" element={<VerifyArtisanEmail />} />
   <Route path="verification" element={<VerifyEmail />} />
+
 </Route>
 </Route>
 

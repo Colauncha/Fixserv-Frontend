@@ -180,17 +180,13 @@ const handleSubmit = async () => {
               {/* Continue Button */}
               <div className="flex justify-center pt-4">
                 <button
-                  className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-16 py-2.5 rounded-md text-sm font-medium transition"
-                >
-                  Continue
-                </button>
-                <button
   onClick={handleSubmit}
   disabled={loading}
   className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-16 py-2.5 rounded-md text-sm font-medium transition"
 >
   {loading ? "Creating..." : "Create Service"}
 </button>
+
 
 {error && (
   <p className="text-red-500 text-sm text-center mt-3">

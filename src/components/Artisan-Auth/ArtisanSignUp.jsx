@@ -5,9 +5,10 @@ import signOverlay from '../../assets/sign/sign overlay.png';
 import googleLogo from '../../assets/sign/google logo.png';
 import appleLogo from '../../assets/sign/apple logo.png';
 import { Eye, EyeOff } from "lucide-react";
-import { registerArtisan } from "../../api/auth.api";
+import { registerUser, googleLogin as googleAuth } from "../../api/auth.api";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 
 const ArtisanSignUp = () => {
@@ -21,13 +22,15 @@ const ArtisanSignUp = () => {
   const [fieldErrors, setFieldErrors] = useState({});
 
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    location: "",
-    password: "",
-    confirmPassword: "",
-  });
+const [formData, setFormData] = useState({
+  fullName: "",
+  email: "",
+  phoneNumber: "",
+  location: "",
+  password: "",
+  confirmPassword: "",
+  categories: [],   
+});
 
 const handleChange = (e) => {
   setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -39,38 +42,45 @@ const handleChange = (e) => {
 
 
   // GOOGLE SIGNUP
-  const googleLogin = useGoogleLogin({
-    flow: "implicit",
-    onSuccess: async (tokenResponse) => {
-      try {
-        const res = await fetch(
-          "https://user-management-h4hg.onrender.com/api/admin/google-login",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              idToken: tokenResponse.credential, // ✅ CORRECT
-            }),
-          }
-        );
+const googleSignUp = useGoogleLogin({
+  flow: "implicit",
+  scope: "openid email profile",
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
+  onSuccess: async (tokenResponse) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        localStorage.setItem("fixserv_token", data.token);
-        localStorage.setItem("fixserv_user", JSON.stringify(data.user));
-        localStorage.setItem("fixserv_role", data.user.role);
+      const { data } = await googleAuth({
+        idToken: tokenResponse.id_token,
+        role: "ARTISAN",   // important so backend knows role
+      });
 
-        navigate(
-          data.user.role === "ARTISAN"
-            ? "/artisan/onboarding"
-            : "/client"
-        );
-      } catch (err) {
-        setError(err.message || "Google signup failed");
-      }
-    },
-  });
+      localStorage.setItem("fixserv_token", data.BearerToken);
+      localStorage.setItem("fixserv_role", data.user.role);
+      localStorage.setItem("fixserv_user", JSON.stringify(data.user));
+
+      navigate(
+        data.user.role === "ARTISAN"
+          ? "/artisan/onboarding"
+          : "/client"
+      );
+
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+        "Google signup failed"
+      );
+    } finally {
+      setLoading(false);
+    }
+  },
+
+  onError: () => {
+    setError("Google authentication failed");
+  },
+});
+
 
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -80,6 +90,7 @@ const handleSubmit = async (e) => {
 
   if (!formData.fullName.trim()) errors.fullName = "Full name is required";
   if (!formData.email.trim()) errors.email = "Email is required";
+  if (!formData.phoneNumber.trim()) errors.phoneNumber = "Phone number is required";
   if (!formData.location.trim()) errors.location = "Location is required";
   if (!formData.password) errors.password = "Password is required";
   if (!formData.confirmPassword)
@@ -97,6 +108,10 @@ const handleSubmit = async (e) => {
     errors.agreed = "You must agree to the Terms & Conditions";
   }
 
+  if (formData.categories.length === 0) {
+  errors.categories = "Please select at least one category";
+}
+
   if (Object.keys(errors).length > 0) {
     setFieldErrors(errors);
     return;
@@ -104,42 +119,154 @@ const handleSubmit = async (e) => {
 
   setFieldErrors({});
 
-  try {
-    setLoading(true);
+try {
+  setLoading(true);
 
-    const payload = {
-      fullName: formData.fullName.trim(),
-      email: formData.email.trim(),
-      password: formData.password.trim(),
-      role: "ARTISAN",
-      artisanData: {
-        businessName: "",
-        skillSet: [],
-        businessHours: {},
-        location: formData.location.trim(),
-        rating: 0,
-      },
-    };
+  const rawPhone = formData.phoneNumber.trim();
+  const cleanedPhone = rawPhone.replace(/[^\d+]/g, "");
 
-    await registerArtisan(payload);
+  const normalizedPhone =
+    cleanedPhone.startsWith("0")
+      ? `+234${cleanedPhone.slice(1)}`
+      : cleanedPhone.startsWith("234")
+        ? `+${cleanedPhone}`
+        : cleanedPhone.startsWith("+")
+          ? cleanedPhone
+          : `+${cleanedPhone}`;
 
-    navigate("/verification-one", {
-      state: { email: formData.email },
-    });
-  } catch (err) {
-    setError(
-      err?.response?.data?.message ||
-      err?.message ||
-      "Registration failed"
-    );
-  } finally {
-    setLoading(false);
+  if (normalizedPhone.startsWith("+234") && normalizedPhone.length !== 14) {
+    setFieldErrors((prev) => ({
+      ...prev,
+      phoneNumber: "Phone number must be a valid Nigerian number (e.g. 08012345678)",
+    }));
+    return;
   }
+
+  const selectedCategories = formData.categories.map(String);
+  const primaryCategory = selectedCategories[0];
+
+  const payload = {
+    email: formData.email.trim().toLowerCase(),
+    password: formData.password, // don't trim
+    fullName: formData.fullName.trim(),
+    role: "ARTISAN",
+    phoneNumber: normalizedPhone,
+
+    category: primaryCategory,
+    categories: selectedCategories,
+    skillSet: selectedCategories,
+
+    artisanData: {
+      location: formData.location.trim(),
+      category: primaryCategory,
+      categories: selectedCategories,
+      skillSet: selectedCategories,
+    },
+  };
+
+  console.log("ARTISAN REGISTER PAYLOAD =>", payload);
+
+
+  const { data } = await registerUser(payload);
+  console.log("REGISTER RESPONSE =>", data);
+  if (!data?.success) {
+    throw new Error(data?.message || "Registration failed");
+  }
+
+  
+setError(null);
+  navigate("/artisan-verification", { state: { email: payload.email } });
+}catch (err) {
+
+if (axios.isAxiosError(err) && (!err.response || err.code === "ECONNABORTED")) {
+  setError("Network issue: we couldn't confirm signup. Please try again.");
+  return;
+}
+
+const apiData = err?.response?.data;
+if (!apiData) {
+  setError(err?.message || "Registration failed");
+  return;
+}
+
+  console.log("ARTISAN REGISTER ERROR =>", err.response.status, apiData);
+  console.log("ARTISAN REGISTER ERROR[0] =>", apiData?.errors?.[0]);
+  console.log(
+    "ARTISAN REGISTER ERROR MESSAGE =>",
+    apiData?.errors?.[0]?.message || apiData?.message
+  );
+  console.log(
+    "ARTISAN REGISTER ERROR FIELD =>",
+    apiData?.errors?.[0]?.field || apiData?.errors?.[0]?.path
+  );
+
+  const status = err.response.status;
+
+  const rawMessage =
+    apiData?.errors?.[0]?.message ||
+    apiData?.message ||
+    err?.message ||
+    "";
+
+  const msgLower = String(rawMessage).toLowerCase();
+
+  let message = "Registration failed";
+
+  if (
+    status === 409 ||
+    msgLower.includes("duplicate key") ||
+    msgLower.includes("e11000") ||
+    msgLower.includes("dup key") ||
+    msgLower.includes("email_1")
+  ) {
+    message = "An account with this email already exists. Please log in instead.";
+  } else if (status === 422) {
+    message = "Password is too weak. Please choose a stronger password.";
+  } else if (status === 400) {
+    message = rawMessage || "Invalid email or missing fields.";
+  } else {
+    message = rawMessage || "Something went wrong. Please try again.";
+  }
+
+  setError(message);
+} finally {
+  setLoading(false);
+}
 };
 
 
+const CATEGORY_OPTIONS = [
+  "Plumbing",
+  "Electrical",
+  "Carpentry",
+  "Painting",
+  "AC Repair",
+  "Cleaning",
+  "Welding",
+  "Tiling",
+];
 
+const toggleCategory = (category) => {
+  setFormData((prev) => {
+    const exists = prev.categories.includes(category);
 
+    if (exists) {
+      return {
+        ...prev,
+        categories: prev.categories.filter((c) => c !== category),
+      };
+    } else {
+      return {
+        ...prev,
+        categories: [...prev.categories, category],
+      };
+    }
+  });
+
+  if (fieldErrors.categories) {
+    setFieldErrors({ ...fieldErrors, categories: undefined });
+  }
+};
 
   return (
         <div>
@@ -164,7 +291,7 @@ const handleSubmit = async (e) => {
       />
     
         {/* Logo */}
-        <div className="relative z-10 px-6 sm:px-10 lg:px-62 pt-6 sm:pt-10 lg:pt-16">
+        <div className="relative z-10 px-6 sm:px-10 lg:px-30 pt-6 sm:pt-10 lg:pt-16">
           <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
         </div>
 
@@ -176,10 +303,9 @@ const handleSubmit = async (e) => {
   text-center text-white max-w-lg mx-auto
 ">
 
-          {/* <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-5 lg:mb-10 font-medium leading-tight">
-          Start Earning with Your Skills
-        </h2> */}
-
+          <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-2 lg:mb-3 font-medium leading-tight">
+          Hi!
+        </h2>
     
         <p className="text-base mb-2 opacity-90 text-white">
           If you are looking to request repairs
@@ -211,7 +337,8 @@ const handleSubmit = async (e) => {
     
           {/* Google */}
 <button
-  onClick={() => googleLogin()}
+  onClick={() => googleSignUp()}
+  disabled={loading}
   className="w-full flex items-center justify-center mb-4 gap-3 bg-black text-white py-3 rounded-md cursor-pointer"
 >
   <img src={googleLogo} className="w-5 h-5" />
@@ -258,6 +385,19 @@ const handleSubmit = async (e) => {
   <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
 )}
 
+<input
+  type="text"
+  name="phoneNumber"
+  value={formData.phoneNumber}
+  onChange={handleChange}
+  placeholder="Phone Number"
+  className={`w-full rounded-md px-4 py-3 text-sm border
+    ${fieldErrors.phoneNumber ? "border-red-500" : "border-[#9BAAB9]"}`}
+/>
+{fieldErrors.phoneNumber && (
+  <p className="text-xs text-red-500 mt-1">{fieldErrors.phoneNumber}</p>
+)}
+
     
 <input
   type="text"
@@ -271,6 +411,38 @@ const handleSubmit = async (e) => {
 {fieldErrors.location && (
   <p className="text-xs text-red-500 mt-1">{fieldErrors.location}</p>
 )}
+
+<div>
+  <p className="text-sm font-medium mb-2">Select Your Service Category</p>
+
+  <div className="grid grid-cols-2 gap-2">
+    {CATEGORY_OPTIONS.map((category) => {
+      const selected = formData.categories.includes(category);
+
+      return (
+        <button
+          type="button"
+          key={category}
+          onClick={() => toggleCategory(category)}
+          className={`px-3 py-2 text-sm rounded-md border transition
+            ${
+              selected
+                ? "bg-[#3E83C4] text-white border-[#3E83C4]"
+                : "border-[#9BAAB9] text-black"
+            }`}
+        >
+          {category}
+        </button>
+      );
+    })}
+  </div>
+
+  {fieldErrors.categories && (
+    <p className="text-xs text-red-500 mt-2">
+      {fieldErrors.categories}
+    </p>
+  )}
+</div>
 
     
 {/* Password */}

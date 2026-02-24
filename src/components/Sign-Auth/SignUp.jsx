@@ -474,10 +474,7 @@ import appleLogo from "../../assets/sign/apple logo.png";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
-
-
-
-
+import { registerUser, googleLogin } from "../../api/auth.api";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -486,6 +483,7 @@ const [formData, setFormData] = useState({
   firstName: "",
   lastName: "",
   email: "",
+  phoneNumber: "",
   location: "",
   password: "",
   confirmPassword: "",
@@ -500,24 +498,29 @@ const [agreed, setAgreed] = useState(false);
 const [fieldErrors, setFieldErrors] = useState({});
 
 
-
 const handleChange = (e) => {
+  setError("");
   setFormData({
     ...formData,
     [e.target.name]: e.target.value,
   });
 };
 
+
+  const [showPassword, setShowPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 const handleSubmit = async () => {
+  if (loading) return;
   setError("");
   const errors = {};
 
-  const { firstName, lastName, email, password, confirmPassword, location } = formData;
+const { firstName, lastName, email, phoneNumber, password, confirmPassword } = formData;
 
   if (!firstName.trim()) errors.firstName = "First name is required";
   if (!lastName.trim()) errors.lastName = "Last name is required";
   if (!email.trim()) errors.email = "Email is required";
-  if (!location.trim()) errors.location = "Location is required";
+  if (!phoneNumber.trim()) errors.phoneNumber = "Phone number is required";
   if (!password) errors.password = "Password is required";
   if (!confirmPassword) errors.confirmPassword = "Confirm your password";
 
@@ -538,101 +541,148 @@ const handleSubmit = async () => {
 
   try {
     setLoading(true);
-    const res = await fetch(
-      "https://user-management-h4hg.onrender.com/api/users/register",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password.trim(),
-          fullName: `${firstName.trim()} ${lastName.trim()}`,
-          location: location.trim(),
-          role: "CLIENT",
-          referralCode: formData.referral || null,
-        }),
-      }
-    );
+    const rawPhone = phoneNumber.trim();
 
-    const data = await res.json();
+// keep + if user typed it, remove spaces/dashes etc.
+const cleanedPhone = rawPhone.replace(/[^\d+]/g, "");
 
-    if (!res.ok) {
-      throw new Error(data.message || "Registration failed");
-    }
+// If user typed 080..., convert to +23480...
+const normalizedPhone =
+  cleanedPhone.startsWith("0")
+    ? `+234${cleanedPhone.slice(1)}`
+    : cleanedPhone.startsWith("234")
+      ? `+${cleanedPhone}`
+      : cleanedPhone.startsWith("+")
+        ? cleanedPhone
+        : `+${cleanedPhone}`;
 
-    // ✅ Save role
-    // localStorage.setItem("fixserv_role", "CLIENT");
+if (normalizedPhone.startsWith("+234") && normalizedPhone.length !== 14) {
+  const nextErrors = { ...errors, phoneNumber: "Phone number must be a valid Nigerian number (e.g. 08012345678)" };
+  setFieldErrors(nextErrors);
+  setLoading(false);
+  return;
+}
 
-
-    // if (data.token) {
-    //   localStorage.setItem("fixserv_token", data.token);
-    // }
-
-navigate("/verification", {
-  state: { email },
+console.log("REGISTER PAYLOAD =>", {
+  email: email.trim().toLowerCase(),
+  fullName: `${firstName.trim()} ${lastName.trim()}`.trim(),
+  role: "CLIENT",
+  phoneNumber: normalizedPhone,
+  passwordLength: password?.length,
 });
 
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
+const { data } = await registerUser({
+  email: email.trim().toLowerCase(),
+  password,
+  fullName: `${firstName.trim()} ${lastName.trim()}`.trim(),
+  role: "CLIENT",
+  phoneNumber: normalizedPhone,
+});
+
+navigate("/verification", { state: { email } });
+
+   } catch (err) {
+  console.log("REGISTER ERROR =>", err?.response?.status, err?.response?.data);
+
+  const status = err?.response?.status;  
+  const data = err?.response?.data;
+
+  if (status === 504) {
+    setError("Server is taking too long to respond. Please try again in a moment.");
+    return;
   }
-};
 
+if (err?.code === "ECONNABORTED" || !err?.response) {
+  // Backend may have completed registration but the response timed out.
+  navigate("/verification", { state: { email } });
+  return;
+}
 
-  const [showPassword, setShowPassword] = useState(false);
-const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const rawMessage =
+    data?.errors?.[0]?.message ||
+    data?.message ||
+    err?.message ||
+    "";
 
-const handleGoogleSuccess = async (tokenResponse) => {
-  try {
-    setLoading(true);
-    setError("");
+  const msgLower = String(rawMessage).toLowerCase();
 
-    const res = await fetch(
-      "https://user-management-h4hg.onrender.com/api/users/google",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accessToken: tokenResponse.access_token,
-          role: "CLIENT",
-          referralCode: formData.referral || null,
-        }),
-      }
-    );
+  let message = "Registration failed";
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Google signup failed");
-    }
-
-    localStorage.setItem("fixserv_token", data.token);
-    localStorage.setItem("fixserv_role", data.user.role);
-
-    navigate("/client");
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
+  // ✅ Handle duplicate email even when backend sends 400
+  if (
+    status === 409 ||
+    msgLower.includes("duplicate key") ||
+    msgLower.includes("e11000") ||
+    msgLower.includes("dup key") ||
+    msgLower.includes("email_1")
+  ) {
+    message = "An account with this email already exists. Please log in instead.";
+  } else if (status === 422) {
+    message = "Password is too weak. Please choose a stronger password.";
+  } else if (status === 400) {
+    message = rawMessage || "Invalid email or missing fields.";
+  } else {
+    message = rawMessage || "Something went wrong. Please try again.";
   }
+
+  setError(message);
+} finally {
+  setLoading(false);
+}
 };
-
-
 
 const handleGoogleError = () => {
   setError("Google Sign-In failed. Please try again.");
 };
 
 const login = useGoogleLogin({
-  flow: "implicit",
+  flow: "implicit",   // important
   scope: "openid email profile",
-  onSuccess: handleGoogleSuccess,
-  onError: handleGoogleError,
+
+  onSuccess: async (tokenResponse) => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const { data } = await googleLogin({
+  idToken: tokenResponse.id_token,
 });
 
+if (!data?.user || !data?.BearerToken) {
+  throw new Error(data?.message || "Invalid server response");
+}
 
+localStorage.setItem("fixserv_token", data.BearerToken);
+localStorage.setItem("fixserv_role", data.user.role);
 
+switch (data.user.role) {
+  case "CLIENT":
+    navigate("/client");
+    break;
+  case "ARTISAN":
+    navigate("/artisan");
+    break;
+  case "ADMIN":
+    navigate("/admin");
+    break;
+  default:
+    navigate("/");
+}
+
+    } catch (err) {
+  const message =
+    err?.response?.data?.errors?.[0]?.message ||
+    err?.response?.data?.message ||
+    "Google Sign-In failed. Please try again.";
+
+  setError(message);
+} finally {
+      setLoading(false);
+    }
+  },
+
+  onError: handleGoogleError,
+});
 
   return (
     <section className="h-screen grid grid-cols-1 lg:grid-cols-[40%_60%]">
@@ -643,8 +693,6 @@ const login = useGoogleLogin({
                 lg:h-screen 
                 overflow-hidden">
 
-
-
         <img src={signImage} className="absolute inset-0 w-full h-full object-cover" />
         <img src={signOverlay} className="absolute inset-0 w-full h-full object-cover" />
 
@@ -653,25 +701,7 @@ const login = useGoogleLogin({
           <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
         </div>
          {/* Center Content */}
-        {/* <div className="relative z-10 flex-1 flex flex-col items-center justify-center mb-60 px-6 sm:px-10 lg:px-14 text-center text-white max-w-lg mx-auto">
-
-          * <h2 className="text-lg sm:text-xl lg:text-2xl mb-6 font-medium">
-            Hi! Let’s Get Started
-          </h2> *
-
-          <p className="text-sm sm:text-base mb-6 opacity-90">
-            Are you a skilled professional? Looking to offer your services?
-          </p>
-
-          <button
-            onClick={() => navigate("/artisan-signup")}
-            className="border border-white px-6 py-2 rounded-2xl font-medium hover:bg-white hover:text-[#3E83C4] transition"
-          >
-            Join as an artisan
-          </button>
-        </div> */}
-
-       
+      
         <div className="
   relative z-10 flex-1 flex flex-col items-center justify-center
   mb-8 sm:mb-12 lg:mb-40
@@ -698,12 +728,9 @@ const login = useGoogleLogin({
                 py-10 sm:py-14 lg:py-16
                 h-screen 
                 overflow-y-auto">
-
-
         
         <div className="w-full max-w-xl">
           {/* <div className="w-full max-w-2xl"> */}
-
 
           <h2 className="text-2xl font-semibold text-black text-center">
             Sign Up as a Client
@@ -714,17 +741,7 @@ const login = useGoogleLogin({
           </p>
 
           {/* Social Buttons */}
-          {/* <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4">
-            <img src={googleLogo} className="w-5 h-5" />
-            Sign up with Google
-          </button> */}
-          {/* <div className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4">
-  <GoogleLogin
-    onSuccess={handleGoogleSuccess}
-    onError={handleGoogleError}
-    useOneTap
-  />
-</div> */}
+    
 <button
   onClick={() => { console.log("🟡 Google button clicked"); 
     login(); 
@@ -736,13 +753,10 @@ const login = useGoogleLogin({
   Sign up with Google
 </button>
 
-
-
           <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-6 cursor-pointer">
             <img src={appleLogo} className="w-5 h-5" />
             Sign up with Apple
           </button>
-
 
           {/* Divider */}
           <div className="flex items-center justify-center gap-4 mb-6">
@@ -756,8 +770,6 @@ const login = useGoogleLogin({
   e.preventDefault();
   handleSubmit();
 }}>
-
-
 
 <input
   name="firstName"
@@ -796,20 +808,17 @@ const login = useGoogleLogin({
   <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
 )}
 
-
 <input
-  name="location"
-  value={formData.location}
+  name="phoneNumber"
+  value={formData.phoneNumber}
   onChange={handleChange}
-  placeholder="Location"
+  placeholder="Phone Number"
   className={`w-full rounded-md px-4 py-3 text-sm border 
-    ${fieldErrors.location ? "border-red-500" : "border-[#9BAAB9]"}`}
+    ${fieldErrors.phoneNumber ? "border-red-500" : "border-[#9BAAB9]"}`}
 />
-{fieldErrors.location && (
-  <p className="text-xs text-red-500 mt-1">{fieldErrors.location}</p>
+{fieldErrors.phoneNumber && (
+  <p className="text-xs text-red-500 mt-1">{fieldErrors.phoneNumber}</p>
 )}
-
-
 
 {/* Password */}
 <div className="relative">
@@ -825,7 +834,6 @@ const login = useGoogleLogin({
 {fieldErrors.password && (
   <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
 )}
-
 
   <button
     type="button"
@@ -861,13 +869,11 @@ const login = useGoogleLogin({
   onChange={handleChange}
   type="text"
   name="referral"
-  placeholder="Rferal Code (Optional)"
+  placeholder="Referral Code (Optional)"
   className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm"
 />
 
-
-
-            {/* Terms */}
+ {/* Terms */}
 <label className="flex items-start gap-2 text-sm text-gray-600">
   <input
     type="checkbox"
@@ -889,21 +895,10 @@ const login = useGoogleLogin({
 
 
 
-{/* <button
-  type="button"
-  onClick={() => {
-    localStorage.setItem("showWelcomeBonus", "true");
-    navigate("/client");
-  }}
-  className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md font-medium transition"
->
-  Sign Up as a Client
-</button> */}
-
 {error && (
-  <p className="text-sm text-red-500 text-center mt-2">
+  <div className="w-full bg-red-50 border border-red-400 text-red-600 text-sm px-4 py-3 rounded-md text-center">
     {error}
-  </p>
+  </div>
 )}
 
 <button
@@ -913,20 +908,6 @@ const login = useGoogleLogin({
 >
   {loading ? "Creating account..." : "Sign Up as a Client"}
 </button>
-
-
-
-{/* <button
-  type="submit"
- disabled={loading || !agreed}
-  className="w-full cursor-pointer bg-[#3E83C4] text-white py-3 rounded-md"
->
-  {loading ? "Creating account..." : "Sign Up as a Client"}
-</button> */}
-
-
-
-
 
             <p className="text-sm text-center text-black">
               Already have a Fixserv account?{" "}

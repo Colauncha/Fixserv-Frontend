@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { resendVerification } from "../../api/auth.api";
 
-const VerifyEmail = () => {
+const VerifyArtisanEmail = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const email = state?.email;
@@ -85,21 +85,13 @@ const VerifyEmail = () => {
 )}
 
         <button
-          onClick={() => navigate("/log-in")}
+          onClick={() => navigate("/artisan-login")}
           className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md font-medium transition cursor-pointer"
         >
           Go to Login
         </button>
 
-        {/* <button
-          className="mt-4 text-sm text-[#3E83C4] hover:underline"
-          onClick={handleResend}
-          disabled={loading}
-        >
-          {loading
-            ? "Resending..."
-            : "Didn’t receive the email? Resend Verification Email"}
-        </button> */}
+       
         <p className="mt-4 text-sm text-gray-600">
   Didn’t receive the email?{" "}
   <button
@@ -117,4 +109,4 @@ const VerifyEmail = () => {
   );
 };
 
-export default VerifyEmail;
+export default VerifyArtisanEmail;
