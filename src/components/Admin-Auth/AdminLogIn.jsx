@@ -149,7 +149,7 @@ const googleAdminLogin = useGoogleLogin({
           />
         
         {/* Logo */}
-        <div className="relative z-10 px-6 sm:px-10 lg:px-40 pt-6 sm:pt-10 lg:pt-16">
+        <div className="relative z-10 px-6 sm:px-10 lg:px-30 pt-6 sm:pt-10 lg:pt-16">
           <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
         </div>
         

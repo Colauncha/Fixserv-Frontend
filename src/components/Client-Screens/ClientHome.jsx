@@ -25,7 +25,7 @@ import bannerOverlay from "../../assets/client images/client-home/banner overlay
 import { useNavigate } from 'react-router-dom';
 
 
-
+const SEARCH_BASE_URL = "https://dev-user-api.fixserv.co/api/search";
 
 const ClientHome = () => {
 
@@ -42,40 +42,6 @@ const [searchError, setSearchError] = useState("");
 const [searchResults, setSearchResults] = useState([]);
 const [isSearching, setIsSearching] = useState(false);
 
-
-
-
-// const handleSearch = async () => {
-//   if (!searchQuery.trim()) return;
-
-//   try {
-//     setSearchLoading(true);
-//     setSearchError("");
-
-//     const res = await fetch(
-//       `https://search-and-discovery.onrender.com/api/search?keyword=${encodeURIComponent(
-//         searchQuery
-//       )}&isAvailableNow=true`
-//     );
-
-//     const data = await res.json();
-
-//     if (!res.ok || !data.success) {
-//       throw new Error("Search failed");
-//     }
-
-
-//     const artisansFromSearch = data.data?.artisans?.data || [];
-
-//     setApiArtisans(artisansFromSearch);
-
-//   } catch (err) {
-//     setSearchError(err.message);
-//   } finally {
-//     setSearchLoading(false);
-//   }
-// };
-
 const handleSearch = async () => {
   if (!searchQuery.trim()) return;
 
@@ -84,28 +50,25 @@ const handleSearch = async () => {
     setSearchError("");
     setIsSearching(true);
 
-    const res = await fetch(
-      `https://search-and-discovery.onrender.com/api/search?keyword=${encodeURIComponent(
-        searchQuery
-      )}&isAvailableNow=true`
-    );
+    const url = `${SEARCH_BASE_URL}?keyword=${encodeURIComponent(
+      searchQuery
+    )}&isAvailableNow=true`;
 
+    const res = await fetch(url);
     const data = await res.json();
 
     if (!res.ok || !data.success) {
-      throw new Error("Search failed");
+      throw new Error(data?.message || "Search failed");
     }
 
     const artisansFromSearch = data.data?.artisans?.data || [];
-
     setSearchResults(artisansFromSearch);
   } catch (err) {
-    setSearchError(err.message);
+    setSearchError(err.message || "Search failed");
   } finally {
     setSearchLoading(false);
   }
 };
-
   const [showWelcomeBonus, setShowWelcomeBonus] = useState(false);
 
 useEffect(() => {
@@ -173,7 +136,7 @@ const artisansToDisplay = isSearching ? searchResults : apiArtisans;
 const mappedApiArtisans = artisansToDisplay.map((artisan) => ({
   id: artisan.id || artisan._id,
   name: artisan.fullName || artisan.businessName || "Unnamed Artisan",
-  location: artisan.location || "Unknown location",
+  location: artisan.location || artisan.city || artisan.state || "Unknown location",
   rating: artisan.rating || 0,
   skills: artisan.skills || artisan.skillSet || [],
   image: johnOne,
@@ -325,14 +288,15 @@ const mappedApiArtisans = artisansToDisplay.map((artisan) => ({
       type="text"
       placeholder="What do you need?"
       value={searchQuery}
-      // onChange={(e) => setSearchQuery(e.target.value)}
-      onChange={(e) => {
+onChange={(e) => {
   const value = e.target.value;
   setSearchQuery(value);
 
+  // ✅ When user clears search, go back to normal list
   if (!value.trim()) {
     setIsSearching(false);
     setSearchResults([]);
+    setSearchError("");
   }
 }}
 
@@ -344,11 +308,17 @@ const mappedApiArtisans = artisansToDisplay.map((artisan) => ({
   <button
     type="submit"
     disabled={searchLoading}
-    className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-8 text-sm font-medium transition disabled:opacity-60"
+    className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-8 text-sm font-medium transition disabled:opacity-60 cursor-pointer"
   >
     {searchLoading ? "Searching..." : "Search"}
   </button>
 </form>
+
+{searchError && (
+  <p className="text-sm text-red-200 mt-3">
+    {searchError}
+  </p>
+)}
 
         </div>
       </section>
@@ -361,7 +331,7 @@ const mappedApiArtisans = artisansToDisplay.map((artisan) => ({
       Top Artisans near you
     </h2>
 
-    {!loadingArtisans && !searchLoading && mappedApiArtisans.length === 0 && (
+{isSearching && !searchLoading && mappedApiArtisans.length === 0 && (
   <p className="text-sm text-gray-500">
     No artisans found for “{searchQuery}”
   </p>

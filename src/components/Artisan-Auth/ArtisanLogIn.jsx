@@ -6,8 +6,8 @@ import googleLogo from '../../assets/sign/google logo.png';
 import appleLogo from '../../assets/sign/apple logo.png';
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
-
-
+import { loginUser, googleLogin as googleAuth } from "../../api/auth.api";
+import { useAuth } from "../../context/AuthContext"; // if you use AuthContext
 import { useNavigate } from 'react-router-dom';
 
 const ArtisanLogIn = () => {
@@ -28,126 +28,204 @@ const [fieldErrors, setFieldErrors] = useState({
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
 
+const { login } = useAuth();
+
 const handleSubmit = async (e) => {
   e.preventDefault();
   setError("");
 
   const newErrors = { email: "", password: "" };
+  if (!formData.email.trim()) newErrors.email = "Email is required";
+  if (!formData.password) newErrors.password = "Password is required";
 
-  if (!formData.email.trim()) {
-    newErrors.email = "Email is required";
-  }
-
-  if (!formData.password.trim()) {
-    newErrors.password = "Password is required";
-  }
-
-  if (newErrors.email || newErrors.password) {
+  if (Object.values(newErrors).some(Boolean)) {
     setFieldErrors(newErrors);
     return;
   }
 
   setFieldErrors({ email: "", password: "" });
 
+  const email = formData.email.trim().toLowerCase();
+
   try {
-    setLoading(true);
+  setLoading(true);
 
-    const res = await fetch(
-      "https://user-management-h4hg.onrender.com/api/admin/login",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email.trim(),
-          password: formData.password.trim(),
-        }),
-      }
-    );
+  const res = await loginUser(
+    { email, password: formData.password },
+    { timeout: 60000 }
+  );
 
-    const data = await res.json();
+  console.log("✅ STEP A: API returned", res?.status, res?.data);
 
-    if (!res.ok) {
-      throw new Error(data.message || "Login failed");
-    }
+  const inner = res?.data?.data; // { response, BearerToken }
+  const token = inner?.BearerToken;
+  const user = inner?.response;
 
-    const user = data.data.response;
-    const token = data.data.BearerToken;
+  console.log("✅ STEP B: parsed", { token: !!token, user });
 
-    localStorage.setItem(
-      "fixserv_user",
-      JSON.stringify({
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-      })
-    );
+  if (!token || !user) {
+    setError("Invalid server response (missing token/user).");
+    return;
+  }
 
+  if (user.role !== "ARTISAN") {
+    setError("This account is not an artisan account.");
+    return;
+  }
+
+  // 1) localStorage — isolate
+  try {
+    console.log("✅ STEP C: saving to localStorage...");
     localStorage.setItem("fixserv_token", token);
     localStorage.setItem("fixserv_role", user.role);
-
-if (user.role === "ARTISAN") {
-  navigate("/artisan");
-} else {
-  navigate("/artisan-login");
-}
-
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
+    localStorage.setItem("fixserv_user", JSON.stringify(user));
+    console.log("✅ STEP D: localStorage saved OK");
+  } catch (storageErr) {
+    console.error("❌ STORAGE ERROR =>", storageErr);
+    console.log("STORAGE DETAILS =>", {
+      name: storageErr?.name,
+      message: storageErr?.message,
+      code: storageErr?.code,
+      stack: storageErr?.stack,
+    });
+    setError("Login succeeded but browser storage failed. Disable storage blocking / clear site data.");
+    return;
   }
+
+  // 2) AuthContext login — isolate
+  try {
+    console.log("✅ STEP E: calling AuthContext login...");
+    login?.(token, { ...user, id: user._id });
+    console.log("✅ STEP F: AuthContext login OK");
+  } catch (ctxErr) {
+    console.error("❌ AUTH CONTEXT ERROR =>", ctxErr);
+    console.log("AUTH DETAILS =>", {
+      name: ctxErr?.name,
+      message: ctxErr?.message,
+      code: ctxErr?.code,
+      stack: ctxErr?.stack,
+    });
+    setError("Login succeeded but app session handler crashed (AuthContext).");
+    return;
+  }
+
+  console.log("✅ STEP G: navigating...");
+  navigate("/artisan");
+} catch (err) {
+  console.error("❌ LOGIN CATCH ERROR (RAW) =>", err);
+
+  console.log("❌ DETAILS =>", {
+    name: err?.name,
+    message: err?.message,
+    code: err?.code,
+    stack: err?.stack,
+  });
+
+  // If axios/network error, this exists:
+  console.log("❌ AXIOS INFO =>", {
+    hasResponse: !!err?.response,
+    status: err?.response?.status,
+    data: err?.response?.data,
+  });
+
+  // DO NOT show timeout message unless it is truly a timeout
+  if (err?.code === "ECONNABORTED") {
+    setError("Server is taking too long to respond. Please try again.");
+    return;
+  }
+
+  // If it’s NOT an axios response, it’s your app code throwing (storage/context/etc.)
+  if (!err?.response) {
+    setError(err?.message || "App crashed after login success. Check console error details.");
+    return;
+  }
+
+  const apiData = err.response.data;
+  const errMsg =
+    apiData?.errors?.[0]?.message ||
+    apiData?.message ||
+    err?.message ||
+    "Login failed";
+
+  setError(errMsg);
+} finally {
+  setLoading(false);
+}
 };
 
 const googleLogin = useGoogleLogin({
-  flow: "implicit",
-  onSuccess: async (tokenResponse) => {
+  // ✅ Use auth-code if your backend accepts { code } and exchanges it server-side
+  flow: "auth-code",
+  scope: "openid email profile",
+
+  onSuccess: async (codeResponse) => {
     try {
       setLoading(true);
+      setError("");
 
-      const res = await fetch(
-        "https://user-management-h4hg.onrender.com/api/admin/google-login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            idToken: tokenResponse.id_token,
-          }),
+      // ✅ send the authorization code to your backend
+      const { data } = await googleAuth({
+        code: codeResponse.code,
+      });
+
+      // ✅ handle “soft failures” (200 but success:false)
+      if (!data?.success) {
+        const msgLower = String(data?.message || "").toLowerCase();
+
+        if (data?.code === "EMAIL_NOT_VERIFIED" || msgLower.includes("verify")) {
+          navigate("/verification", {
+            state: { email: formData.email.trim().toLowerCase() },
+          });
+          return;
         }
-      );
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Google login failed");
+        throw new Error(data?.message || "Google login failed");
       }
 
-      const user = data.data.response;
-      const token = data.data.BearerToken;
+      const user = data?.user;
+      const token = data?.BearerToken;
 
-      localStorage.setItem(
-        "fixserv_user",
-        JSON.stringify({
-          id: user._id,
-          fullName: user.fullName,
-          email: user.email,
-          role: user.role,
-        })
-      );
+      if (!user || !token) {
+        throw new Error(data?.message || "Invalid server response");
+      }
 
+      if (user.role !== "ARTISAN") {
+        throw new Error("This Google account is not registered as an artisan.");
+      }
+
+      // ✅ Persist session
+      login?.(token, { ...user, id: user._id });
       localStorage.setItem("fixserv_token", token);
       localStorage.setItem("fixserv_role", user.role);
+      localStorage.setItem("fixserv_user", JSON.stringify(user));
 
       navigate("/artisan");
     } catch (err) {
-      setError(err.message);
+      const status = err?.response?.status;
+      const apiData = err?.response?.data;
+
+      // ✅ also handle hard failures (403 etc)
+      if (status === 403 && apiData?.code === "EMAIL_NOT_VERIFIED") {
+        navigate("/verification", {
+          state: { email: formData.email.trim().toLowerCase() },
+        });
+        return;
+      }
+
+      const message =
+        apiData?.errors?.[0]?.message ||
+        apiData?.message ||
+        err?.message ||
+        "Google login failed";
+
+      setError(message);
     } finally {
       setLoading(false);
     }
   },
+
   onError: () => setError("Google login failed"),
 });
-
 
   return (
         <div>
@@ -169,21 +247,18 @@ const googleLogin = useGoogleLogin({
       />
     
         {/* Logo */}
-        <div className="relative z-10 px-6 sm:px-10 lg:px-49 pt-6 sm:pt-10 lg:pt-16">
+        <div className="relative z-10 px-6 sm:px-10 lg:px-30 pt-6 sm:pt-10 lg:pt-16">
           <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
         </div>
 
         {/* Center Content */}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 sm:px-10 lg:px-14 text-center text-white max-w-lg mx-auto">
 
-          {/* <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-5 lg:mb-10 font-medium leading-tight">
-          Welcome Back, Pro!
+           <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-2 lg:mb-3 font-medium leading-tight">
+          Hi!
         </h2>
     
-        <p className="text-sm sm:text-base mb-20 sm:mb-12 text-white opacity-90">
-          Pick up right where you left off
-        </p> */}
-    
+           
         <p className="text-sm sm:text-base mb-4 text-white opacity-90">
           If you are looking to request repairs
         </p>
@@ -211,9 +286,12 @@ const googleLogin = useGoogleLogin({
           </p>
     
           {/* Google */}
-          <button
+          
+  <button
+  type="button"
+  disabled={loading}
   onClick={() => googleLogin()}
-  className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4"
+  className={`w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4 ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
 >
   <img src={googleLogo} alt="Google" className="w-5 h-5" />
   Sign in with Google
@@ -262,21 +340,19 @@ const googleLogin = useGoogleLogin({
   className={`w-full border rounded-md px-4 py-3 pr-12 text-sm
     ${fieldErrors.password ? "border-red-500" : "border-[#9BAAB9]"}
   `}
+  
 />
+<button
+  type="button"
+  onClick={() => setShowPassword(!showPassword)}
+  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+>
+  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+</button>
 
 {fieldErrors.password && (
   <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
 )}
-
-{error && (
-  <p className="text-sm text-red-500 text-center mt-2">
-    {error}
-  </p>
-)}
-
-
-
-
 </div>
     
       {/* Remember & Forgot */}
@@ -300,14 +376,11 @@ const googleLogin = useGoogleLogin({
       </div>
     
       {/* Submit */}
-      {/* <button
-        type="submit"
-        onClick={() => navigate("/artisan")}
-        className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] 
-                   text-white py-3 rounded-md font-medium transition cursor-pointer"
-      >
-        Log In
-      </button> */}
+    {error && (
+  <p className="text-sm text-red-500 text-center mt-2">
+    {error}
+  </p>
+)}
 <button
   type="submit"
   disabled={loading}
@@ -324,7 +397,7 @@ const googleLogin = useGoogleLogin({
       <p className="text-sm text-center text-black">
         Don’t have a Fixserv account?{" "}
         <a href="/artisan-signup" className="text-[#3E83C4] hover:underline font-medium">
-          Sign Up dev
+          Sign Up
         </a>
       </p>
     

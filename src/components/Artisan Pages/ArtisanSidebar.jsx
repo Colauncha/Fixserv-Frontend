@@ -11,15 +11,19 @@ import help from "../../assets/Artisan Images/help.png";
 import dark from "../../assets/Artisan Images/dark.png";
 import adebayoImg from "../../assets/Artisan Images/adebayo.png";
 import log from "../../assets/Artisan Images/log.png";
+import { useAuth } from "../../context/AuthContext";
 
-const navClass = ({ isActive }) =>
+const ArtisanSidebar = () => {
+
+  const navClass = ({ isActive }) =>
   `flex items-center gap-3 px-6 py-2 text-sm transition ${
     isActive
       ? "bg-[#C9DDF2] text-[#2563EB] border-r-4 border-[#2563EB]"
       : "text-gray-600 hover:bg-gray-100"
   }`;
 
-const ArtisanSidebar = () => {
+  const { logout } = useAuth();
+  
   return (
     <aside className="w-64 min-h-screen bg-white border-r border-blue-100 flex flex-col justify-between">
 
@@ -97,7 +101,7 @@ const ArtisanSidebar = () => {
           </div>
         </div>
 
-        <button className="flex items-center gap-2 text-sm text-gray-500 mt-4 px-2">
+        <button onClick={logout} className="flex items-center gap-2 text-sm text-gray-500 mt-4 px-2">
           <img src={log} className="w-4" />
           Log out
         </button>

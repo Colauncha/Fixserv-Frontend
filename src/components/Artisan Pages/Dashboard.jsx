@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import not from "../../assets/Artisan Images/not.png";
 import profile from "../../assets/Artisan Images/adebayo.png";
 import total from "../../assets/Artisan Images/total.png";
@@ -7,7 +7,7 @@ import ongoing from "../../assets/Artisan Images/ongoing.png";
 import completed from "../../assets/Artisan Images/completed.png";
 import uncompleted from "../../assets/Artisan Images/uncompleted.png";
 import scalearrow from "../../assets/Artisan Images/scalearrows.png";
-import { getAuthUser } from "../../utils/auth";
+import { getAuthUser, getAuthToken } from "../../utils/auth";
 
 const Dashboard = () => {
   const artisan = getAuthUser();
@@ -19,14 +19,58 @@ const Dashboard = () => {
 
   const [jobs, setJobs] = useState([]); 
 
-  useEffect(() => {
-  fetch("{{ARTISAN_JOBS_ENDPOINT}}", {
-    headers: {
-      Authorization: `Bearer ${getAuthToken()}`
+//   useEffect(() => {
+//   fetch("{{ARTISAN_JOBS_ENDPOINT}}", {
+//     headers: {
+//       Authorization: `Bearer ${getAuthToken()}`
+//     }
+//   })
+//     .then(res => res.json())
+//     .then(data => setJobs(data.jobs || []));
+// }, []);
+
+useEffect(() => {
+  const run = async () => {
+    try {
+      const token = getAuthToken();
+
+      const res = await fetch("/api/artisan/jobs", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("JOBS STATUS:", res.status);
+      console.log("JOBS CONTENT-TYPE:", res.headers.get("content-type"));
+
+      const contentType = res.headers.get("content-type") || "";
+
+      // If backend didn't return JSON, log body for debugging
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        console.log("JOBS NOT JSON BODY (first 300):", text.slice(0, 300));
+        throw new Error("Jobs endpoint did not return JSON");
+      }
+
+      const data = await res.json();
+      console.log("JOBS JSON:", data);
+
+      // adapt to your backend shape
+      const jobsArray =
+        data?.jobs ??
+        data?.data?.jobs ??
+        data?.data ??
+        [];
+
+      setJobs(Array.isArray(jobsArray) ? jobsArray : []);
+    } catch (e) {
+      console.log("JOBS FETCH ERROR =>", e);
     }
-  })
-    .then(res => res.json())
-    .then(data => setJobs(data.jobs || []));
+  };
+
+  run();
 }, []);
 
 
@@ -38,7 +82,7 @@ const Dashboard = () => {
       <div className="flex justify-between p-4 items-center">
         <div>
           <h1 className="text-2xl font-semibold text-black">Dashboard</h1>
-          <p className="text-sm text-gray-600 mt-1">Welcome {artisan.fullname}</p>
+          <p className="text-sm text-gray-600 mt-1">Welcome {artisan.fullName}</p>
         </div>
 
         <div className="flex items-center gap-4">

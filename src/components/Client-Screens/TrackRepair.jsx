@@ -290,7 +290,7 @@
 // export default TrackRepair;
 
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CheckCircle2, Circle, ArrowLeft, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import failure from "../../assets/client images/client-home/cancel.png";
@@ -306,10 +306,17 @@ const stepsData = [
 ];
 
 const TrackRepair = () => {
-  const [completedStep, setCompletedStep] = useState(1);
-  const [timestamps, setTimestamps] = useState(
-    stepsData.map(() => null)
-  );
+  const [completedStep, setCompletedStep] = useState(0);
+  // const [timestamps, setTimestamps] = useState(
+  //   stepsData.map(() => null)
+  // );
+
+  useEffect(() => {
+  if (booking?.currentStep !== undefined) {
+    setCompletedStep(booking.currentStep);
+  }
+}, [booking]);
+
   
   // Modal states
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -337,14 +344,13 @@ const TrackRepair = () => {
     return { date, time };
   };
 
-  const updateProgress = (stepIndex) => {
-    setCompletedStep(stepIndex);
-    setTimestamps((prev) =>
-      prev.map((ts, i) =>
-        i <= stepIndex ? ts || formatDateTime() : null
-      )
-    );
-  };
+{stepsData.map((step, index) => {
+  const isCompleted = index <= completedStep;
+  const timestamp = booking.timeline?.[index];
+
+
+})}
+
 
   const handleCancelReasonSelect = (reason) => {
     setCancelReason(reason);
@@ -375,6 +381,13 @@ const TrackRepair = () => {
   const location = useLocation();
 const booking = location.state?.booking;
 const artisan = location.state?.artisan;
+
+useEffect(() => {
+  if (booking?.currentStep !== undefined) {
+    setCompletedStep(booking.currentStep);
+  }
+}, [booking]);
+
 
 if (!booking) {
   return (
@@ -649,78 +662,61 @@ if (!booking) {
 
 
         {/* Timeline */}
-        <div className="mt-10">
-          {stepsData.map((step, index) => {
-            const isCompleted = index <= completedStep;
-            const timestamp = timestamps[index];
+<div className="mt-10">
+  {stepsData.map((step, index) => {
+    const isCompleted = index <= completedStep;
+    const timestamp = booking.timeline?.[index];
 
-            return (
-              <div
-                key={index}
-                onClick={() => updateProgress(index)}
-                // className="flex items-start gap-6 mb-10 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
-                className="flex items-start gap-8 mb-8 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+    return (
+      <div
+        key={index}
+        className="flex items-start gap-8 mb-8 p-3 rounded-lg"
+      >
+        {/* LEFT */}
+        <div className="relative flex flex-col items-center">
+          <span className="z-10 bg-white p-0.5 rounded-full">
+            {isCompleted ? (
+              <CheckCircle2 className="text-[#3E83C4] w-6 h-6" />
+            ) : (
+              <Circle className="text-[#656565] w-6 h-6" />
+            )}
+          </span>
 
-              >
-                {/* LEFT: Line & Icon */}
-                <div className="relative flex flex-col items-center">
-                  {/* <span className="z-10 bg-white"> */}
-                  <span className="z-10 bg-white p-0.5 rounded-full">
-                    {isCompleted ? (
-                      <CheckCircle2 className="text-[#3E83C4] w-6 h-6" />
-                    ) : (
-                      <Circle className="text-[#656565] w-6 h-6" />
-                    )}
-                  </span>
-
-                  {index !== stepsData.length - 1 && (
-                    // <span className="w-px h-full bg-blue-300 absolute top-6" />
-                    <span className="w-px h-[72px] bg-blue-300 absolute top-7" />
-
-                  )}
-                </div>
-
-                {/* CENTER: Step Content */}
-                <div className="flex-1">
-                  {/* <p
-                    className={`font-semibold ${
-                      isCompleted ? "text-blue-700" : "text-gray-500"
-                    }`}
-                    
-                  > */}
-                  <p className={`font-medium ${isCompleted ? "text-[#3E83C4]" : "text-gray-600"}`}>
-
-                    {step}
-                  </p>
-
-                  {/* <p className="text-sm text-gray-500"> */}
-                  <p className="text-xs text-[#656565] mt-1">
-
-                    {[
-                      "Repair request accepted",
-                      "Dropped off with technician",
-                      "Technician working…",
-                      "Repair done, awaiting pick-up",
-                      "Service completed",
-                    ][index]}
-                  </p>
-                </div>
-
-                {/* RIGHT: Date & Time */}
-                {/* <div className="w-28 text-xs text-gray-400 text-right leading-tight"> */}
-                <div className="w-32 text-[11px] text-gray-400 text-right leading-tight pt-1">
-
-                  {timestamp && (
-                    <>
-                      <p>{timestamp.date}</p>
-                      <p>{timestamp.time}</p>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {index !== stepsData.length - 1 && (
+            <span className="w-px h-[72px] bg-blue-300 absolute top-7" />
+          )}
         </div>
+
+        {/* CENTER */}
+        <div className="flex-1">
+          <p className={`font-medium ${isCompleted ? "text-[#3E83C4]" : "text-gray-600"}`}>
+            {step}
+          </p>
+          <p className="text-xs text-[#656565] mt-1">
+            {[
+              "Repair request accepted",
+              "Dropped off with technician",
+              "Technician working…",
+              "Repair done, awaiting pick-up",
+              "Service completed",
+            ][index]}
+          </p>
+        </div>
+
+        {/* RIGHT */}
+        <div className="w-32 text-[11px] text-gray-400 text-right pt-1">
+          {timestamp && (
+            <>
+              <p>{timestamp.date}</p>
+              <p>{timestamp.time}</p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  })}
+</div>
+
 
         {/* Bottom Buttons */}
         {/* <div className="flex flex-col gap-3 items-center mt-10"> */}
