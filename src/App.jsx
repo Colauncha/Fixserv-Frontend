@@ -148,12 +148,13 @@ const App = () => {
     <Route index element={<ClientHome />} />
     <Route path="client-request" element={<ClientRequest />} />
     <Route path="history" element={<ClientHistory />} />
-     {/* <Route path="/client/artisan-profile/:artisanId" element={<ClientArtisanProfile />} /> */}
+     
+     {/* first update  */}
       <Route
       path="artisan-profile/:artisanId"
       element={<ClientArtisanProfile />}
     />
-    {/* <Route path="artisan-profile" element={<ClientArtisanProfile />} /> */}
+   
           <Route path="booking/:artisanId" element={<ClientBooking />} />
 
           {/* <Route path="booking" element={<ClientBooking />} /> */}

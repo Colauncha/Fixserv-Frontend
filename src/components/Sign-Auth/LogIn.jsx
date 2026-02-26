@@ -70,13 +70,16 @@ const handleSubmit = async (e) => {
     }
 
     // ✅ Save auth
-    login?.(token, { ...user, id: user._id });
 
-    localStorage.setItem("fixserv_token", token);
-    localStorage.setItem("fixserv_role", user.role);
-    localStorage.setItem("fixserv_user", JSON.stringify(user));
+    login?.(token, user);
+    
+    // login?.(token, { ...user, id: user._id });
 
-    // ✅ Redirect based on role
+    // localStorage.setItem("fixserv_token", token);
+    // localStorage.setItem("fixserv_role", user.role);
+    // localStorage.setItem("fixserv_user", JSON.stringify(user));
+
+
     switch (user.role) {
       case "CLIENT":
         navigate("/client");
