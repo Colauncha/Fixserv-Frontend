@@ -6,10 +6,11 @@ import failedIcon from "../../assets/Artisan Images/failed icon.png";
 import not from "../../assets/Artisan Images/not.png";
 import profile from "../../assets/Artisan Images/adebayo.png";
 import { useNavigate } from "react-router-dom";
-import { getWithdrawalHistory } from "../../api/wallet";
-import { resolveAccount } from "../../api/wallet";
-
-import { initiateWithdrawal } from "../../api/wallet";
+import {
+  getWithdrawalHistory,
+  resolveAccount,
+  initiateWithdrawal,
+} from "../../api/wallet.api";
 import { getAuthUser } from "../../utils/auth"
 
 

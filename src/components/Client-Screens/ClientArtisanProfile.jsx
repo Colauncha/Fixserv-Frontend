@@ -66,37 +66,38 @@ const { artisanId } = useParams();
 useEffect(() => {
   const fetchArtisan = async () => {
     try {
+      setLoadingArtisan(true);
+
       const token = localStorage.getItem("fixserv_token");
 
       const res = await fetch(
-        `https://user-management-h4hg.onrender.com/api/admin/user/${artisanId}`,
+        `https://dev-user-api.fixserv.co/api/admin/user/${artisanId}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         }
       );
 
       const json = await res.json();
 
       if (!res.ok) {
-        throw new Error(json.message || "Failed to fetch artisan");
+        throw new Error(json?.message || "Failed to fetch artisan");
       }
 
       const artisanData = {
-        ...json.data,
-        id: json.data.id || json.data._id,
+        ...(json?.data || json?.user || json),
+        id: (json?.data || json?.user || json)?.id || (json?.data || json?.user || json)?._id,
       };
 
       setArtisan(artisanData);
     } catch (err) {
       console.error(err);
+      setArtisan(null);
     } finally {
       setLoadingArtisan(false);
     }
   };
 
-  fetchArtisan();
+  if (artisanId) fetchArtisan();
 }, [artisanId]);
 
 useEffect(() => {
@@ -107,23 +108,22 @@ useEffect(() => {
       const token = localStorage.getItem("fixserv_token");
 
       const res = await fetch(
-        "https://user-management-h4hg.onrender.com/api/admin/getAll?role=ARTISAN",
+        "https://dev-user-api.fixserv.co/api/admin/getAll?role=ARTISAN",
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         }
       );
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error("Failed to fetch artisans");
+        throw new Error(data?.message || "Failed to fetch artisans");
       }
 
-      setRecommendedArtisans(data.data || []);
+      setRecommendedArtisans(data.users || []);
     } catch (err) {
       console.error("Recommendation error:", err);
+      setRecommendedArtisans([]);
     } finally {
       setLoadingRecommendations(false);
     }
@@ -132,15 +132,15 @@ useEffect(() => {
   fetchRecommendedArtisans();
 }, []);
 
-const mappedRecommendations = recommendedArtisans
-.filter((a) => String(a._id || a.id) !== String(artisanId))
-  .map((artisan) => ({
-    id: artisan.id,
-    name: artisan.fullName || "Unnamed Artisan",
-    location: artisan.location || "Unknown location",
-    rating: artisan.rating || 0,
-    skills: artisan.skills || [],
-    image: artisan.profileImage || johnOne
+const mappedRecommendations = (recommendedArtisans || [])
+  .filter((a) => String(a.id || a._id) !== String(artisanId))
+  .map((a) => ({
+    id: a.id || a._id,
+    name: a.fullName || a.businessName || "Unnamed Artisan",
+    location: a.location || "Unknown location",
+    rating: a.rating || 0,
+    skills: a.skills || [],
+    image: a.profilePicture || johnOne,
   }));
 
     if (loadingArtisan || !artisan) {
@@ -163,7 +163,7 @@ const mappedRecommendations = recommendedArtisans
           {/* LEFT – IMAGE */}
           <div className="relative">
             <img
-              src={profileImage}
+              src={artisan.profilePicture || profileImage}
               alt="Artisan"
               className="w-70 h-70 rounded-xl object-cover"
             />
@@ -184,7 +184,7 @@ const mappedRecommendations = recommendedArtisans
             <div className="flex items-center gap-4">
               
               <h2 className="text-2xl font-semibold">
-                {artisan.fullName}
+                {artisan.fullName || artisan.businessName || "Unnamed Artisan"}
               </h2>
               <img src={tick} alt="verified" className="w-5 h-5" />
             </div>
@@ -215,7 +215,7 @@ const mappedRecommendations = recommendedArtisans
 
             {/* Categories */}
             <div className="flex gap-2">
-              {["Phone", "Tablet", "Laptop"].map((item) => (
+              {(artisan.categories || ["Phone", "Tablet", "Laptop"]).slice(0, 3).map((item) => (
                 <span
                   key={item}
                   className="bg-[#C1DAF3] text-[#3E83C4] px-3 py-1 rounded-full text-xs"
@@ -272,39 +272,42 @@ const mappedRecommendations = recommendedArtisans
 
 
     {/* Business Hours Section */}
-<div className="mt-16">
-  <h2 className="text-3xl font-bold text-black mb-6">Business Hours</h2>
+<div className="space-y-3 text-sm text-[#535353]">
+  {[
+    { label: "Monday", key: "monday" },
+    { label: "Tuesday", key: "tuesday" },
+    { label: "Wednesday", key: "wednesday" },
+    { label: "Thursday", key: "thursday" },
+    { label: "Friday", key: "friday" },
+    { label: "Saturday", key: "saturday" },
+    { label: "Sunday", key: "sunday" },
+  ].map((dayObj) => {
+    const hours = artisan?.businessHours?.[dayObj.key];
+    const isClosed = !hours || !hours.open || !hours.close;
 
-  <div className="space-y-3 text-sm text-[#535353]">
-    {[
-      { day: "Monday", open: "9:00 Am", close: "5:00 PM" },
-      { day: "Tuesday", open: "9:00 Am", close: "5:00 PM" },
-      { day: "Wednesday", open: "9:00 Am", close: "5:00 PM" },
-      { day: "Thursday", open: "9:00 Am", close: "5:00 PM" },
-      { day: "Friday", open: "9:00 Am", close: "5:00 PM" },
-      { day: "Saturday", close: "Closed" },
-      { day: "Sunday", close: "Closed" },
-    ].map((item) => (
-      <div key={item.day} className="flex items-center gap-6">
+    return (
+      <div key={dayObj.key} className="flex items-center gap-6">
         {/* Day */}
-        <span className="w-24 text-[#8B8B8B]">{item.day}:</span>
+        <span className="w-24 text-[#8B8B8B]">
+          {dayObj.label}:
+        </span>
 
         {/* Time / Closed */}
-        {item.close === "Closed" ? (
+        {isClosed ? (
           <span className="text-[#8B8B8B]">Closed</span>
         ) : (
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 border border-gray-200 rounded-md text-xs text-gray-600 bg-white">
-              {item.open}
+              {hours.open}
             </span>
             <span className="px-3 py-1 border border-gray-200 rounded-md text-xs text-gray-600 bg-white">
-              {item.close}
+              {hours.close}
             </span>
           </div>
         )}
       </div>
-    ))}
-  </div>
+    );
+  })}
 </div>
 
   </div>
