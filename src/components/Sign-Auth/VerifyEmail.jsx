@@ -91,15 +91,6 @@ const VerifyEmail = () => {
           Go to Login
         </button>
 
-        {/* <button
-          className="mt-4 text-sm text-[#3E83C4] hover:underline"
-          onClick={handleResend}
-          disabled={loading}
-        >
-          {loading
-            ? "Resending..."
-            : "Didn’t receive the email? Resend Verification Email"}
-        </button> */}
         <p className="mt-4 text-sm text-gray-600">
   Didn’t receive the email?{" "}
   <button

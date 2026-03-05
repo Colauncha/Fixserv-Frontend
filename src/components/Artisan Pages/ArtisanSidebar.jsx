@@ -12,8 +12,10 @@ import dark from "../../assets/Artisan Images/dark.png";
 import adebayoImg from "../../assets/Artisan Images/adebayo.png";
 import log from "../../assets/Artisan Images/log.png";
 import { useAuth } from "../../context/AuthContext";
+import { getAuthUser, getAuthToken } from "../../utils/auth";
 
 const ArtisanSidebar = () => {
+   const { user, logout } = useAuth();
 
   const navClass = ({ isActive }) =>
   `flex items-center gap-3 px-6 py-2 text-sm transition ${
@@ -22,7 +24,6 @@ const ArtisanSidebar = () => {
       : "text-gray-600 hover:bg-gray-100"
   }`;
 
-  const { logout } = useAuth();
   
   return (
     <aside className="w-64 min-h-screen bg-white border-r border-blue-100 flex flex-col justify-between">
@@ -71,9 +72,9 @@ const ArtisanSidebar = () => {
         <div className="my-6 border-t border-blue-100"></div>
 
         {/* Support */}
-        <p className="px-6 text-xs text-gray-400 mt-6 mb-2">Support</p>
+        {/* <p className="px-6 text-xs text-gray-400 mt-6 mb-2">Support</p> */}
 
-        <nav className="space-y-1">
+        {/* <nav className="space-y-1">
           <NavLink to="/artisan/settings" className={navClass}>
             <img src={setting} className="w-4" />
             Settings
@@ -88,24 +89,35 @@ const ArtisanSidebar = () => {
             <img src={dark} className="w-4" />
             Dark mode
           </button>
-        </nav>
+        </nav> */}
       </div>
 
       {/* User Card */}
       <div className="px-4 py-4">
-        <div className="bg-[#3E83C4] text-white rounded-lg p-3 flex items-center gap-3">
-          <img src={adebayoImg} className="w-9 h-9 rounded-full" />
-          <div className="text-xs">
-            <p className="font-semibold">Adebayo. O</p>
-            <p className="opacity-80">Active</p>
-          </div>
-        </div>
+  <div className="bg-[#3E83C4] text-white rounded-lg p-3 flex items-center gap-3">
+    <img
+      src={
+        user?.profileImage ||
+        user?.profilePicture ||
+        adebayoImg
+      }
+      className="w-9 h-9 rounded-full"
+    />
 
-        <button onClick={logout} className="flex items-center gap-2 text-sm text-gray-500 mt-4 px-2">
-          <img src={log} className="w-4" />
-          Log out
-        </button>
-      </div>
+    <div className="text-xs">
+      <p className="font-semibold">{user?.fullName}</p>
+      <p className="opacity-80">Active</p>
+    </div>
+  </div>
+
+  <button
+    onClick={logout}
+    className="flex items-center gap-2 text-sm text-gray-500 mt-4 px-2 cursor-pointer hover:text-[#3E83C4]"
+  >
+    <img src={log} className="w-4" />
+    Log out
+  </button>
+</div>
     </aside>
   );
 };

@@ -11,7 +11,8 @@ import {
   resolveAccount,
   initiateWithdrawal,
 } from "../../api/wallet.api";
-import { getAuthUser } from "../../utils/auth"
+import { useAuth } from "../../context/AuthContext";
+import { getAuthToken } from "../../utils/auth";
 
 
 const activities = [
@@ -64,7 +65,8 @@ const activities = [
 
 const Wallet = () => {
 
-const user = getAuthUser();
+   const { user } = useAuth();
+
 const userId = user?.id;
 
   const [withdrawals, setWithdrawals] = useState([]);
@@ -129,58 +131,7 @@ const [withdrawing, setWithdrawing] = useState(false);
 const fee = 50;
 const netAmount = withdrawalAmount - fee;
 
-// const handleSubmit = async (e) => {
-//   e.preventDefault();
-//   setError("");
 
-//   if (!agreed) {
-//     setError("You must agree to the Terms & Conditions");
-//     return;
-//   }
-
-//   if (formData.password !== formData.confirmPassword) {
-//     setError("Passwords do not match");
-//     return;
-//   }
-
-//   try {
-//     setLoading(true);
-
-//     const payload = {
-//       email: formData.email.trim(),
-//       password: formData.password,
-//       fullName: formData.fullName.trim(),
-//       role: "ADMIN",
-//       adminData: {
-//         permissions: formData.permissions,
-//       },
-//     };
-
-//     const res = await fetch(
-//       "https://user-management-h4hg.onrender.com/api/users/register",
-//       {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(payload),
-//       }
-//     );
-
-//     const data = await res.json();
-
-//     if (!res.ok) {
-//       throw new Error(data.message || "Registration failed");
-//     }
-
-//     // optional, safe
-//     localStorage.setItem("fixserv_role", "ADMIN");
-
-//     navigate("/admin-login");
-//   } catch (err) {
-//     setError(err.message);
-//   } finally {
-//     setLoading(false);
-//   }
-// };
 const handleResolveAccount = async () => {
   if (accountNumber.length !== 10 || !bankCode) return;
 
@@ -193,22 +144,7 @@ const handleResolveAccount = async () => {
   }
 };
 
-// const handleWithdraw = async () => {
-//   try {
-//     await initiateWithdrawal({
-//       userId,
-//       amount: Number(amount),
-//       accountNumber,
-//       bankCode,
-//       pin,
-//     });
 
-//     fetchWithdrawals(); // refresh history
-//     alert("Withdrawal initiated successfully");
-//   } catch (err) {
-//     alert("Withdrawal failed");
-//   }
-// };
 
 const handleWithdraw = async () => {
   if (withdrawing) return;
@@ -248,7 +184,7 @@ const handleWithdraw = async () => {
         <h1 className="text-2xl text-black font-semibold">My Wallet</h1>
        <div className="flex items-center gap-4">
                  <img src={not} className="w-11 h-9 cursor-pointer" />
-                 <img src={profile} className="w-9 h-9 rounded-full cursor-pointer" />
+                  <img src={user.profileImage || profile} className="w-9 h-9 rounded-full cursor-pointer" />
                </div>
       </div>
       <div className="border-t border-blue-200"></div>

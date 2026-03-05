@@ -1,6 +1,9 @@
+// new code 
+
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import WelcomeBonus from "./WelcomeBonus";
+import ReferEarn from "./ReferEarn"; // <-- Imported ReferEarn modal
 
 // Images
 import bgImage from "../../assets/client images/client-home/clientbg.png";
@@ -23,27 +26,24 @@ import catImageSix from "../../assets/client images/client-home/catjohnsix.png";
 import bannerBg from "../../assets/client images/client-home/banner.png";
 import bannerOverlay from "../../assets/client images/client-home/banner overlay.png";
 
+import { getArtisansByCategory } from "../../api/category.api";
+
+// Wallet/Fixpoints images
+import walletIcon from "../../assets/client images/client-home/wallet.png";
+import coin from "../../assets/client images/client-home/Fixcoin.png"
+
 import { searchServicesAndArtisans } from "../../api/search.api";
 
-
-
-// const SEARCH_BASE_URL = "/search";
-
 const ClientHome = () => {
-
-  /* =========================
-     INITIALIZATION SECTION
-  ========================== */
-
   const navigate = useNavigate();
 
-const storedUser = localStorage.getItem("fixserv_user");
-const user = storedUser ? JSON.parse(storedUser) : null;
+  /* =========================
+     USER & STATE
+  ========================== */
 
-
+  const storedUser = localStorage.getItem("fixserv_user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
   const firstName = user?.fullName?.split(" ")[0];
-
-  const categories = ["Phone", "Tablet", "Laptop", "Home Appliances"];
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
@@ -60,15 +60,19 @@ const user = storedUser ? JSON.parse(storedUser) : null;
   const [loadingArtisans, setLoadingArtisans] = useState(false);
 
   const [showWelcomeBonus, setShowWelcomeBonus] = useState(false);
+  const [showReferEarn, setShowReferEarn] = useState(false); // <-- State for referral modal
 
   const searchSectionRef = useRef(null);
-
   const [debouncedQuery, setDebouncedQuery] = useState("");
-
   const [animatedCount, setAnimatedCount] = useState(0);
+  const [referralCode, setReferralCode] = useState("");
+
+  const previousCountRef = useRef(0);
+
+  const categories = ["Phone", "Tablet", "Laptop", "Home Appliances"];
 
   /* =========================
-     HELPER FUNCTIONS
+     HELPERS
   ========================== */
 
   const getCategorySlug = (cat) => {
@@ -91,378 +95,359 @@ const user = storedUser ? JSON.parse(storedUser) : null;
     return map[cat] || catImageOne;
   };
 
+  const fetchArtisans = async () => {
+  const token = localStorage.getItem("fixserv_token");
 
+  try {
+    setLoadingArtisans(true);
 
-  useEffect(() => {
-    const shouldShow = localStorage.getItem("showWelcomeBonus");
+    const res = await fetch(
+      "https://dev-user-api.fixserv.co/api/admin/getAll?role=ARTISAN",
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      }
+    );
 
-    if (shouldShow === "true") {
-      setShowWelcomeBonus(true);
-      localStorage.removeItem("showWelcomeBonus");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || "Failed to fetch artisans");
+
+    setApiArtisans(data.users || []);
+  } catch (err) {
+    console.error("Error fetching artisans:", err);
+  } finally {
+    setLoadingArtisans(false);
+  }
+};
+
+  /* =========================
+     FETCH ARTISANS
+  ========================== */
+useEffect(() => {
+  fetchArtisans();
+
+  const interval = setInterval(fetchArtisans, 30000); // refresh every 30s
+  return () => clearInterval(interval);
+}, []);
+
+useEffect(() => {
+  const fetchCategoryArtisans = async () => {
+    try {
+      setLoadingCategoryArtisans(true);
+
+      const categorySlug = getCategorySlug(activeCategory);
+
+      const data = await getArtisansByCategory({
+        category: categorySlug,
+        // location: user?.location || "",  // optional if you want to filter by user location
+        page: 1,
+        limit: 10,
+      });
+
+      if (!data?.success) throw new Error(data?.message || "Failed to fetch category artisans");
+
+      setCategoryArtisans(data.artisans || []);
+    } catch (err) {
+      console.error("Error fetching category artisans:", err?.response?.data || err?.message);
+      setCategoryArtisans([]);
+    } finally {
+      setLoadingCategoryArtisans(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    const fetchArtisans = async () => {
-      try {
-        setLoadingArtisans(true);
-
-        const token = localStorage.getItem("fixserv_token");
-
-        const res = await fetch(
-          "https://dev-user-api.fixserv.co/api/admin/getAll?role=ARTISAN",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.message || "Failed to fetch artisans");
-        }
-
-        setApiArtisans(data.users || []);
-      } catch (err) {
-        console.error("Error fetching artisans:", err);
-      } finally {
-        setLoadingArtisans(false);
-      }
-    };
-
-    fetchArtisans();
-  }, []);
-
-  useEffect(() => {
-    const fetchCategoryArtisans = async () => {
-      try {
-        setLoadingCategoryArtisans(true);
-
-        const token = localStorage.getItem("fixserv_token");
-        const categorySlug = getCategorySlug(activeCategory);
-
-        const res = await fetch(
-          `/api/category/artisans/category/${encodeURIComponent(categorySlug)}`,
-          {
-            headers: token
-              ? { Authorization: `Bearer ${token}` }
-              : undefined,
-          }
-        );
-
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-          throw new Error(data?.message || "Failed to fetch category artisans");
-        }
-
-        setCategoryArtisans(data.artisans || []);
-      } catch (err) {
-        console.error("Error fetching category artisans:", err);
-        setCategoryArtisans([]);
-      } finally {
-        setLoadingCategoryArtisans(false);
-      }
-    };
-
-    fetchCategoryArtisans();
-  }, [activeCategory]);
+  fetchCategoryArtisans();
+}, [activeCategory]);
 
   /* =========================
      SEARCH LOGIC
   ========================== */
 
-const handleSearch = async () => {
-  const q = searchQuery.trim();
-  if (!q) return;
+  const handleSearch = async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
 
-  setSearchLoading(true);
-  setSearchError("");
-  setIsSearching(true);
-
-  try {
-    const data = await searchServicesAndArtisans({
-  keyword: q,
-});
-
-    if (!data?.success) {
-      throw new Error(data?.message || "Search failed");
-    }
-
-    const artisansFromSearch = data?.data?.artisans?.data || [];
-    setSearchResults(artisansFromSearch);
-
-    // ✅ If API worked, don't show any fallback message
+    setSearchLoading(true);
     setSearchError("");
-  } catch (err) {
-    console.error("SEARCH ERROR:", err?.response?.data || err?.message);
+    setIsSearching(true);
 
-    const apiMsg =
-      err?.response?.data?.message ||
-      err?.response?.data?.errors?.[0]?.message ||
-      err?.response?.data?.errors?.[0]?.message?.message || // (in case error is nested)
-      err?.response?.data?.errors?.[0] ||
-      err?.message;
+    try {
+      const data = await searchServicesAndArtisans({ keyword: q });
+      if (!data?.success) throw new Error(data?.message || "Search failed");
 
-    // ✅ fallback to local filtering
-    const keyword = q.toLowerCase();
-    const localFiltered = (apiArtisans || []).filter((a) => {
-      const fullName = (a.fullName || "").toLowerCase();
-      const businessName = (a.businessName || "").toLowerCase();
-      const location = (a.location || a.city || a.state || "").toLowerCase();
-      const skillsArr = Array.isArray(a.skills)
-        ? a.skills
-        : Array.isArray(a.skillSet)
-        ? a.skillSet
-        : [];
-      const skillsText = skillsArr.join(" ").toLowerCase();
+      const artisansFromSearch = data?.data?.artisans?.data || [];
+      setSearchResults(artisansFromSearch);
+      setSearchError("");
+    } catch (err) {
+      console.error("SEARCH ERROR:", err?.response?.data || err?.message);
 
-      return (
-        fullName.includes(keyword) ||
-        businessName.includes(keyword) ||
-        location.includes(keyword) ||
-        skillsText.includes(keyword)
-      );
-    });
+      const apiMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.errors?.[0]?.message ||
+        err?.message;
 
-    setSearchResults(localFiltered);
+      // fallback to local filtering
+      const keyword = q.toLowerCase();
+      const localFiltered = (apiArtisans || []).filter((a) => {
+        const fullName = (a.fullName || "").toLowerCase();
+        const businessName = (a.businessName || "").toLowerCase();
+        const location = (a.location || a.city || a.state || "").toLowerCase();
+        const skillsArr = Array.isArray(a.skills)
+          ? a.skills
+          : Array.isArray(a.skillSet)
+          ? a.skillSet
+          : [];
+        const skillsText = skillsArr.join(" ").toLowerCase();
 
-    // ✅ IMPORTANT: show the warning ONLY if fallback also returns nothing
-    if (localFiltered.length === 0) {
-      setSearchError(apiMsg || "Search service is temporarily unavailable. Try again.");
-    } else {
-      setSearchError(""); // no scary message if we can show local results
+        return (
+          fullName.includes(keyword) ||
+          businessName.includes(keyword) ||
+          location.includes(keyword) ||
+          skillsText.includes(keyword)
+        );
+      });
+
+      setSearchResults(localFiltered);
+      if (localFiltered.length === 0) setSearchError(apiMsg || "Search service is temporarily unavailable. Try again.");
+      else setSearchError("");
+    } finally {
+      setSearchLoading(false);
     }
-  } finally {
-    setSearchLoading(false);
-  }
-};
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (debouncedQuery) handleSearch();
+  }, [debouncedQuery]);
+
+  useEffect(() => {
+    if (isSearching && !searchLoading && searchSectionRef.current) {
+      searchSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [isSearching, searchLoading]);
+
+     /* =========================
+     WELCOME BONUS / REFER & EARN LOGIC (FIXED)
+  ========================== */
+
+  const userId = user?.id || user?._id;
+
+  const ONBOARDING_KEY = userId ? `fixserv_onboarding_step_${userId}` : null;
+
+
+  useEffect(() => {
+    if (!userId || !ONBOARDING_KEY) return;
+
+    const step = localStorage.getItem(ONBOARDING_KEY);
+
+    // First time this user is landing on ClientHome
+    if (!step) {
+      localStorage.setItem(ONBOARDING_KEY, "welcome");
+      setShowWelcomeBonus(true);
+      setShowReferEarn(false);
+      return;
+    }
+
+    if (step === "welcome") {
+      setShowWelcomeBonus(true);
+      setShowReferEarn(false);
+      return;
+    }
+
+    if (step === "refer") {
+      setShowWelcomeBonus(false);
+      setShowReferEarn(true);
+      return;
+    }
+
+    // done
+    setShowWelcomeBonus(false);
+    setShowReferEarn(false);
+  }, [userId, ONBOARDING_KEY]);
 
 useEffect(() => {
-  if (isSearching && !searchLoading && searchSectionRef.current) {
-    searchSectionRef.current.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }
-}, [isSearching, searchLoading]);
+  const fetchReferralCode = async () => {
+    const userId = user?.id || user?._id;
+    const token = localStorage.getItem("fixserv_token");
+    if (!userId || !token) return;
 
+    try {
+      const res = await fetch(
+        `https://dev-wallet-api.fixserv.co/api/wallet/referral/info/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-useEffect(() => {
-  const timer = setTimeout(() => {
-    setDebouncedQuery(searchQuery.trim());
-  }, 300);
+      const data = await res.json();
 
-  return () => clearTimeout(timer);
-}, [searchQuery]);
+      if (data?.success) {
+        setReferralCode(data?.data?.myReferralCode || "");
+      } else {
+        setReferralCode("");
+      }
+    } catch (err) {
+      console.error("Failed to fetch referral code:", err);
+      setReferralCode("");
+    }
+  };
 
-useEffect(() => {
-  if (debouncedQuery) {
-    handleSearch();
-  }
-}, [debouncedQuery]);
-
-const previousCountRef = useRef(0);
-
+  fetchReferralCode();
+}, [user?.id, user?._id]);
 
   /* =========================
      DERIVED DATA
   ========================== */
 
-// Always map original artisans for "Top Artisans"
 const mappedApiArtisans = (apiArtisans || []).map((artisan) => ({
   id: artisan.id || artisan._id,
-  name:
-    artisan.fullName ||
-    artisan.businessName ||
-    "Unnamed Artisan",
-  location:
-    artisan.location ||
-    artisan.city ||
-    artisan.state ||
-    "Unknown location",
+  name: artisan.fullName || artisan.businessName || "Unnamed Artisan",
+  location: artisan.location || artisan.city || artisan.state || "Unknown location",
   rating: artisan.rating || 0,
   skills: artisan.skills || artisan.skillSet || [],
-  image: johnOne,
+  image:
+    artisan.profilePicture ||
+    artisan.profileImage ||
+    johnOne, // fallback
   available: true,
 }));
+  
+  const getNewest = (list = [], count = 6) => {
+  // backend usually includes createdAt/updatedAt even if not documented
+  const sorted = [...list].sort((a, b) => {
+    const aDate = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
+    const bDate = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
+    return bDate - aDate;
+  });
 
-// Separate mapping for search results
-const mappedSearchResults = (searchResults || []).map((artisan) => ({
+  return sorted.slice(0, count);
+};
+
+const newestApiArtisans = getNewest(apiArtisans || [], 6);
+
+const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
   id: artisan.id || artisan._id,
-  name:
-    artisan.fullName ||
-    artisan.businessName ||
-    "Unnamed Artisan",
-  location:
-    artisan.location ||
-    artisan.city ||
-    artisan.state ||
-    "Unknown location",
+  name: artisan.fullName || artisan.businessName || "Unnamed Artisan",
+  location: artisan.location || artisan.city || artisan.state || "Unknown location",
   rating: artisan.rating || 0,
   skills: artisan.skills || artisan.skillSet || [],
-  image: johnOne,
+  image: artisan.profilePicture || artisan.profileImage || johnOne,
   available: true,
 }));
 
+  const mappedSearchResults = (searchResults || []).map((artisan) => ({
+    id: artisan.id || artisan._id,
+    name: artisan.fullName || artisan.businessName || "Unnamed Artisan",
+    location: artisan.location || artisan.city || artisan.state || "Unknown location",
+    rating: artisan.rating || 0,
+    skills: artisan.skills || artisan.skillSet || [],
+    image: johnOne,
+    available: true,
+  }));
 
-  const filteredArtisans = (categoryArtisans || []).map(
-    (artisan, index) => ({
-      id: artisan.id || artisan._id || `${index}`,
-      name:
-        artisan.fullName ||
-        artisan.businessName ||
-        "Unnamed Artisan",
-      category: activeCategory,
-      image:
-        artisan.profilePicture ||
-        getCategoryImage(activeCategory),
-      rating: artisan.rating || 0,
-      reviews: artisan.reviews || 0,
-      available: true,
-    })
-  );
+  const filteredArtisans = (categoryArtisans || []).map((artisan, index) => ({
+    id: artisan.id || artisan._id || `${index}`,
+    name: artisan.fullName || artisan.businessName || "Unnamed Artisan",
+    category: activeCategory,
+    image: artisan.profilePicture || getCategoryImage(activeCategory),
+    rating: artisan.rating || 0,
+    reviews: artisan.reviews || 0,
+    available: true,
+  }));
 
   useEffect(() => {
-  const end = mappedSearchResults.length;
+    const end = mappedSearchResults.length;
+    if (previousCountRef.current === end) return;
+    previousCountRef.current = end;
 
-  if (previousCountRef.current === end) return;
-
-  previousCountRef.current = end;
-
-  let start = 0;
-
-  if (end === 0) {
-    setAnimatedCount(0);
-    return;
-  }
-
-  const duration = 400;
-  const incrementTime = 20;
-  const step = Math.ceil(end / (duration / incrementTime));
-
-  const counter = setInterval(() => {
-    start += step;
-    if (start >= end) {
-      start = end;
-      clearInterval(counter);
+    let start = 0;
+    if (end === 0) {
+      setAnimatedCount(0);
+      return;
     }
-    setAnimatedCount(start);
-  }, incrementTime);
 
-  return () => clearInterval(counter);
-}, [mappedSearchResults.length]);
+    const duration = 400;
+    const incrementTime = 20;
+    const step = Math.ceil(end / (duration / incrementTime));
 
+    const counter = setInterval(() => {
+      start += step;
+      if (start >= end) {
+        start = end;
+        clearInterval(counter);
+      }
+      setAnimatedCount(start);
+    }, incrementTime);
+
+    return () => clearInterval(counter);
+  }, [mappedSearchResults.length]);
+
+  /* =========================
+     RENDER
+  ========================== */
 
   return (
-   
     <div className="w-full">
       {/* HERO */}
       <section className="relative w-full h-[420px] flex items-center justify-center mt-4">
-        
-        {/* Background Image */}
-        <img
-          src={bgImage}
-          alt="Client background"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src={bgImage} alt="Client background" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={bgOverlay} alt="" className="absolute inset-0 w-full h-full object-cover" />
 
-        {/* Overlay */}
-        <img
-          src={bgOverlay}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-
-        {/* Content */}
         <div className="relative z-10 w-full max-w-4xl px-6 text-center text-white">
-          
-          {/* Heading */}
-<h1 className="text-3xl md:text-4xl font-semibold mb-3">
-  Hi {firstName || "there"}, What are you fixing today?
-</h1>
-
-
-
-          {/* Subtitle */}
+          <h1 className="text-3xl md:text-4xl font-semibold mb-3">
+            Hi {firstName || "there"}, What are you fixing today?
+          </h1>
           <p className="text-sm md:text-base text-[#D9D9D9] mb-8">
             Connect with skilled and trusted professionals in minutes.
           </p>
 
-{/* Search Bar */}
-<form
-  onSubmit={(e) => {
-    e.preventDefault();
-    handleSearch();
-  }}
-  className="flex w-full max-w-2xl mx-auto bg-white rounded-lg overflow-hidden shadow-lg"
->
-  {/* Input */}
-  <div className="flex items-center flex-1 px-4">
-    <svg
-      className="w-5 h-5 text-gray-400 mr-2"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
-      />
-    </svg>
+          {/* Search Bar */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearch();
+            }}
+            className="flex w-full max-w-2xl mx-auto bg-white rounded-lg overflow-hidden shadow-lg"
+          >
+            <div className="flex items-center flex-1 px-4">
+              <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" />
+              </svg>
 
-    <input
-      type="text"
-      placeholder="What do you need?"
-      value={searchQuery}
-onChange={(e) => {
-  const value = e.target.value;
-  setSearchQuery(value);
+              <input
+                type="text"
+                placeholder="What do you need?"
+                value={searchQuery}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchQuery(value);
+                  if (!value.trim()) {
+                    setIsSearching(false);
+                    setSearchResults([]);
+                    setSearchError("");
+                  }
+                }}
+                className="w-full py-3 text-sm text-black focus:outline-none"
+              />
+            </div>
 
-  if (!value.trim()) {
-    setIsSearching(false);
-    setSearchResults([]);
-    setSearchError("");
-  }
-}}
+            <button type="submit" disabled={searchLoading} className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-8 text-sm font-medium transition disabled:opacity-60 cursor-pointer">
+              {searchLoading ? "Searching..." : "Search"}
+            </button>
+          </form>
 
-
-      className="w-full py-3 text-sm text-black focus:outline-none"
-    />
-  </div>
-
-  {/* Button */}
-  <button
-    type="submit"
-    disabled={searchLoading}
-    className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-8 text-sm font-medium transition disabled:opacity-60 cursor-pointer"
-  >
-    {searchLoading ? "Searching..." : "Search"}
-  </button>
-</form>
-
-{searchError && (
-  <p className="text-sm text-yellow-200 mt-3">
-    {searchError}
-  </p>
-)}
-
+          {searchError && <p className="text-sm text-yellow-200 mt-3">{searchError}</p>}
         </div>
       </section>
 
-    
-{/* SEARCH RESULTS SECTION */}
-{isSearching && (
-  <section
-  ref={searchSectionRef}
-  className="w-full py-14 transition-opacity duration-500 ease-in-out opacity-100 animate-fadeIn"
->
-
-    <div className="max-w-7xl mx-auto px-2 md:px-6">
+      {/* SEARCH RESULTS SECTION */}
+      {isSearching && (
+        <section ref={searchSectionRef} className="w-full py-14 transition-opacity duration-500 ease-in-out opacity-100 animate-fadeIn">
+           <div className="max-w-7xl mx-auto px-2 md:px-6">
 
       <div className="flex items-center justify-between mb-6">
   <h2 className="text-lg font-semibold text-black">
@@ -562,10 +547,11 @@ onChange={(e) => {
         ))}
       </div>
     </div>
-  </section>
-)}
+        </section>
+      )}
 
-<section className="w-full py-14 overflow-hidden">
+      {/* TOP ARTISANS, CATEGORY, NEW ON FIXSERV, BANNER */}
+      <section className="w-full py-14 overflow-hidden">
   <div className="max-w-7xl mx-auto px-2 md:px-6">
     {/* Title */}
     <h2 className="text-lg font-semibold text-black mb-6">
@@ -589,10 +575,13 @@ onChange={(e) => {
           >
             <div className="relative">
               <img
-                src={artisan.image}
-                alt={artisan.name}
-                className="w-full h-60 object-cover rounded-lg"
-              />
+  src={artisan.image}
+  alt={artisan.name}
+  className="w-full h-60 object-cover rounded-lg"
+  onError={(e) => {
+    e.currentTarget.src = johnOne;
+  }}
+/>
 
               <span className="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs px-2 py-1 rounded-full">
                 Early User
@@ -655,46 +644,96 @@ onChange={(e) => {
     </div>
   </div>
 </section>
-
-
-
-    <section className="w-full py-14 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-2 md:px-6">
-  {/* Title */}
+      {/* ...all other sections stay the same as your original code... */}
+<section className="w-full py-14 overflow-hidden">
+  <div className="max-w-7xl mx-auto px-2 md:px-6">
+    {/* Title */}
     <h2 className="text-lg font-semibold text-black mb-6">
-    New on Fixserv
-  </h2>
+      New on Fixserv
+    </h2>
 
-  {/* Marquee Wrapper */}
+    {/* Marquee Wrapper */}
+    <div className="relative w-full overflow-hidden">
+      <div className="flex w-max gap-8 marquee">
+        {[...Array(2)].map((_, loopIndex) => (
+          <React.Fragment key={loopIndex}>
+            {loadingArtisans ? (
+              <p className="text-sm text-gray-500 px-4">
+                Loading artisans...
+              </p>
+            ) : (
+              mappedNewArtisans.map((artisan) => (
+                <div
+                  key={`${loopIndex}-${artisan.id}`}
+                  className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
+                >
+                  <div className="relative">
+                    <img
+                      src={artisan.image}
+                      alt={artisan.name}
+                      className="w-full h-60 object-cover rounded-lg"
+                    />
+                    <span className="absolute top-3 right-3 bg-[#3E83C4] text-white text-xs px-2 py-1 rounded-full">
+                      New
+                    </span>
+                  </div>
 
-<div className="relative w-full overflow-hidden">
-  <div className="flex w-max gap-8 marquee">
-    {[...Array(2)].map((_, loopIndex) => (
-      <React.Fragment key={loopIndex}>
-        {loadingArtisans ? (
-          <p className="text-sm text-gray-500 px-4">
-            Loading artisans...
-          </p>
-        ) : (
-          mappedApiArtisans.slice(0, 6).map((artisan) => (
-            <div
-              key={`${loopIndex}-${artisan.id}`}
-              className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
-            >
-          
-            </div>
-          ))
-        )}
-      </React.Fragment>
-    ))}
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-black">
+                          {artisan.name}
+                        </h3>
+                        <img src={mark} alt="verified" className="w-4 h-4" />
+                      </div>
+
+                      <span className="text-xs text-[#43A047] bg-[#C9E8CA] px-2 py-0.5 rounded-full">
+                        Available
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-[#535353] mb-2">
+                      {artisan.location}
+                    </p>
+
+                    <div className="flex items-center gap-1 text-sm mb-3">
+                      <img src={starIcon} alt="star" className="w-4 h-4" />
+                      <span className="font-medium text-black">
+                        {artisan.rating}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                      {(artisan.skills || [])
+                        .slice(0, 3)
+                        .map((skill, i) => (
+                          <span
+                            key={`${skill}-${i}`}
+                            className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                    </div>
+
+                    <button
+                      onClick={() =>
+                        navigate(`/client/artisan-profile/${artisan.id}`)
+                      }
+                      className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition"
+                    >
+                      View Profile
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
   </div>
-</div>
-</div>
-
-
-
 </section>
-
 
 <section className="w-full py-14 overflow-hidden">
   <div className="max-w-7xl mx-auto px-2 md:px-6">
@@ -756,9 +795,11 @@ onChange={(e) => {
                 <span className="text-[#3E83C4] text-xs">✔</span>
               </div>
 
-              <p className="text-lg text-[#535353] mt-2 mb-2">
-                Electronics Technicians
-              </p>
+             <p className="text-lg text-[#535353] mt-2 mb-2">
+  {(categoryArtisans?.[0]?.categories && categoryArtisans?.[0]?.categories.length)
+    ? categoryArtisans?.[0]?.categories.join(", ")
+    : "Service Provider"}
+</p>
 
               <div className="flex items-center gap-1 mt-6 text-sm text-black">
                 <span className="text-yellow-500">★</span>
@@ -785,7 +826,6 @@ onChange={(e) => {
 
   </div>
 </section>
-
 
 
 <section className="relative w-full flex items-center justify-center mt-4 mb-8 py-14 overflow-hidden">
@@ -821,17 +861,38 @@ onChange={(e) => {
     </div>
   </div>
 </section>
-
-
-{showWelcomeBonus && (
-  <WelcomeBonus onClose={() => setShowWelcomeBonus(false)} />
+      {/* =====================
+         MODALS
+      ====================== */}
+            {showWelcomeBonus && (
+  <WelcomeBonus
+    onClose={() => {
+      // if user closes without claiming, you can either keep step as welcome or move on.
+      // I’ll keep it as welcome so it will show again until they claim.
+      setShowWelcomeBonus(false);
+    }}
+    onClaim={() => {
+      if (ONBOARDING_KEY) localStorage.setItem(ONBOARDING_KEY, "refer");
+      setShowWelcomeBonus(false);
+      setShowReferEarn(true);
+    }}
+  />
 )}
 
+{showReferEarn && (
+  <ReferEarn
+    onClose={() => {
+      if (ONBOARDING_KEY) localStorage.setItem(ONBOARDING_KEY, "done");
+      setShowReferEarn(false);
+    }}
+    referralCode={referralCode}
+  />
+)}
+      <div className="fixed bottom-4 right-4 z-[999999] bg-black text-white text-xs p-2 rounded">
+  welcome:{String(showWelcomeBonus)} refer:{String(showReferEarn)}
 </div>
+    </div>
+  );
+};
 
-
-
-  )
-}
-
-export default ClientHome
+export default ClientHome;

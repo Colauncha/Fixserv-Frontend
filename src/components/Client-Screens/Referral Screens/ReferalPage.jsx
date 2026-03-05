@@ -1,6 +1,4 @@
-
-import React, { useState } from "react";
-
+import React, { useState, useEffect } from "react";
 import mainBg from "../../../assets/client images/client-home/referal part/referalbg.png";
 import overlayOne from "../../../assets/client images/client-home/referal part/referalbgoverlayone.png";
 import overlayTwo from "../../../assets/client images/client-home/referal part/referalbgoverlaytwo.png";
@@ -19,44 +17,174 @@ import MyFixpointsPanel from "./MyFixpointsPanel";
 import LeaderBoard from "./LeaderBoard";
 import Task from "./Task";
 
+import { useAuth } from "../../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 
 const ReferalPage = () => {
 
-    const [activeTab, setActiveTab] = useState("users");
+  const navigate = useNavigate();
 
-      const allUsers = [
-    ["Ufoma Napoleon", "uffynapoleon@gmail.com", "7-11-2025", "Successful"],
-    ["Lawal Hassan", "Lawal123@gmail.com", "7-11-2025", "Pending"],
-    ["John Adewale", "johnadewale@gmail.com", "7-10-2025", "Pending"],
-    ["Tude Adesan", "tudeadesan@gmail.com", "7-09-2025", "Successful"],
-    ["Natalie Kings", "natalieking@gmail.com", "7-08-2025", "Successful"],
-    ["Shola Johnson", "sholajohnson@gmail.com", "7-07-2025", "Successful"],
-    ["Janet Adetayo", "janetadetayo@gmail.com", "7-06-2025", "Successful"],
-    ["Lawal Hassan", "lawaltest@gmail.com", "7-05-2025", "Pending"],
-    ["Ufoma Napoleon", "ufomanew@gmail.com", "7-04-2025", "Successful"],
-  ];
+const { user, token } = useAuth();
+const userId = user?.id;
 
-    const [sortOption, setSortOption] = useState("Newest");
-    const [page, setPage] = useState(1);
-    const itemsPerPage = 4;
+const [activeTab, setActiveTab] = useState("users");
+const [fixpoints, setFixpoints] = useState(0);
+const [loading, setLoading] = useState(false);
+const [referralInfo, setReferralInfo] = useState(null);
+const [page, setPage] = useState(1);
+const [sortOption, setSortOption] = useState("Newest");
+const itemsPerPage = 5;
+
+const referralCode = referralInfo?.myReferralCode || "—";
+
+// adjust this to your real frontend domain
+const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
+
+// the shareable link
+const referralLink = referralCode && referralCode !== "—"
+  ? `${APP_URL}/signup?ref=${encodeURIComponent(referralCode)}`
+  : "";
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (text) => {
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  } catch (e) {
+    // fallback if clipboard API fails
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+};
+
+const handleShare = async () => {
+  if (!referralLink) return;
+
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: "Fixserv Referral",
+        text: `Use my Fixserv referral code: ${referralCode}`,
+        url: referralLink,
+      });
+    } else {
+      await handleCopy(referralLink); // desktop fallback
+    }
+  } catch (e) {
+    // If user cancels share, don't treat as error.
+    // But if anything fails, fallback to copy.
+    await handleCopy(referralLink);
+  }
+};
+
+
+const referralRewards = Array.isArray(referralInfo?.referralRewards)
+  ? referralInfo.referralRewards
+  : [];
+
+// Convert backend items → your table row format: [name, email, date, status]
+const allUsers = referralRewards.map((item) => {
+  // name
+  const name =
+    item?.fullName ||
+    item?.name ||
+    item?.referredUser?.fullName ||
+    item?.referredUser?.name ||
+    item?.user?.fullName ||
+    item?.user?.name ||
+    "—";
+
+  // email
+  const email =
+    item?.email ||
+    item?.referredUser?.email ||
+    item?.user?.email ||
+    "—";
+
+  // date
+  const rawDate =
+    item?.joinedAt ||
+    item?.createdAt ||
+    item?.referredAt ||
+    item?.date ||
+    item?.rewardedAt ||
+    null;
+
+  const date = rawDate
+    ? new Date(rawDate).toLocaleDateString("en-GB")
+    : "—";
+
+  // status mapping
+  const statusRaw =
+    item?.status ||
+    item?.rewardStatus ||
+    item?.paymentStatus ||
+    item?.state ||
+    "";
+
+  const s = String(statusRaw).toLowerCase();
+
+  const status =
+    s.includes("success") ||
+    s.includes("approved") ||
+    s.includes("paid") ||
+    s.includes("credit") ||
+    s.includes("completed")
+      ? "Successful"
+      : "Pending";
+
+  return [name, email, date, status];
+});
+
+
+const parseRowDate = (val) => {
+  if (!val || val === "—") return 0;
+
+  // Try native parsing first
+  const t = new Date(val).getTime();
+  if (!Number.isNaN(t)) return t;
+
+  // Try dd/mm/yyyy
+  const m = String(val).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) {
+    const [, dd, mm, yyyy] = m;
+    return new Date(`${yyyy}-${mm}-${dd}`).getTime();
+  }
+
+  return 0;
+};
+
+const sortedUsers = [...allUsers].sort((a, b) => {
+  const dateA = parseRowDate(a[2]);
+  const dateB = parseRowDate(b[2]);
+  return sortOption === "Newest" ? dateB - dateA : dateA - dateB;
+});
+
+// ✅ keep pagination UI the same, but prevent totalPages=0
+const totalPages = Math.max(1, Math.ceil(sortedUsers.length / itemsPerPage));
+
+const startIndex = (page - 1) * itemsPerPage;
+const paginatedUsers = sortedUsers.slice(startIndex, startIndex + itemsPerPage);
+
+// ✅ when list shrinks to 0, force page back to 1
+useEffect(() => {
+  if (page > totalPages) setPage(1);
+}, [totalPages, page]);
   
-    // Sort data
-    const sortedUsers = [...allUsers].sort((a, b) => {
-      const dateA = new Date(a[2]);
-      const dateB = new Date(b[2]);
-      return sortOption === "Newest" ? dateB - dateA : dateA - dateB;
-    });
-  
-    // Pagination logic
-    const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
-    const startIndex = (page - 1) * itemsPerPage;
-    const paginatedUsers = sortedUsers.slice(startIndex, startIndex + itemsPerPage);
-  
-    const handleNext = () => {
-      if (page < totalPages) setPage(page + 1);
-    };
-  
+const handleNext = () => {
+  if (page < totalPages) setPage(page + 1);
+};
+ 
     const handlePageClick = (num) => {
       setPage(num);
     };
@@ -65,6 +193,75 @@ const ReferalPage = () => {
       setSortOption(sortOption === "Newest" ? "Oldest" : "Newest");
     };
 
+    useEffect(() => {
+  const fetchFixpoints = async () => {
+    try {
+      if (!userId || !token) return;
+
+      const res = await fetch(
+        `https://dev-wallet-api.fixserv.co/api/wallet/fixpoints/balance/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      console.log("REFERRAL API RAW =>", data);
+
+      console.log("FIXPOINTS RAW =>", data);
+
+      if (data?.success) {
+        setFixpoints(data?.data?.points || 0);
+      }
+    } catch (error) {
+      console.log("Fixpoints fetch error:", error);
+    }
+  };
+
+  fetchFixpoints();
+}, [userId, token]);
+
+useEffect(() => {
+  const fetchReferralInfo = async () => {
+    if (!userId || !token) return;
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        `https://dev-wallet-api.fixserv.co/api/wallet/referral/info/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      console.log("referralRewards sample =>", data?.data?.referralRewards?.[0]);
+  console.log("REFERRAL RAW =>", data);
+console.log("referralRewards sample =>", data?.data?.referralRewards?.[0]);
+console.log("referralRewards length =>", data?.data?.referralRewards?.length);
+
+if (data?.success) {
+  setReferralInfo(data.data);
+} else {
+  setReferralInfo(null);
+}
+    } catch (err) {
+      console.log("Referral fetch error:", err);
+      setReferralInfo(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchReferralInfo();
+}, [userId, token]);
 
   return (
     <div className="w-full bg-white">
@@ -74,9 +271,18 @@ const ReferalPage = () => {
 
     {/* Back */}
     <div className="max-w-7xl mx-auto px-2 md:px-6 relative z-20">
-      <button className="absolute top-16 left-6 text-white text-sm flex items-center gap-1 cursor-pointer">
-        ← Back
-      </button>
+      <button
+  onClick={() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/client/profile");
+    }
+  }}
+  className="absolute top-16 left-6 text-white text-sm flex items-center gap-1 cursor-pointer"
+>
+  ← Back
+</button>
     </div>
 
     {/* Background Layers */}
@@ -107,16 +313,36 @@ const ReferalPage = () => {
           <div className="w-[65%]">
 
             {/* Referral Code */}
-            <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden h-[52px]">
-              <span className="flex-1 px-5 text-sm text-gray-700">
-                FX-PRAISE123
-              </span>
+           <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden h-[52px]">
+  <span className="flex-1 px-5 text-sm text-gray-700">
+    {referralCode}
+  </span>
 
-              <button className="flex items-center gap-2 bg-gray-500 text-white px-6 h-full text-sm cursor-pointer">
-                <img src={copy} className="w-4 h-4" />
-                Copy Link
-              </button>
-            </div>
+  <button
+    onClick={() => handleCopy(referralCode)}
+    disabled={!referralInfo?.myReferralCode}
+    className="flex items-center gap-2 bg-[#3E83C4] text-white px-6 h-full text-sm cursor-pointer disabled:opacity-60"
+  >
+    <img src={copy} className="w-4 h-4" />
+    {copied ? "Copied!" : "Copy Code"}
+  </button>
+
+  {/* <button
+    onClick={() => handleCopy(referralLink)}
+    disabled={!referralLink}
+    className="flex items-center gap-2 bg-[#3E83C4] text-white px-6 h-full text-sm cursor-pointer disabled:opacity-60"
+  >
+    <img src={copy} className="w-4 h-4" />
+    Copy Link
+  </button> */}
+  <button
+  onClick={handleShare}
+  disabled={!referralLink}
+  className="flex items-center gap-2 bg-black text-white px-6 h-full text-sm cursor-pointer disabled:opacity-60"
+>
+  Share
+</button>
+</div>
 
             {/* Divider */}
             <div className="flex items-center my-8">
@@ -174,7 +400,7 @@ const ReferalPage = () => {
           Total Fixpoints
         </span>
         <span className="font-semibold text-gray-900">
-          850 pts
+          {fixpoints} pts
         </span>
       </div>
 
@@ -182,15 +408,36 @@ const ReferalPage = () => {
 
       <div className="flex items-center justify-between">
         <span className="text-gray-600">Equivalent values</span>
-        <span className="font-semibold text-gray-900">₦1700.00</span>
+        <span className="font-semibold text-gray-900">₦{(fixpoints * 2).toLocaleString()}.00
+</span>
       </div>
 
       <hr className="border-gray-200" />
 
       <div className="flex items-center justify-between">
-        <span className="text-gray-600">Referrals Completed</span>
-        <span className="font-semibold text-gray-900">3</span>
-      </div>
+  <span className="text-gray-600">Referrals Completed</span>
+  <span className="font-semibold text-gray-900">
+    {referralInfo?.totalReferrals ?? 0}
+  </span>
+</div>
+
+<hr className="border-gray-200" />
+
+<div className="flex items-center justify-between">
+  <span className="text-gray-600">Referral Points Earned</span>
+  <span className="font-semibold text-gray-900">
+    {referralInfo?.totalPointsFromReferrals ?? 0} pts
+  </span>
+</div>
+
+<hr className="border-gray-200" />
+
+<div className="flex items-center justify-between">
+  <span className="text-gray-600">Referral Value</span>
+  <span className="font-semibold text-gray-900">
+    ₦{Number((referralInfo?.totalPointsFromReferrals ?? 0) * 2).toLocaleString()}
+  </span>
+</div>
 
       <hr className="border-gray-200" />
 
@@ -260,9 +507,11 @@ const ReferalPage = () => {
     />
   )}
 
-  {activeTab === "points" && <MyFixpointsPanel />}
+  {activeTab === "points" && (
+  <MyFixpointsPanel fixpoints={fixpoints} />
+)}
   {activeTab === "board" && <LeaderBoard />}
-  {activeTab === "tasks" && <Task />}
+  {activeTab === "tasks" && <Task referralCode={referralCode} />}
 </div>
 
 

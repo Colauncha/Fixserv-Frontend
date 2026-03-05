@@ -50,3 +50,22 @@ export const searchServicesAndArtisans = async (params) => {
 
   return res.data;
 };
+
+export const getAllArtisans = async (page = 1) => {
+  try {
+    const res = await fetch(
+      `https://dev-user-api.fixserv.co/api/admin/getAll?role=ARTISAN&page=${page}`
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.message || "Failed to fetch artisans");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Get all artisans error:", error);
+    throw error;
+  }
+};

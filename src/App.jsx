@@ -177,30 +177,6 @@ const App = () => {
 </Route>
 
 
-        {/* <Route path="/client" element={<ClientLayout />}>
-          <Route index element={<ClientHome />} />
-          <Route path="client-request" element={<ClientRequest />} />
-          <Route path="history" element={<ClientHistory />} />
-          <Route path="artisan-profile" element={<ClientArtisanProfile />} />
-          <Route path="booking" element={<ClientBooking />} />
-          <Route path="booking-summary" element={<BookingSummary />} />
-          <Route path="track-repair" element={<TrackRepair />} />
-          <Route path="profile" element={<UserProfile />} />
-          <Route path="settings" element={<ProfileSettings />} />
-          <Route path="notifications" element={<ClientNotification />} /> 
-          <Route path="refer-earn" element={<ReferEarn />} />
-          <Route path="upload-item" element={<Additem />} />
-          <Route path="rate-service" element={<RateServiceRepair />} />
-          <Route path="referral" element={<ReferalPage />} />
-          <Route path="repair" element={<RepairHistory />} />
-          <Route path="view" element={<ViewRepair />} />
-          <Route path="request-repair" element={<RequestRepair />} />
-          <Route path="technician" element={<Technican />} />
-          <Route path="review-rating" element={<ReviewRating />} />
-
-        </Route> */}
-
-
 {/* Artisan Routes */}
 <Route element={<ProtectedRoute allowedRoles={["ARTISAN"]} />}>
   <Route path="/artisan" element={<ArtisanLayout />}>
@@ -214,17 +190,6 @@ const App = () => {
   <Route path="help" element={<Help />} />
   </Route>
 </Route>
-
-{/* <Route path="/artisan" element={<ArtisanLayout />}>
-  <Route index element={<Dashboard />} />
-  <Route path="jobs" element={<Jobs />} />
-  <Route path="notification" element={<Notification />} />
-  <Route path="wallet" element={<Wallet />} />
-  <Route path="profile" element={<Profile />} />
-  <Route path="verification" element={<Verification />} />
-  <Route path="settings" element={<Settings />} />
-  <Route path="help" element={<Help />} />
-</Route> */}
 
 
        {/* ADMIN DASHBOARD ROUTES (WITH AdminNavbar) */}
@@ -249,15 +214,6 @@ const App = () => {
     <Route path="setup-four" element={<AdminSetUpFour />} />
   </Route>
 </Route>
-{/* <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
-  <Route path="/admin" element={<AdminOnboardingLayout />}>
-    <Route path="admin-post-verification" element={<AdminPostVerification />} />
-    <Route path="admin-setup" element={<AdminSetUp />} />
-    <Route path="admin-setup-two" element={<AdminSetUpTwo />} />
-    <Route path="admin-setup-three" element={<AdminSetUpThree />} />
-    <Route path="admin-setup-four" element={<AdminSetUpFour />} />
-  </Route>
-</Route> */}
 <Route path="*" element={<Notfound />} />
 
 

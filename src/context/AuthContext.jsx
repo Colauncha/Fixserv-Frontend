@@ -5,14 +5,14 @@ const AuthContext = createContext(null);
 const normalizeUser = (u) => {
   if (!u) return null;
 
-  // if the API returns nested user shapes sometimes, you can unwrap here too
+
   const user = u?.data?.user ?? u?.user ?? u;
 
   const id = user?.id || user?._id;
 
   return {
     ...user,
-    id, // ✅ always available
+    id, 
   };
 };
 
@@ -53,17 +53,18 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      token,
-      isAuthenticated: !!token,
-      loading,
-      login,
-      logout,
-    }),
-    [user, token, loading]
-  );
+const value = useMemo(
+  () => ({
+    user,
+    token,
+    isAuthenticated: !!token,
+    loading,
+    login,
+    logout,
+    setUser, 
+  }),
+  [user, token, loading]
+);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

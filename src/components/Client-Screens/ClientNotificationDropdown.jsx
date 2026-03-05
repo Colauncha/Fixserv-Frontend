@@ -6,7 +6,7 @@ const ClientNotificationDropdown = ({
   setNotifications,
   onClose,
 }) => {
-  // Auto mark as read when opened
+
   useEffect(() => {
     if (!isOpen) return;
 

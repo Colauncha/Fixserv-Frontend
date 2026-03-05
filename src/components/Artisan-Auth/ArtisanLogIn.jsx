@@ -6,7 +6,7 @@ import googleLogo from '../../assets/sign/google logo.png';
 import appleLogo from '../../assets/sign/apple logo.png';
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
-import { loginUser, googleLogin as googleAuth } from "../../api/auth.api";
+// import { loginUser, googleLogin as googleAuth, fetchAdminById } from "../../api/auth.api";
 import { useAuth } from "../../context/AuthContext"; // if you use AuthContext
 import { useNavigate } from 'react-router-dom';
 
@@ -72,42 +72,64 @@ const handleSubmit = async (e) => {
     setError("This account is not an artisan account.");
     return;
   }
+try {
+  console.log("✅ STEP C: saving token/role to localStorage...");
+  localStorage.setItem("fixserv_token", token);
+  localStorage.setItem("fixserv_role", user.role);
+  console.log("✅ STEP D: token/role saved OK");
+} catch (storageErr) {
+  console.error("❌ STORAGE ERROR =>", storageErr);
+  setError("Login succeeded but browser storage failed. Disable storage blocking / clear site data.");
+  return;
+}
 
-  // 1) localStorage — isolate
-  try {
-    console.log("✅ STEP C: saving to localStorage...");
-    localStorage.setItem("fixserv_token", token);
-    localStorage.setItem("fixserv_role", user.role);
-    localStorage.setItem("fixserv_user", JSON.stringify(user));
-    console.log("✅ STEP D: localStorage saved OK");
-  } catch (storageErr) {
-    console.error("❌ STORAGE ERROR =>", storageErr);
-    console.log("STORAGE DETAILS =>", {
-      name: storageErr?.name,
-      message: storageErr?.message,
-      code: storageErr?.code,
-      stack: storageErr?.stack,
-    });
-    setError("Login succeeded but browser storage failed. Disable storage blocking / clear site data.");
-    return;
-  }
+// 2) Fetch fresh profile so user is always up-to-date after re-login
+const adminId = user?.id || user?._id || user?.artisanId;
 
-  // 2) AuthContext login — isolate
-  try {
-    console.log("✅ STEP E: calling AuthContext login...");
-    login?.(token, { ...user, id: user._id });
-    console.log("✅ STEP F: AuthContext login OK");
-  } catch (ctxErr) {
-    console.error("❌ AUTH CONTEXT ERROR =>", ctxErr);
-    console.log("AUTH DETAILS =>", {
-      name: ctxErr?.name,
-      message: ctxErr?.message,
-      code: ctxErr?.code,
-      stack: ctxErr?.stack,
-    });
-    setError("Login succeeded but app session handler crashed (AuthContext).");
-    return;
+let freshUser = user;
+
+try {
+  if (adminId) {
+    console.log("✅ STEP E: fetching fresh profile...", adminId);
+    const profRes = await fetchAdminById(adminId);
+
+    // depending on backend shape: {data:{...}} or {data:{data:{...}}}
+    freshUser = profRes?.data?.data || profRes?.data || user;
+    console.log("✅ STEP F: fresh profile loaded");
   }
+} catch (e) {
+  console.warn("⚠️ Could not fetch fresh profile after login, using login user.", e);
+}
+
+// Normalize fields for your UI
+const normalizedUser = {
+  ...freshUser,
+  id: freshUser?._id || freshUser?.id || adminId,
+  // make sure skills always exists for UI
+  skills: freshUser?.skills || freshUser?.skillSet || user?.skills || user?.skillSet || [],
+  // unify phone naming
+  phone: freshUser?.phone || freshUser?.phoneNumber || user?.phone || user?.phoneNumber || "",
+};
+
+// 3) Persist full user object
+try {
+  localStorage.setItem("fixserv_user", JSON.stringify(normalizedUser));
+} catch (storageErr) {
+  console.error("❌ STORAGE ERROR saving user =>", storageErr);
+  setError("Login succeeded but saving user profile failed in storage. Clear site data and try again.");
+  return;
+}
+
+// 4) AuthContext
+try {
+  console.log("✅ STEP G: calling AuthContext login...");
+  login?.(token, normalizedUser);
+  console.log("✅ STEP H: AuthContext login OK");
+} catch (ctxErr) {
+  console.error("❌ AUTH CONTEXT ERROR =>", ctxErr);
+  setError("Login succeeded but app session handler crashed (AuthContext).");
+  return;
+}
 
   console.log("✅ STEP G: navigating...");
   navigate("/artisan");
@@ -158,71 +180,82 @@ const googleLogin = useGoogleLogin({
   flow: "auth-code",
   scope: "openid email profile",
 
-  onSuccess: async (codeResponse) => {
-    try {
-      setLoading(true);
-      setError("");
+ onSuccess: async (codeResponse) => {
+  try {
+    setLoading(true);
+    setError("");
 
-      // ✅ send the authorization code to your backend
-      const { data } = await googleAuth({
-        code: codeResponse.code,
-      });
+    const { data } = await googleAuth({ code: codeResponse.code });
 
-      // ✅ handle “soft failures” (200 but success:false)
-      if (!data?.success) {
-        const msgLower = String(data?.message || "").toLowerCase();
-
-        if (data?.code === "EMAIL_NOT_VERIFIED" || msgLower.includes("verify")) {
-          navigate("/verification", {
-            state: { email: formData.email.trim().toLowerCase() },
-          });
-          return;
-        }
-
-        throw new Error(data?.message || "Google login failed");
-      }
-
-      const user = data?.user;
-      const token = data?.BearerToken;
-
-      if (!user || !token) {
-        throw new Error(data?.message || "Invalid server response");
-      }
-
-      if (user.role !== "ARTISAN") {
-        throw new Error("This Google account is not registered as an artisan.");
-      }
-
-      // ✅ Persist session
-      login?.(token, { ...user, id: user._id });
-      localStorage.setItem("fixserv_token", token);
-      localStorage.setItem("fixserv_role", user.role);
-      localStorage.setItem("fixserv_user", JSON.stringify(user));
-
-      navigate("/artisan");
-    } catch (err) {
-      const status = err?.response?.status;
-      const apiData = err?.response?.data;
-
-      // ✅ also handle hard failures (403 etc)
-      if (status === 403 && apiData?.code === "EMAIL_NOT_VERIFIED") {
+    if (!data?.success) {
+      const msgLower = String(data?.message || "").toLowerCase();
+      if (data?.code === "EMAIL_NOT_VERIFIED" || msgLower.includes("verify")) {
         navigate("/verification", {
           state: { email: formData.email.trim().toLowerCase() },
         });
         return;
       }
-
-      const message =
-        apiData?.errors?.[0]?.message ||
-        apiData?.message ||
-        err?.message ||
-        "Google login failed";
-
-      setError(message);
-    } finally {
-      setLoading(false);
+      throw new Error(data?.message || "Google login failed");
     }
-  },
+
+    const user = data?.user;
+    const token = data?.BearerToken;
+
+    if (!user || !token) throw new Error("Invalid server response");
+    if (user.role !== "ARTISAN") throw new Error("This Google account is not registered as an artisan.");
+
+    // 1) Persist token/role first
+    localStorage.setItem("fixserv_token", token);
+    localStorage.setItem("fixserv_role", user.role);
+
+    // 2) Fetch fresh profile (optional but best)
+    const adminId = user?._id || user?.id || user?.artisanId;
+
+    let freshUser = user;
+    try {
+      if (adminId) {
+        const profRes = await fetchAdminById(adminId);
+        freshUser = profRes?.data?.data || profRes?.data || user;
+      }
+    } catch (e) {
+      console.warn("⚠️ Could not fetch fresh profile after google login", e);
+    }
+
+    // 3) Normalize for UI
+    const finalUser = {
+      ...freshUser,
+      id: freshUser?._id || freshUser?.id || adminId,
+      skills: freshUser?.skills || freshUser?.skillSet || user?.skills || user?.skillSet || [],
+      phone: freshUser?.phone || freshUser?.phoneNumber || user?.phone || user?.phoneNumber || "",
+    };
+
+    // 4) Save user + context
+    localStorage.setItem("fixserv_user", JSON.stringify(finalUser));
+    login?.(token, finalUser);
+
+    navigate("/artisan");
+  } catch (err) {
+    const status = err?.response?.status;
+    const apiData = err?.response?.data;
+
+    if (status === 403 && apiData?.code === "EMAIL_NOT_VERIFIED") {
+      navigate("/verification", {
+        state: { email: formData.email.trim().toLowerCase() },
+      });
+      return;
+    }
+
+    const message =
+      apiData?.errors?.[0]?.message ||
+      apiData?.message ||
+      err?.message ||
+      "Google login failed";
+
+    setError(message);
+  } finally {
+    setLoading(false);
+  }
+},
 
   onError: () => setError("Google login failed"),
 });
@@ -254,13 +287,13 @@ const googleLogin = useGoogleLogin({
         {/* Center Content */}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 sm:px-10 lg:px-14 text-center text-white max-w-lg mx-auto">
 
-           <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-2 lg:mb-3 font-medium leading-tight">
-          Hi!
+           <h2 className="text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-2 lg:mb-3 font-medium leading-tight">
+          Hey!
         </h2>
     
            
         <p className="text-sm sm:text-base mb-4 text-white opacity-90">
-          If you are looking to request repairs
+          Are you looking to request repairs?
         </p>
     
         <button onClick={() => navigate("/log-in")} className="border border-white text-[#ffffff] px-6 py-2 rounded-xl font-medium hover:bg-white hover:text-[#3E83C4] transition cursor-pointer">

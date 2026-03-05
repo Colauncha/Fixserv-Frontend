@@ -8,7 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 
 import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from "@react-oauth/google";
-import { adminLogin, googleLogin as googleAuth } from "../../api/auth.api";
+import { loginUser, googleLogin as googleAuth } from "../../api/auth.api";
 import { useAuth } from "../../context/AuthContext"
 
 
@@ -53,7 +53,7 @@ const handleSubmit = async (e) => {
   try {
     setLoading(true);
 
-    const res = await adminLogin({ email, password: formData.password });
+    const res = await loginUser({ email, password: formData.password });
     console.log("✅ LOGIN RESPONSE:", res.data);
 
     // Your API shape is: { data: { BearerToken, response } }
@@ -69,15 +69,15 @@ const handleSubmit = async (e) => {
       return;
     }
 
-    // ✅ Save auth
 
     login?.(token, user);
-    
-    // login?.(token, { ...user, id: user._id });
 
-    // localStorage.setItem("fixserv_token", token);
-    // localStorage.setItem("fixserv_role", user.role);
-    // localStorage.setItem("fixserv_user", JSON.stringify(user));
+
+    if (user?.role === "CLIENT" && user?.isNewUser === true) {
+  localStorage.setItem("showWelcomeBonus", "true");
+}
+
+console.log("USER OBJECT:", user);
 
 
     switch (user.role) {
@@ -96,7 +96,7 @@ const handleSubmit = async (e) => {
   } catch (err) {
     console.error("LOGIN ERROR RAW =>", err);
 
-    // ✅ REAL network/timeout errors only
+
     if (err?.code === "ECONNABORTED") {
       setError("Server is taking too long to respond. Please try again.");
       return;
@@ -110,7 +110,7 @@ const handleSubmit = async (e) => {
     const status = err.response.status;
     const apiData = err.response.data;
 
-    // ✅ email not verified
+
     if (status === 403 && apiData?.code === "EMAIL_NOT_VERIFIED") {
       navigate("/verification", {
         state: {
@@ -145,7 +145,7 @@ const googleLoginHandler = useGoogleLogin({
         idToken: tokenResponse.id_token,
       });
 
-      console.log("✅ GOOGLE LOGIN RESPONSE:", data);
+      console.log("GOOGLE LOGIN RESPONSE:", data);
 
       // Validate response
       if (!data?.user || !data?.BearerToken) {
@@ -221,6 +221,9 @@ const googleLoginHandler = useGoogleLogin({
   px-6 sm:px-10 lg:px-14
   text-center text-white max-w-lg mx-auto
 ">
+    <h2 className="text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-2 lg:mb-3 font-medium leading-tight">
+          Hey!
+        </h2>
   <p className="text-sm sm:text-base mb-6 opacity-90">
     Are you a skilled professional? Looking to offer your services?
   </p>
@@ -251,13 +254,6 @@ const googleLoginHandler = useGoogleLogin({
         Enter your details to log in your Fixserv client account
       </p>
 
-      {/* <button
-  onClick={() => googleLogin()}
-  className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md cursor-pointer mb-4"
->
-  <img src={googleLogo} alt="Google" className="w-5 h-5" />
-  Sign up with Google
-</button> */}
 
 <button
   onClick={() => googleLoginHandler()}

@@ -1,223 +1,20 @@
-// import React, { useState } from "react";
-// import upload from "../../../assets/client images/client-home/referal part/upload.png";
-
-// const RequestRepair = () => {
-//   const [preview, setPreview] = useState(null);
-
-//   const handleUpload = (e) => {
-//     const file = e.target.files[0];
-//     if (!file) return;
-
-//     const reader = new FileReader();
-//     reader.onload = () => setPreview(reader.result);
-//     reader.readAsDataURL(file);
-//   };
-
-//   const [formData, setFormData] = useState({
-//   title: "",
-//   description: "",
-//   price: "",
-//   estimatedDuration: "",
-// });
-// const [loading, setLoading] = useState(false);
-// const [error, setError] = useState("");
-
-//  const handleSubmit = async () => {
-//     setError("");
-
-//     const { title, description, price, estimatedDuration } = formData;
-
-//     if (!title || !description || !price || !estimatedDuration) {
-//       setError("All fields are required");
-//       return;
-//     }
-
-//     try {
-//       setLoading(true);
-
-//       const res = await fetch(
-//         "https://dev-service-api.fixserv.co/api/service/createService",
-//         {
-//           method: "POST",
-//           headers: {
-//             "Content-Type": "application/json",
-//             Authorization: `Bearer ${localStorage.getItem("fixserv_token")}`,
-//           },
-//           body: JSON.stringify({
-//             title,
-//             description,
-//             price: Number(price),
-//             estimatedDuration,
-//             rating: 0,
-//           }),
-//         }
-//       );
-
-//       const data = await res.json();
-
-//       if (!res.ok) {
-//         throw new Error(data?.message || "Failed to create service");
-//       }
-
-//       alert("Service created successfully 🎉");
-//     } catch (err) {
-//       setError(err?.message || "Something went wrong");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-
-
-//   return (
-//     <div className="w-full">
-
-//       <section className="w-full flex align-center justify-center py-14 mt-4 overflow-hidden">
-//         <div className="max-w-7xl mx-auto px-2 md:px-6">
-
-//           {/* Header */}
-//           <div className="mb-10">
-//             <h1 className="text-xl font-semibold mb-1">Request Repair</h1>
-//             <p className="text-sm text-gray-500">
-//               Tell us what needs fixing and we’ll connect you with the right technician for the job.
-//             </p>
-//           </div>
-
-//           {/* Form */}
-//           <div className="max-w-3xl space-y-5">
-
-// {/* Simple fields */}
-// {["Device Type", "Location", "Service Required"].map((item) => (
-//   <input
-//     key={item}
-//     type="text"
-//     placeholder={item}
-//     className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
-//   />
-// ))}
-
-// {/* Controlled form inputs */}
-// <input
-//   name="title"
-//   value={formData.title}
-//   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-//   placeholder="Service Title"
-//   className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
-// />
-
-// <input
-//   name="estimatedDuration"
-//   value={formData.estimatedDuration}
-//   onChange={(e) =>
-//     setFormData({ ...formData, estimatedDuration: e.target.value })
-//   }
-//   placeholder="Estimated Duration"
-//   className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
-// />
-
-// <input
-//   type="number"
-//   name="price"
-//   value={formData.price}
-//   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-//   placeholder="Service Price"
-//   className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
-// />
-
-
-//             {/* Upload */}
-//             <div>
-//               <p className="text-sm text-gray-500 mb-2">
-//                 Upload image of Damaged Device
-//               </p>
-
-//               <label className="border-2 border-dashed border-gray-300 rounded-xl h-44 flex flex-col items-center justify-center cursor-pointer transition hover:border-blue-400">
-
-//                 {preview ? (
-//                   <img src={preview} className="max-h-full object-contain" />
-//                 ) : (
-//                   <>
-//                     <img src={upload} className="w-10 mb-3 opacity-70" />
-//                     <p className="text-sm text-gray-500">
-//                       Click to upload or drag & drop
-//                     </p>
-//                     <p className="text-xs text-gray-400">
-//                       PNG, JPG, JPEG up to 5MB
-//                     </p>
-//                   </>
-//                 )}
-
-//                 <input
-//                   type="file"
-//                   accept="image/*"
-//                   className="hidden"
-//                   onChange={handleUpload}
-//                 />
-//               </label>
-//             </div>
-
-//             {/* Issue & Notes */}
-//             <div className="mt-8 space-y-5 max-w-3xl">
-
-//               <textarea
-//   rows={5}
-//   name="description"
-//   value={formData.description}
-//   onChange={(e) =>
-//     setFormData({ ...formData, description: e.target.value })
-//   }
-//   placeholder="Service Description"
-//   className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
-// />
-
-
-//               <textarea
-//                 rows={3}
-//                 placeholder="Additional Notes"
-//                 className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
-//               />
-
-//               {/* Continue Button */}
-//               <div className="flex justify-center pt-4">
-//                 <button
-//   onClick={handleSubmit}
-//   disabled={loading}
-//   className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-16 py-2.5 rounded-md text-sm font-medium transition"
-// >
-//   {loading ? "Creating..." : "Create Service"}
-// </button>
-
-
-// {error && (
-//   <p className="text-red-500 text-sm text-center mt-3">
-//     {error}
-//   </p>
-// )}
-
-//               </div>
-
-//             </div>
-
-//           </div>
-
-//         </div>
-//       </section>
-//     </div>
-//   );
-// };
-
-// export default RequestRepair;
-
-
-
-// new try 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import upload from "../../../assets/client images/client-home/referal part/upload.png";
 
 const DRAFT_ENDPOINT = "https://dev-order-api.fixserv.co/api/orders/draft";
 const CONFIRM_ENDPOINT = "https://dev-order-api.fixserv.co/api/orders/confirm";
+const SERVICES_ENDPOINT = "https://dev-service-api.fixserv.co/api/service/services";
+
+const normalizeServices = (payload) => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.services)) return payload.services;
+  if (Array.isArray(payload?.data?.services)) return payload.data.services;
+  if (Array.isArray(payload?.data?.data)) return payload.data.data;
+  return [];
+};
 
 const RequestRepair = () => {
   const navigate = useNavigate();
@@ -229,18 +26,88 @@ const RequestRepair = () => {
     deviceType: "",
     deviceBrand: "",
     deviceModel: "",
-    serviceRequired: "",
-
-    // ✅ REQUIRED to confirm and match artisans
-    serviceId: "",
-
-    // ✅ upload-products endpoint fields
+    serviceRequired: "", // will be filled from selected service title
     objectName: "",
     description: "",
   });
 
+
+  const [services, setServices] = useState([]);
+  const [serviceId, setServiceId] = useState("");
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const [servicesError, setServicesError] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+const safeParse = async (res) => {
+  const contentType = res.headers.get("content-type") || "";
+  const raw = await res.text();
+
+  let json = null;
+  if (contentType.includes("application/json") && raw) {
+    try {
+      json = JSON.parse(raw);
+    } catch (e) {
+      json = null;
+    }
+  }
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    contentType,
+    raw,
+    json,
+  };
+};
+
+
+useEffect(() => {
+  const fetchServices = async () => {
+    try {
+      setServicesLoading(true);
+      setServicesError("");
+
+      const token = localStorage.getItem("fixserv_token");
+
+      const res = await fetch(`${SERVICES_ENDPOINT}?page=1&limit=100`, {
+        method: "GET",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        cache: "no-store",
+      });
+
+      const parsed = await safeParse(res);
+
+      console.log("SERVICES META =>", {
+        status: parsed.status,
+        raw: parsed.raw,
+        json: parsed.json,
+      });
+
+      if (!parsed.ok) {
+        const msg =
+          parsed?.json?.message ||
+          parsed?.json?.error ||
+          parsed?.raw ||
+          `Failed to load services (${parsed.status})`;
+        throw new Error(msg);
+      }
+
+      const list = normalizeServices(parsed.json);
+      setServices(list);
+    } catch (err) {
+      setServices([]);
+      setServicesError(err?.message || "Failed to load services");
+    } finally {
+      setServicesLoading(false);
+    }
+  };
+
+  fetchServices();
+}, []);
 
   const handleUpload = (e) => {
     const f = e.target.files?.[0];
@@ -253,93 +120,129 @@ const RequestRepair = () => {
     reader.readAsDataURL(f);
   };
 
-  const safeParse = async (res) => {
-    const contentType = res.headers.get("content-type") || "";
-    const raw = await res.text();
-    if (contentType.includes("application/json") && raw) return JSON.parse(raw);
-    return { message: raw };
-  };
+const uploadProduct = async ({ token, userId }) => {
+  if (!file) throw new Error("Please upload an image of the damaged device.");
 
-  const uploadProduct = async ({ token, userId }) => {
-    if (!file) throw new Error("Please upload an image of the damaged device.");
+  const objectName =
+    formData.objectName?.trim() || formData.deviceType?.trim() || "Device";
+  const description =
+    formData.description?.trim() ||
+    "Device repair request";
 
-    const objectName =
-      formData.objectName?.trim() || formData.deviceType?.trim() || "Device";
-    const description =
-      formData.description?.trim() ||
-      formData.serviceRequired?.trim() ||
-      "Device repair request";
+  const fd = new FormData();
+  fd.append("productImage", file);
+  fd.append("objectName", objectName);
+  fd.append("description", description);
 
-    const fd = new FormData();
-    fd.append("productImage", file);
-    fd.append("objectName", objectName);
-    fd.append("description", description);
-
-    const res = await fetch(
-      `https://dev-user-api.fixserv.co/api/upload/${userId}/upload-products`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      }
-    );
-
-    const data = await safeParse(res);
-
-    if (!res.ok) {
-      throw new Error(data?.message || `Upload failed (${res.status})`);
-    }
-
-    const uploadedProductId =
-      data?.product?._id ||
-      data?.product?.id ||
-      data?.data?.product?._id ||
-      data?.data?.product?.id;
-
-    if (!uploadedProductId) {
-      throw new Error("Upload succeeded but uploadedProductId was not returned.");
-    }
-
-    return uploadedProductId;
-  };
-
-  const createDraft = async ({ token, payload }) => {
-    const res = await fetch(DRAFT_ENDPOINT, {
+  const res = await fetch(
+    `https://dev-user-api.fixserv.co/api/upload/${userId}/upload-products`,
+    {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await safeParse(res);
-
-    if (!res.ok) {
-      throw new Error(data?.message || `Draft request failed (${res.status})`);
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
     }
+  );
 
-    return data;
+  const parsed = await safeParse(res);
+
+  console.log("UPLOAD META =>", {
+    status: parsed.status,
+    raw: parsed.raw,
+    json: parsed.json,
+  });
+
+  if (!parsed.ok) {
+    const msg =
+      parsed?.json?.message ||
+      parsed?.json?.error ||
+      parsed?.raw ||
+      `Upload failed (${parsed.status})`;
+    throw new Error(msg);
+  }
+
+  const data = parsed.json || {};
+  const uploadedProductId =
+    data?.product?._id ||
+    data?.product?.id ||
+    data?.data?.product?._id ||
+    data?.data?.product?.id;
+
+  if (!uploadedProductId) {
+    throw new Error("Upload succeeded but uploadedProductId was not returned.");
+  }
+
+  return uploadedProductId;
+};
+
+const createDraft = async ({ token, payload }) => {
+  const res = await fetch(DRAFT_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const parsed = await safeParse(res);
+
+  console.log("DRAFT META =>", {
+    status: parsed.status,
+    raw: parsed.raw,
+    json: parsed.json,
+  });
+
+  if (!parsed.ok) {
+    const msg =
+      parsed?.json?.message ||
+      parsed?.json?.error ||
+      parsed?.raw ||
+      `Draft request failed (${parsed.status})`;
+    throw new Error(msg);
+  }
+
+  // ✅ return the real payload
+  return parsed.json ?? {};
+};
+
+const confirmDraft = async ({ token, draftOrderId, serviceId }) => {
+  const payload = {
+    draftOrderId,
+    orderId: draftOrderId, // ✅ compatibility for backends using orderId
+    serviceId,
   };
 
-  const confirmDraft = async ({ token, draftOrderId, serviceId }) => {
-    const res = await fetch(CONFIRM_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ draftOrderId, serviceId }),
-    });
+  console.log("CONFIRM PAYLOAD =>", payload);
 
-    const data = await safeParse(res);
+  const res = await fetch(CONFIRM_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
 
-    if (!res.ok) {
-      throw new Error(data?.message || `Confirm failed (${res.status})`);
-    }
+  const parsed = await safeParse(res);
 
-    return data;
-  };
+  console.log("CONFIRM RESPONSE META =>", {
+    status: parsed.status,
+    contentType: parsed.contentType,
+    raw: parsed.raw,
+    json: parsed.json,
+  });
+
+  if (!parsed.ok) {
+    const msg =
+      parsed?.json?.message ||
+      parsed?.json?.error ||
+      parsed?.raw ||
+      `Confirm failed (${parsed.status})`;
+    throw new Error(msg);
+  }
+
+  return parsed.json ?? {};
+};
 
   const handleSubmit = async () => {
     setError("");
@@ -359,63 +262,69 @@ const RequestRepair = () => {
       return;
     }
 
-    const {
-      deviceType,
-      deviceBrand,
-      deviceModel,
-      serviceRequired,
-      serviceId,
-    } = formData;
+    const { deviceType, deviceBrand, deviceModel } = formData;
 
-    if (!deviceType || !deviceBrand || !deviceModel || !serviceRequired) {
-      setError(
-        "deviceType, deviceBrand, deviceModel and serviceRequired are required."
-      );
+    if (!deviceType || !deviceBrand || !deviceModel) {
+      setError("deviceType, deviceBrand, and deviceModel are required.");
       return;
     }
 
     if (!serviceId) {
-      setError("serviceId is required to confirm and match artisans.");
+      setError("Please select a service from the dropdown.");
+      return;
+    }
+
+    // fill serviceRequired from selected service title (draft requires text)
+    const selected = services.find((s) => String(s?.id || s?._id) === String(serviceId));
+    const serviceTitle = selected?.title || selected?.name || selected?.serviceName || "";
+
+    if (!serviceTitle) {
+      setError("Selected service is invalid. Please pick again.");
       return;
     }
 
     try {
       setLoading(true);
 
-      // 1) Upload product => uploadedProductId
+      // 1) Upload product
       const uploadedProductId = await uploadProduct({ token, userId });
 
-      // 2) Create draft
+      // 2) Draft
       const draftPayload = {
         uploadedProductId,
         deviceType: deviceType.trim(),
         deviceBrand: deviceBrand.trim(),
         deviceModel: deviceModel.trim(),
-        serviceRequired: serviceRequired.trim(),
+        serviceRequired: serviceTitle, // ✅ from dropdown
       };
 
-      const draftRes = await createDraft({ token, payload: draftPayload });
+const draftRes = await createDraft({ token, payload: draftPayload });
+console.log("DRAFT RESPONSE JSON =>", draftRes);
 
-      // draft example docs: { status, message, data: { orderId ... } }
-      const draftData = draftRes?.data || draftRes;
-      const draftOrderId =
-        draftData?.orderId || draftData?.draftOrderId || draftData?.id;
+// docs show: { status, message, data: { orderId: "..." } }
+const draftData = draftRes?.data || draftRes;
+const draftOrderId = draftData?.orderId || draftData?.draftOrderId || draftData?.id;
 
-      if (!draftOrderId) {
-        throw new Error(
-          "Draft created but draftOrderId/orderId was not returned."
-        );
-      }
+console.log("DRAFT ID USED =>", draftOrderId);
 
-      // 3) Confirm draft => returns matching artisans
-      const confirmRes = await confirmDraft({
-        token,
-        draftOrderId,
-        serviceId: serviceId.trim(),
-      });
+if (!draftOrderId) {
+  throw new Error("Draft created but draftOrderId/orderId was not returned.");
+}
+
+      // 3) Confirm => matched artisans
+const draftOrderIdStr = String(draftOrderId || "").trim();
+const serviceIdStr = String(serviceId || "").trim();
+
+if (!draftOrderIdStr) throw new Error("draftOrderId missing after draft creation.");
+if (!serviceIdStr) throw new Error("serviceId missing from dropdown.");
+
+const confirmRes = await confirmDraft({
+  token,
+  draftOrderId: draftOrderIdStr,
+  serviceId: serviceIdStr,
+});
 
       const confirmData = confirmRes?.data || confirmRes;
-
       const artisans =
         confirmData?.artisans ||
         confirmData?.matchedArtisans ||
@@ -423,18 +332,18 @@ const RequestRepair = () => {
         confirmData?.data?.matchedArtisans ||
         [];
 
-      // 4) Navigate to technician page with artisans
-      navigate("/technician", {
-        state: {
-          draftOrderId,
-          serviceId: serviceId.trim(),
-          uploadedProductId,
-          deviceType: draftData?.deviceType || deviceType,
-          serviceRequired: draftData?.serviceRequired || serviceRequired,
-          artisans,
-          rawConfirm: confirmRes, // helps debug if UI doesn't match
-        },
-      });
+      // 4) Navigate
+      navigate("/client/technician", {
+  state: {
+    draftOrderId: draftOrderIdStr,
+    serviceId: serviceIdStr,
+    uploadedProductId,
+    deviceType: draftData?.deviceType || deviceType,
+    serviceRequired: serviceTitle,
+    artisans,
+    rawConfirm: confirmRes,
+  },
+});
     } catch (err) {
       setError(err?.message || "Something went wrong");
     } finally {
@@ -449,118 +358,89 @@ const RequestRepair = () => {
           <div className="mb-10">
             <h1 className="text-xl font-semibold mb-1">Request Repair</h1>
             <p className="text-sm text-gray-500">
-              Tell us what needs fixing and we’ll connect you with the right
-              technician for the job.
+              Tell us what needs fixing and we’ll connect you with the right technician for the job.
             </p>
           </div>
 
           <div className="max-w-3xl space-y-5">
             <input
-              name="deviceType"
               value={formData.deviceType}
-              onChange={(e) =>
-                setFormData({ ...formData, deviceType: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, deviceType: e.target.value })}
               placeholder="Device Type (e.g. inverter)"
               className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
             />
 
             <input
-              name="deviceBrand"
               value={formData.deviceBrand}
-              onChange={(e) =>
-                setFormData({ ...formData, deviceBrand: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, deviceBrand: e.target.value })}
               placeholder="Device Brand (e.g. LG, Sumec)"
               className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
             />
 
             <input
-              name="deviceModel"
               value={formData.deviceModel}
-              onChange={(e) =>
-                setFormData({ ...formData, deviceModel: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, deviceModel: e.target.value })}
               placeholder="Device Model (e.g. i26)"
               className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
             />
 
-            <input
-              name="serviceRequired"
-              value={formData.serviceRequired}
-              onChange={(e) =>
-                setFormData({ ...formData, serviceRequired: e.target.value })
-              }
-              placeholder="Service Required (e.g. inverter repairer)"
-              className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
-            />
+            {/* ✅ Option A: dropdown only */}
+            <div className="space-y-1">
+              <select
+                value={serviceId}
+                onChange={(e) => setServiceId(e.target.value)}
+                className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm bg-white"
+              >
+                <option value="">Select a Service</option>
+                {services.map((s) => {
+                  const sid = s?.id || s?._id;
+                  const title = s?.title || s?.name || s?.serviceName || "Service";
+                  return (
+                    <option key={sid || title} value={sid}>
+                      {title}
+                    </option>
+                  );
+                })}
+              </select>
 
-            {/* ✅ REQUIRED FOR CONFIRM */}
-            <input
-              name="serviceId"
-              value={formData.serviceId}
-              onChange={(e) =>
-                setFormData({ ...formData, serviceId: e.target.value })
-              }
-              placeholder="Service ID (UUID) - required to match artisans"
-              className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
-            />
+              {servicesLoading && (
+                <p className="text-xs text-gray-500">Loading services...</p>
+              )}
+              {servicesError && (
+                <p className="text-xs text-red-500">{servicesError}</p>
+              )}
+            </div>
 
             <input
-              name="objectName"
               value={formData.objectName}
-              onChange={(e) =>
-                setFormData({ ...formData, objectName: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, objectName: e.target.value })}
               placeholder="Object Name (optional)"
               className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
             />
 
             <textarea
               rows={4}
-              name="description"
               value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="Describe the issue (used for uploaded product description)"
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Describe the issue"
               className="w-full border border-blue-300 rounded-md px-4 py-3 text-sm"
             />
 
             <div>
-              <p className="text-sm text-gray-500 mb-2">
-                Upload image of Damaged Device
-              </p>
+              <p className="text-sm text-gray-500 mb-2">Upload image of Damaged Device</p>
 
               <label className="border-2 border-dashed border-gray-300 rounded-xl h-44 flex flex-col items-center justify-center cursor-pointer transition hover:border-blue-400">
                 {preview ? (
-                  <img
-                    src={preview}
-                    className="max-h-full object-contain"
-                    alt="preview"
-                  />
+                  <img src={preview} className="max-h-full object-contain" alt="preview" />
                 ) : (
                   <>
-                    <img
-                      src={upload}
-                      className="w-10 mb-3 opacity-70"
-                      alt="upload"
-                    />
-                    <p className="text-sm text-gray-500">
-                      Click to upload or drag & drop
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      PNG, JPG, JPEG up to 5MB
-                    </p>
+                    <img src={upload} className="w-10 mb-3 opacity-70" alt="upload" />
+                    <p className="text-sm text-gray-500">Click to upload or drag & drop</p>
+                    <p className="text-xs text-gray-400">PNG, JPG, JPEG up to 5MB</p>
                   </>
                 )}
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleUpload}
-                />
+                <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
               </label>
             </div>
 
@@ -574,9 +454,7 @@ const RequestRepair = () => {
               </button>
             </div>
 
-            {error && (
-              <p className="text-red-500 text-sm text-center mt-3">{error}</p>
-            )}
+            {error && <p className="text-red-500 text-sm text-center mt-3">{error}</p>}
           </div>
         </div>
       </section>
