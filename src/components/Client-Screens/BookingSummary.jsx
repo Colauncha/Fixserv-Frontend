@@ -42,6 +42,55 @@ const location = useLocation();
 const artisan = location.state?.artisan;
 const booking = location.state?.booking;
 
+const cleanText = (v, fallback = "") =>
+  typeof v === "string" && v.trim() === "" ? fallback : v ?? fallback;
+
+const formatNaira = (value) => {
+  const num = Number(value);
+  if (Number.isNaN(num)) return value;
+  return `₦${num.toLocaleString("en-NG")}`;
+};
+
+
+const serviceTitle =
+  typeof booking?.serviceRequired === "string" && booking.serviceRequired.trim()
+    ? booking.serviceRequired
+    : "Selected Service";
+
+const bookingIdToShow = finalBooking?.id || "—";
+
+const professionLabel =
+  artisan?.profession ||
+  artisan?.roleTitle ||
+  artisan?.categoryTitle ||
+  "Technician";
+
+
+const reviewsCount = Number(artisan?.reviewsCount || artisan?.reviews || 0);
+
+
+const yearsFromCreatedAt = artisan?.createdAt
+  ? Math.max(
+      0,
+      Math.floor(
+        (Date.now() - new Date(artisan.createdAt).getTime()) /
+          (1000 * 60 * 60 * 24 * 365)
+      )
+    )
+  : null;
+
+
+const categoriesToShow =
+  Array.isArray(artisan?.categories) && artisan.categories.length
+    ? artisan.categories.slice(0, 3)
+    : ["Phone", "Tablet", "Laptop"];
+
+
+const serviceCost = Number(booking?.serviceCost ?? 7000);
+const platformFee = Number(booking?.platformFee ?? 500);
+const taxFee = Number(booking?.taxFee ?? 0);
+const totalFee = serviceCost + platformFee + taxFee;
+
 const uploadDeviceImage = async (token, userId) => {
   const fd = new FormData();
 
@@ -196,96 +245,108 @@ if (!artisan || !booking) {
       <div className="grid grid-cols-[260px_1fr] gap-30 max-w-7xl mx-auto">
           {/* LEFT — Artisan Card */}
           <div className="bg-[#EEF6FF] rounded-xl p-4 w-[290px]">
-            <div className="flex flex-col">
-          
-              <img
-                src={profileImage}
-                alt="artisan"
-                className="w-[250px] h-[220px] rounded-xl object-cover mb-4"
-              />
-          
-              <div className="flex items-center gap-7">
-                <h2 className="font-semibold text-black text-2xl">
-  {artisan.fullName}
-</h2>
+  <div className="flex flex-col">
+    <img
+      src={artisan?.profilePicture || artisan?.avatar || profileImage}
+      alt="artisan"
+      className="w-[250px] h-[220px] rounded-xl object-cover mb-4"
+    />
 
-                <img src={mark} alt="verified" className="w-5 h-5" />
-              </div>
-          
-              <p className="text-lg text-[#656565] mt-1">
-                Electronics Technicians
-              </p>
-          
-              {/* Rating */}
-              <div className="flex items-center gap-1 mt-2 text-lg">
-                <img src={star} alt="star" className="w-6 h-6" />
-                <span className="font-medium text-black">4.7</span>
-                <span className="text-black">(89 reviews)</span>
-              </div>
-          
-              {/* Categories */}
-              <div className="flex gap-2 mt-3">
-                {["Phone", "Tablet", "Laptop"].map((item) => (
-                  <span
-                    key={item}
-                    className="bg-[#C1DAF3] text-[#3E83C4] px-3 py-1 rounded-lg text-lg"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-          
-              <div className="mt-4 text-lg text-[#656565] space-y-1">
-                <p>
-                  Experience: <span className="font-medium text-black">5+ years</span>
-                </p>
-                <p>
-                  Location: <span className="font-medium text-black">Surulere, Lagos</span>
-                </p>
-              </div>
-            </div>
-          </div>
+    <div className="flex items-center gap-2">
+      <h2 className="font-semibold text-black text-2xl">
+        {cleanText(artisan?.fullName, cleanText(artisan?.businessName, "Unnamed Artisan"))}
+      </h2>
+      <img src={mark} alt="verified" className="w-5 h-5" />
+    </div>
+
+    <p className="text-lg text-[#656565] mt-1">{professionLabel}</p>
+
+    {/* Rating */}
+    <div className="flex items-center gap-1 mt-2 text-lg">
+      <img src={star} alt="star" className="w-6 h-6" />
+      <span className="font-medium text-black">
+        {Number(artisan?.rating || 0).toFixed(1)}
+      </span>
+      <span className="text-black">({reviewsCount} reviews)</span>
+    </div>
+
+    {/* Categories */}
+    <div className="flex gap-2 mt-3 flex-wrap">
+      {categoriesToShow.map((c, idx) => {
+        const label =
+          typeof c === "string" ? c : c?.name || c?.title || `Category ${idx + 1}`;
+        return (
+          <span
+            key={label + idx}
+            className="bg-[#C1DAF3] text-[#3E83C4] px-3 py-1 rounded-lg text-lg"
+          >
+            {label}
+          </span>
+        );
+      })}
+    </div>
+
+    <div className="mt-4 text-lg text-[#656565] space-y-1">
+      <p>
+        Experience:{" "}
+        <span className="font-medium text-black">
+          {yearsFromCreatedAt != null ? `${yearsFromCreatedAt}+ years` : "—"}
+        </span>
+      </p>
+      <p>
+        Location:{" "}
+        <span className="font-medium text-black">
+          {cleanText(artisan?.location, "Unknown")}
+        </span>
+      </p>
+    </div>
+  </div>
+</div>
 
           {/* RIGHT — Booking Summary */}
-
-          <div className="pt-2">
-<h2 className="text-lg font-semibold text-black mb-6">
-  {booking.serviceRequired}
-</h2>
+<div className="pt-2">
+  <h2 className="text-lg font-semibold text-black mb-6">{serviceTitle}</h2>
 
   <div className="space-y-3 text-lg text-black">
+    <p>
+      <span className="text-[#656565]">Booking ID:</span> {bookingIdToShow}
+    </p>
 
-    <p><span className="text-[#656565]">Booking ID:</span> FX1230</p>
-<p>
-  <span className="text-[#656565]">Device Type:</span>{" "}
-  {booking.deviceType}
-</p>
+    <p>
+      <span className="text-[#656565]">Device Type:</span> {booking.deviceType}
+    </p>
 
-<p>
-  <span className="text-[#656565]">Device Brand:</span>{" "}
-  {booking.brand}
-</p>
+    <p>
+      <span className="text-[#656565]">Device Brand:</span> {booking.brand}
+    </p>
 
-<p>
-  <span className="text-[#656565]">Device Model:</span>{" "}
-  {booking.model}
-</p>
+    <p>
+      <span className="text-[#656565]">Device Model:</span> {booking.model}
+    </p>
 
-<p>
-  <span className="text-[#656565]">Issue description:</span>{" "}
-  {booking.issueDescription}
-</p>
+    <p>
+      <span className="text-[#656565]">Issue description:</span>{" "}
+      {booking.issueDescription}
+    </p>
 
-<p>
-  <span className="text-[#656565]">Location:</span>{" "}
-  {booking.location}
-</p>
+    <p>
+      <span className="text-[#656565]">Location:</span> {booking.location}
+    </p>
+
     <div className="pt-6 space-y-2">
-      <p><span className="text-[#656565]">Service Cost:</span> ₦7,000.00</p>
-      <p><span className="text-[#656565]">Platform Fee:</span> ₦500.00</p>
-      <p><span className="text-[#656565]">Tax Fee:</span> ₦0.00</p>
+      <p>
+        <span className="text-[#656565]">Service Cost:</span>{" "}
+        {formatNaira(serviceCost)}
+      </p>
+      <p>
+        <span className="text-[#656565]">Platform Fee:</span>{" "}
+        {formatNaira(platformFee)}
+      </p>
+      <p>
+        <span className="text-[#656565]">Tax Fee:</span> {formatNaira(taxFee)}
+      </p>
       <p className="text-base font-semibold text-blue-600 pt-2">
-        Total Fee: ₦7,500.00
+        Total Fee: {formatNaira(totalFee)}
       </p>
     </div>
   </div>
@@ -296,8 +357,6 @@ if (!artisan || !booking) {
       </section>
       
 
-      {/* <section className="mt-16 max-w-4xl mx-auto"> */}
-
               <section className="w-full py-2 overflow-hidden">
             <div className="max-w-7xl mx-auto px-2 md:px-6">
   
@@ -306,26 +365,6 @@ if (!artisan || !booking) {
   </h3>
 
   {/* Payment Options */}
-  {/* <div className="grid grid-cols-4 gap-6 mb-10">
-
-    {[
-      { img: master, label: "Mastercard" },
-      { img: paypal, label: "PayPal" },
-      { img: visa, label: "Visa" },
-      { img: wallet, label: "Wallet" },
-    ].map((item, idx) => (
-      <div
-        key={idx}
-        className="flex items-center gap-3"
-      >
-        <div className="w-4 h-4 rounded-full border border-[#C1DAF3]" />
-        <img src={item.img} alt={item.label} className="h-42 w-42
-         object-contain" />
-      </div>
-    ))}
-
-  </div> */}
-
   <div className="grid grid-cols-4 gap-6 mb-5">
       {paymentMethods.map((item) => {
         const isActive = selected === item.label;
@@ -493,101 +532,10 @@ if (!artisan || !booking) {
     </p>
 
     <div className="text-sm space-y-1 text-left mt-4">
-      <p>Payment Details</p>
-      <p>Total: ₦7,500.00</p>
-      <p>Balance: ₦18,500.00</p>
-      <p>Balance After Payment: ₦11,000.00</p>
+      <p>Total: {formatNaira(totalFee)}</p>
+<p>Balance: ₦—</p>
+<p>Balance After Payment: ₦—</p>
     </div>
-
-{/* <button
-  disabled={isSubmitting}
-  onClick={async () => {
-    try {
-      setSubmitError("");
-      setIsSubmitting(true);
-      setActiveModal("processing");
-
-      // 1) Upload damaged device image
-      const token = localStorage.getItem("fixserv_token");
-      const user = JSON.parse(localStorage.getItem("fixserv_user") || "{}");
-      const userId = user?.id || user?._id;
-
-      if (!token) throw new Error("Token not found. Please login again.");
-      if (!userId) throw new Error("User ID not found. Please login again.");
-      if (!booking?.imageFile) throw new Error("No image selected.");
-
-      const fd = new FormData();
-      fd.append("productImage", booking.imageFile);
-      fd.append(
-        "objectName",
-        `Damaged Device - ${booking.deviceType} ${booking.brand} ${booking.model}`.trim()
-      );
-      fd.append("description", booking.issueDescription || "Damaged device image");
-
-      const uploadRes = await fetch(
-        `https://dev-user-api.fixserv.co/api/upload/${userId}/upload-products`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        }
-      );
-
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadData?.message || "Image upload failed");
-
-      const uploadedProductId =
-        uploadData?.product?.uploadedProductId ||
-        uploadData?.product?.id ||
-        uploadData?.product?._id ||
-        uploadData?.product?.uuid;
-
-      const uploadedImageUrl = uploadData?.product?.imageUrl || "";
-
-      if (!uploadedProductId) {
-        throw new Error("Upload succeeded but uploadedProductId was not returned.");
-      }
-
-      // 2) Create draft order
-      const draftPayload = {
-        uploadedProductId,
-        deviceType: booking.deviceType,
-        deviceBrand: booking.brand,
-        deviceModel: booking.model,
-        serviceRequired: booking.serviceRequired,
-      };
-
-      const createdOrder = await createDraftOrder(draftPayload);
-      const orderId = createdOrder?.id || createdOrder?.data?.id;
-
-      if (!orderId) throw new Error("Order created but no id was returned.");
-
-      // 3) Persist for TrackRepair (refresh-safe)
-      localStorage.setItem("fixserv_last_order_id", orderId);
-      localStorage.setItem("fixserv_last_uploaded_image_url", uploadedImageUrl);
-
-      // 4) Success modal
-      setFinalBooking({
-        ...booking,
-        id: orderId, // ✅ important
-        damagedDeviceImageUrl: uploadedImageUrl,
-      });
-
-      setActiveModal("success");
-    } catch (err) {
-      console.error(err);
-      setActiveModal("wallet");
-      setSubmitError(err?.message || "Something went wrong");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }}
-  className={`w-full bg-blue-600 text-white py-2 rounded-md ${
-    isSubmitting ? "opacity-60 cursor-not-allowed" : ""
-  }`}
->
-  {isSubmitting ? "Uploading..." : "Make Payment"}
-</button> */}
 
 <button
   disabled={isSubmitting}

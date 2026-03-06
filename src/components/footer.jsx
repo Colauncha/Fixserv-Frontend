@@ -11,17 +11,12 @@ const Footer = () => {
   const navigate = useNavigate();
   return (
 
-    // <footer className="w-full bg-[#3E83C4] text-white pt-10 sm:pt-12 lg:pt-16 pb-6 mt-12 sm:mt-16 lg:mt-20">
-
       <footer className="w-full bg-[#3E83C4] text-white pt-12 sm:pt-14 lg:pt-16 pb-8 mt-16">
 
 
 
       {/* Main Content */}
 
-{/* <div className="max-w-8xl mx-auto px-6 sm:px-10 md:px-16 lg:px-24 
-grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 
-gap-6 md:gap-8 lg:gap-12"> */}
 
 <div className="max-w-8xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20
 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4

@@ -63,7 +63,7 @@ const Home = () => {
 
   return (
     <div className="w-full">
-  {/* HERO - This section already takes full width */}
+
   <section className="relative w-full h-[90vh] flex items-center justify-center mt-4">
     <img src={heroImage} alt="Hero background" className="absolute inset-0 w-full h-full object-cover" />
     <img src={overlayHeroImage} alt="Hero overlay" className="absolute inset-0 w-full h-full object-cover" />
@@ -91,9 +91,8 @@ const Home = () => {
     </div>
   </section>
 
-  {/* HOW IT WORKS - Made fully width */}
   <section className="py-20 bg-white overflow-hidden w-full">
-    {/* Header - Full width container with centered content */}
+
     <div className="w-full text-center mb-12 px-4">
       <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
         How It Works
@@ -131,7 +130,7 @@ const Home = () => {
 </div>
 
 
-          {/* RIGHT — TEXT (Swiper-controlled) */}
+
           <Swiper
             modules={[Autoplay, Pagination]}
             autoplay={{ delay: 5000, disableOnInteraction: false }}
@@ -163,12 +162,12 @@ const Home = () => {
           </Swiper>
         </div>
 
-        {/* Centered Pagination */}
+       
         <div className="how-it-works-pagination mt-8 flex justify-center w-full" />
       </div>
   </section>
 
-  {/* WHY CHOOSE FIXSERV - Made fully width */}
+
 <section className="py-24 bg-white w-full">
   <div className="w-full max-w-7xl mx-auto px-2 md:px-6">
     <div className="grid md:grid-cols-2 gap-12 items-center w-full">
@@ -228,14 +227,14 @@ const Home = () => {
           src={Image4}
           alt=""
           className="w-full max-w-[520px] h-auto object-cover"
-          // className="w-full max-w-[510px] h-auto object-cover"
+
         />
 
         <img
           src={overlay}
           alt=""
           className="absolute -bottom-12 -left-0.5 w-[310px] h-auto object-cover"
-          // className="absolute -bottom-11 -left-12 md:-left-17 w-[280px] md:w-[300px] h-auto object-cover"
+
         />
       </div>
     </div>
@@ -283,7 +282,7 @@ const Home = () => {
 
       {/* CARD 1 */}
       <div className="bg-[#3E83C4] rounded-xl p-7 text-white border border-white/10">
-        {/* Stars */}
+  
         <div className="flex gap-1 mb-4">
           {[...Array(5)].map((_, i) => (
             <img key={i} src={yellowStar} alt="star" className="w-4 h-4" />

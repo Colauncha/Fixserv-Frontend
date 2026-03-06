@@ -1,11 +1,19 @@
+
+import { useNavigate } from "react-router-dom";
 import welcomeImg from "../../assets/client images/bonus.png";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
-const WelcomeBonus = ({ onClose, onClaim }) => {
+const WelcomeBonus = ({ onClose }) => {
+  const navigate = useNavigate();
+const [bonusPoints, setBonusPoints] = useState(200);
 
+
+  // Close on ESC key
   useEffect(() => {
     const handleEsc = (e) => {
-      if (e.key === "Escape") onClose?.();
+      if (e.key === "Escape") {
+        onClose();
+      }
     };
 
     window.addEventListener("keydown", handleEsc);
@@ -13,7 +21,8 @@ const WelcomeBonus = ({ onClose, onClaim }) => {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
@@ -22,6 +31,7 @@ const WelcomeBonus = ({ onClose, onClaim }) => {
 
       {/* Modal */}
       <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center animate-fadeIn">
+
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -30,28 +40,46 @@ const WelcomeBonus = ({ onClose, onClaim }) => {
           ✕
         </button>
 
+        {/* Confetti / Icon */}
         <div className="flex justify-center mb-6">
-          <img src={welcomeImg} alt="Welcome Bonus" className="w-88 h-42" />
+          <img
+            src={welcomeImg}
+            alt="Welcome Bonus"
+            className="w-88 h-42"
+          />
         </div>
 
+        {/* Title */}
         <h2 className="text-xl font-semibold text-black mb-2">
           Welcome to Fixserv!
         </h2>
 
+        {/* Description */}
         <p className="text-sm text-gray-600 mb-4">
           You’ve just earned Fixpoints for signing up!
           <br />
           Earn up to 1,000 points to gain your reward
         </p>
 
-        <p className="text-[#3E83C4] font-semibold text-lg mb-2">+200 points</p>
+        {/* Points */}
+        {/* <p className="text-[#3E83C4] font-semibold text-lg mb-2">
+          +200 points
+        </p> */}
+        <p className="text-[#3E83C4] font-semibold text-lg mb-2">
++200 points
+</p>
+
 
         <p className="text-xs text-gray-500 mb-6">
           Every Fixpoint brings you closer to rewards and exclusive benefits
         </p>
 
+        {/* Claim Button */}
         <button
-          onClick={onClaim || onClose}
+          onClick={() => {
+            onClose();
+            navigate("refer-earn");
+          }}
           className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-lg font-medium transition cursor-pointer"
         >
           Claim

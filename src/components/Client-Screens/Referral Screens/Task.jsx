@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import { useNavigate } from "react-router-dom";
 import people from "../../../assets/client images/client-home/referal part/people.png";
 import mark from "../../../assets/client images/client-home/referal part/mark.png";
 import bitcoin from "../../../assets/client images/client-home/referal part/bitcoin.png";
@@ -14,15 +14,83 @@ import insta from "../../../assets/client images/client-home/referal part/insta.
 import linkedin from "../../../assets/client images/client-home/referal part/linkedin.png";
 import twitter from "../../../assets/client images/client-home/referal part/x.png";
 
-const Task = () => {
+const Task = ({ referralCode }) => {
   const [showModal, setShowModal] = useState(false);
+const navigate = useNavigate();
 
-  const tasks = [
-    { icon: people, title: "Invite 1 Friend", points: "+150 pts", action: "Refer Now" },
-    { icon: mark, title: "Complete Your Profile", points: "+100 pts", action: "Complete" },
-    { icon: bitcoin, title: "Book a Repair", points: "+100 pts", action: "Book Repair" },
-    { icon: star, title: "Give Feedback", points: "+50 pts", action: "Give feedback" },
-  ];
+const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
+
+const referralLink = referralCode
+  ? `${APP_URL}/signup?ref=${encodeURIComponent(referralCode)}`
+  : `${APP_URL}/signup`;
+
+const [copied, setCopied] = useState(false);
+
+const handleCopy = async (text) => {
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  } catch (e) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+};
+
+const handleShare = async () => {
+  if (!referralLink) return;
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: "Fixserv Referral",
+        text: `Use my Fixserv referral code: ${referralCode}`,
+        url: referralLink,
+      });
+    } else {
+      await handleCopy(referralLink);
+    }
+  } catch (e) {
+    // user cancelled or share failed — fallback to copy
+    await handleCopy(referralLink);
+  }
+};
+
+const tasks = [
+  { icon: people, title: "Invite 1 Friend", points: "+150 pts", action: "refer", label: "Refer Now" },
+  { icon: mark, title: "Complete Your Profile", points: "+100 pts", action: "settings", label: "Complete Now" },
+  { icon: bitcoin, title: "Book a Repair", points: "+100 pts", action: "repair", label: "Book Repair" },
+  { icon: star, title: "Give Feedback", points: "+50 pts", action: "feedback", label: "Give Feedback" },
+];
+
+  const handleAction = (action) => {
+    switch (action) {
+      case "refer":
+        setShowModal(true);
+        break;
+
+      case "settings":
+        navigate("/client/settings");
+        break;
+
+      case "repair":
+        navigate("/client/request-repair");
+        break;
+
+      case "feedback":
+        navigate("/client/feedback"); // optional if you have this page
+        break;
+
+      default:
+        break;
+    }
+  };
 
   return (
     <>
@@ -55,11 +123,11 @@ const Task = () => {
 
               <span>
                 <button
-                  onClick={() => task.action === "Refer Now" && setShowModal(true)}
-                  className="bg-blue-500 text-white px-6 py-1.5 rounded-full text-xs hover:bg-blue-600 transition"
-                >
-                  {task.action}
-                </button>
+  onClick={() => handleAction(task.action)}
+  className="bg-blue-500 text-white px-6 py-1.5 rounded-full text-xs hover:bg-blue-600 transition"
+>
+  {task.label}
+</button>
               </span>
             </div>
           ))}
@@ -121,17 +189,46 @@ const Task = () => {
 
             <p className="text-sm mb-2">Your referral code:</p>
 
-            <div className="flex mb-4">
-              <input value="FX-PRAISE123" readOnly className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm" />
-              <button className="bg-blue-500 text-white px-5 rounded-r-md text-sm">Copy Code</button>
-            </div>
+            <div className="flex mb-3">
+  <input
+    value={referralCode || "—"}
+    readOnly
+    className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm"
+  />
+  <button
+    onClick={() => handleCopy(referralCode)}
+    disabled={!referralCode}
+    className="bg-blue-500 text-white px-5 rounded-r-md text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+  >
+    {copied ? "Copied!" : "Copy Code"}
+  </button>
+</div>
 
-            <div className="flex items-center gap-4 justify-center">
-              <img src={fb} className="w-6" />
-              <img src={insta} className="w-6" />
-              <img src={linkedin} className="w-6" />
-              <img src={twitter} className="w-6" />
-            </div>
+{/* <div className="flex mb-5">
+  <input
+    value={referralLink}
+    readOnly
+    className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm"
+  />
+  <button
+    onClick={() => handleCopy(referralLink)}
+    className="bg-gray-800 text-white px-5 rounded-r-md text-sm"
+  >
+    Copy Link
+  </button>
+</div> */}
+
+           <div className="flex items-center gap-4 justify-center">
+  {[fb, insta, linkedin, twitter].map((icon, i) => (
+    <img
+      key={i}
+      src={icon}
+      className="w-6 cursor-pointer"
+      onClick={handleShare}
+      alt="share"
+    />
+  ))}
+</div>
 
           </div>
         </div>
@@ -141,3 +238,4 @@ const Task = () => {
 };
 
 export default Task;
+

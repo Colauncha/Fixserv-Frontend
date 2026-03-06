@@ -37,35 +37,35 @@ const ReferredUsersPanel = ({
           <span>Status</span>
         </div>
 
-        {/* Data Rows */}
-        {paginatedUsers.map((row, i) => (
-          // <div
-          //   key={i}
-          //   className="grid grid-cols-4 px-5 py-4 text-sm border-t border-blue-100 items-center"
-          // >
-          <div
-  key={i}
-  className="grid grid-cols-[1.4fr_1.9fr_0.9fr_0.8fr] px-5 py-4 text-sm border-t border-blue-100 items-center"
->
+  {paginatedUsers.length === 0 ? (
+  <div className="px-5 py-6 text-sm text-gray-500 border-t border-blue-100">
+    No referred users yet.
+  </div>
+) : (
+  paginatedUsers.map((row, i) => (
+    <div
+      key={i}
+      className="grid grid-cols-[1.4fr_1.9fr_0.9fr_0.8fr] px-5 py-4 text-sm border-t border-blue-100 items-center"
+    >
+      <span className="text-gray-800">{row[0]}</span>
+      <span className="text-gray-500">{row[1]}</span>
+      <span className="text-gray-700">{row[2]}</span>
 
-            <span className="text-gray-800">{row[0]}</span>
-            <span className="text-gray-500">{row[1]}</span>
-            <span className="text-gray-700">{row[2]}</span>
-
-            <span>
-              <span
-                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
-                  row[3] === "Successful"
-                    ? "bg-green-100 text-green-600"
-                    : "bg-yellow-100 text-yellow-600"
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                {row[3]}
-              </span>
-            </span>
-          </div>
-        ))}
+      <span>
+        <span
+          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
+            row[3] === "Successful"
+              ? "bg-green-100 text-green-600"
+              : "bg-yellow-100 text-yellow-600"
+          }`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+          {row[3]}
+        </span>
+      </span>
+    </div>
+  ))
+)}
       </div>
 
       {/* Pagination */}
@@ -90,9 +90,10 @@ const ReferredUsersPanel = ({
         {/* Next Button */}
         <div className="absolute right-0 top-0">
           <button
-            onClick={handleNext}
-            className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50 transition"
-          >
+  onClick={handleNext}
+  disabled={paginatedUsers.length === 0 || page === totalPages}
+  className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
+>
             Next <span>→</span>
           </button>
         </div>

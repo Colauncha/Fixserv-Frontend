@@ -86,14 +86,6 @@ const ClientNavbar = () => {
         <div className="hidden md:flex items-center gap-6 relative h-6">
 
           {/* Notification Bell */}
-          {/* <button
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={toggleNotifications}
-            className="relative flex items-center justify-center h-6 w-6 cursor-pointer"
-            aria-expanded={showNotifications}
-            aria-label="Notifications"
-            type="button"
-          > */}
           <button
   type="button"
   onMouseDown={(e) => e.stopPropagation()}

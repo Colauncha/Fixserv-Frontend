@@ -258,22 +258,22 @@ const res = await axios.get(ENDPOINT, {
         </div>
 
         {/* DATE (placeholder for later) */}
-        <button
+        {/* <button
           type="button"
           className="flex items-center gap-2 border px-4 py-2 rounded-lg text-sm"
         >
           <img src={calendar} className="w-4" alt="" />
           Date ▾
-        </button>
+        </button> */}
 
         {/* MORE (placeholder for later) */}
-        <button
+        {/* <button
           type="button"
           className="flex items-center gap-2 border px-4 py-2 rounded-lg text-sm"
         >
           <img src={filterIcon} className="w-4" alt="" />
           More Filters ▾
-        </button>
+        </button> */}
       </div>
 
       {/* STATES */}

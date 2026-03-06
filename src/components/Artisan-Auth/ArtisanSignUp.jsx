@@ -303,12 +303,15 @@ const toggleCategory = (category) => {
   text-center text-white max-w-lg mx-auto
 ">
 
-          <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-2 lg:mb-3 font-medium leading-tight">
-          Hi!
+          <h2 className="text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-2 lg:mb-3 font-medium leading-tight">
+          Hey!
         </h2>
     
-        <p className="text-base mb-2 opacity-90 text-white">
+        {/* <p className="text-base mb-2 opacity-90 text-white">
           If you are looking to request repairs
+        </p> */}
+        <p className="text-base mb-2 opacity-90 text-white">
+          Are you looking to request repairs?
         </p>
     
         <button onClick={() => navigate("/sign-up")} className="border border-white px-5 sm:px-6 py-2 rounded-2xl font-medium hover:bg-white hover:text-[#3E83C4] transition cursor-pointer">

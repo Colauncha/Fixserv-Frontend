@@ -66,6 +66,14 @@ body {
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.5s ease forwards;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+html {
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 

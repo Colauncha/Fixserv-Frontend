@@ -37,7 +37,7 @@ const handleUpload = async () => {
   formData.append("objectName", itemName);
   formData.append("description", itemDescription);
 
-  // ✅ backend expects: productImage (NOT image/file)
+
   formData.append("productImage", image);
 
   try {
@@ -62,7 +62,7 @@ const handleUpload = async () => {
       throw new Error(msg);
     }
 
-    // ✅ update AuthContext user so UserProfile reflects instantly
+
     if (data?.user) {
       login(token, data.user);
     }
