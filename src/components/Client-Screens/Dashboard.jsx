@@ -12,9 +12,9 @@ import coin from "../../assets/client images/client-home/coin.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-// Dummy API fetch function (replace with your actual API call)
+
 const fetchUserData = async (userId) => {
-  // Example API: GET /api/user/{userId}
+ 
   const res = await fetch(`/api/user/${userId}`);
   if (!res.ok) throw new Error("Failed to fetch user data");
   return res.json();
@@ -25,7 +25,7 @@ const Dashboard = ({ onClose }) => {
   const { user: authUser } = useAuth();
   const [user, setUser] = useState(authUser);
 
-  // Live update wallet/fixpoints every 5 seconds
+
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -44,7 +44,7 @@ const Dashboard = ({ onClose }) => {
   const fixpoints = user?.fixpoints || 0;
   const wallet = user?.wallet || { balance: 0, lockedBalance: 0 };
 
-  // Close modal on ESC
+
   useEffect(() => {
     const handler = (e) => {
       if (e.key === "Escape") onClose?.();
@@ -56,7 +56,6 @@ const Dashboard = ({ onClose }) => {
   return (
     <div className="flex flex-col items-center gap-6">
 
-      {/* Wallet / Fixpoints Section */}
       <div className="bg-[#F6FBFF] border border-[#3e83c4] rounded-xl p-5 w-[320px]">
         <div className="flex items-center gap-2 mb-4">
           <img src={walletIcon} alt="" className="w-5 h-5" />
@@ -96,25 +95,25 @@ const Dashboard = ({ onClose }) => {
         </div>
       </div>
 
-      {/* Refer & Earn Modal */}
+      
       <div className="fixed inset-0 z-50 flex items-center justify-center">
 
-        {/* Blur Background */}
+        
         <div
           className="absolute inset-0 bg-black/30 backdrop-blur-sm"
           onClick={onClose}
         />
 
-        {/* Modal Card */}
+      
         <div className="relative w-[520px] bg-white rounded-2xl shadow-xl p-6 z-10 animate-fadeIn">
 
-          {/* Banner */}
+          
           <div
             className="relative rounded-xl p-8 h-[210px] flex items-center mb-6 bg-cover bg-center border border-[#3E83C4]"
             style={{ backgroundImage: `url(${referBg})` }}
           >
 
-            {/* Close Button */}
+           
             <button
               onClick={onClose}
               className="absolute top-1 right-4 text-gray-500 hover:text-gray-700 w-7 h-7 flex items-center justify-center cursor-pointer"

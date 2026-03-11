@@ -1,20 +1,21 @@
-
-//newnew try 
-
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import search from "../../../assets/client images/client-home/referal part/search.png";
 import sortIcon from "../../../assets/client images/client-home/referal part/sort.png";
 import johnone from "../../../assets/client images/client-home/referal part/johnone.png";
 import tick from "../../../assets/client images/client-home/referal part/tick.png";
 import yellowstar from "../../../assets/client images/client-home/referal part/yellowstar.png";
-
 import { searchServicesAndArtisans, getAllArtisans } from "../../../api/search.api";
+
+const normalizeText = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .trim();
 
 const normalizeArtisan = (item) => {
   return {
-    id: item?.id || item?._id,
+    id: item?.id || item?._id || item?.artisanId,
     name: item?.fullName || item?.businessName || item?.name || "Unnamed Artisan",
     img: item?.profilePicture || item?.avatar || item?.image || johnone,
     date: item?.createdAt || item?.updatedAt || new Date().toISOString(),
@@ -23,28 +24,103 @@ const normalizeArtisan = (item) => {
       (Array.isArray(item?.skillSet) && item.skillSet.join(", ")) ||
       item?.category ||
       item?.specialty ||
+      item?.serviceTitle ||
+      item?.title ||
       "Technician",
     rating: item?.rating ?? 0,
     reviews: item?.reviewsCount ?? item?.reviews ?? 0,
-
-    // keep raw for later "View Profile"
     raw: item,
   };
 };
 
+const uniqueById = (list = []) => {
+  const map = new Map();
+
+  list.forEach((item) => {
+    const normalized = item?.raw ? item : normalizeArtisan(item);
+    const id = String(
+      normalized?.id ||
+        normalized?.raw?.id ||
+        normalized?.raw?._id ||
+        normalized?.raw?.artisanId ||
+        ""
+    ).trim();
+
+    if (!id) return;
+    if (!map.has(id)) {
+      map.set(id, normalized);
+    }
+  });
+
+  return Array.from(map.values());
+};
+
+const artisanMatchesRequest = (artisan, deviceType, serviceRequired) => {
+  const raw = artisan?.raw || artisan || {};
+
+  const haystack = [
+    artisan?.name,
+    artisan?.specialty,
+    raw?.category,
+    raw?.specialty,
+    raw?.title,
+    raw?.serviceTitle,
+    raw?.description,
+    ...(Array.isArray(raw?.skills) ? raw.skills : []),
+    ...(Array.isArray(raw?.skillSet) ? raw.skillSet : []),
+    ...(Array.isArray(raw?.services)
+      ? raw.services.flatMap((s) => [
+          s?.title,
+          s?.serviceTitle,
+          s?.name,
+          s?.description,
+          s?.category,
+        ])
+      : []),
+  ]
+    .filter(Boolean)
+    .map(normalizeText)
+    .join(" ");
+
+  const normalizedDeviceType = normalizeText(deviceType);
+  const normalizedServiceRequired = normalizeText(serviceRequired);
+
+  const matchesDevice =
+    !normalizedDeviceType || haystack.includes(normalizedDeviceType);
+
+  const matchesService =
+    !normalizedServiceRequired || haystack.includes(normalizedServiceRequired);
+
+  return matchesDevice || matchesService;
+};
+
 const Technican = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [sortBy, setSortBy] = useState("Newest");
   const [page, setPage] = useState(1);
   const perPage = 4;
 
   const [technicians, setTechnicians] = useState([]);
+  const [allTechnicians, setAllTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [searching, setSearching] = useState(false);
-const [showingFallback, setShowingFallback] = useState(false);
+  const [showingFallback, setShowingFallback] = useState(false);
+
+  const requestState = location.state || {};
+
+  const requestDeviceType = requestState?.deviceType || "";
+  const requestServiceRequired = requestState?.serviceRequired || "";
+  const requestDeviceBrand = requestState?.deviceBrand || "";
+  const requestDeviceModel = requestState?.deviceModel || "";
+  const requestDescription = requestState?.description || "";
+  const requestObjectName = requestState?.objectName || "";
+  const draftOrderId = requestState?.draftOrderId || "";
+  const uploadedProductId = requestState?.uploadedProductId || "";
+  const rawConfirm = requestState?.rawConfirm || null;
 
   const sorted = useMemo(() => {
     const arr = [...technicians];
@@ -72,7 +148,6 @@ const [showingFallback, setShowingFallback] = useState(false);
       setLoading(true);
       setPage(1);
 
-      // Search endpoint (your existing API)
       const data = await searchServicesAndArtisans({
         keyword: q,
       });
@@ -81,10 +156,11 @@ const [showingFallback, setShowingFallback] = useState(false);
         throw new Error(data?.message || "Search failed");
       }
 
-      const artisansFromSearch = data?.data?.artisans?.data || data?.data?.artisans || [];
+      const artisansFromSearch =
+        data?.data?.artisans?.data || data?.data?.artisans || [];
 
-      const mapped = (Array.isArray(artisansFromSearch) ? artisansFromSearch : []).map(
-        normalizeArtisan
+      const mapped = uniqueById(
+        (Array.isArray(artisansFromSearch) ? artisansFromSearch : []).map(normalizeArtisan)
       );
 
       setTechnicians(mapped);
@@ -98,59 +174,88 @@ const [showingFallback, setShowingFallback] = useState(false);
   };
 
   const fetchAllArtisans = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const data = await getAllArtisans();
+      const data = await getAllArtisans();
+      const artisans = data?.users || [];
+      const normalizedAll = uniqueById(artisans.map(normalizeArtisan));
 
-    const artisans = data?.users || [];
+      setAllTechnicians(normalizedAll);
 
-    const mapped = artisans.map(normalizeArtisan);
+      const locallyMatched = normalizedAll.filter((artisan) =>
+        artisanMatchesRequest(artisan, requestDeviceType, requestServiceRequired)
+      );
 
-    setTechnicians(mapped);
-    setShowingFallback(true);
-  } catch (err) {
-    console.error("Failed to fetch artisans:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+      if (locallyMatched.length > 0) {
+        setTechnicians(locallyMatched);
+        setShowingFallback(false);
+      } else {
+        setTechnicians(normalizedAll);
+        setShowingFallback(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch artisans:", err);
+      setTechnicians([]);
+      setAllTechnicians([]);
+      setShowingFallback(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => {
-  const state = location.state || {};
-  const artisans = state?.artisans || [];
+  useEffect(() => {
+    const artisans = requestState?.artisans || [];
 
-  const rawConfirm = state?.rawConfirm;
+    const fallbackArtisans =
+      rawConfirm?.data?.artisans ||
+      rawConfirm?.data?.matchedArtisans ||
+      rawConfirm?.data?.matchedArtisan ||
+      rawConfirm?.artisans ||
+      rawConfirm?.matchedArtisans ||
+      rawConfirm?.matchedArtisan ||
+      [];
 
-  const fallbackArtisans =
-    rawConfirm?.data?.artisans ||
-    rawConfirm?.data?.matchedArtisans ||
-    rawConfirm?.artisans ||
-    rawConfirm?.matchedArtisans ||
-    [];
+    const finalList =
+      Array.isArray(artisans) && artisans.length > 0
+        ? artisans
+        : Array.isArray(fallbackArtisans) && fallbackArtisans.length > 0
+        ? fallbackArtisans
+        : [];
 
-  const finalList =
-    Array.isArray(artisans) && artisans.length > 0
-      ? artisans
-      : Array.isArray(fallbackArtisans)
-      ? fallbackArtisans
-      : [];
+    if (finalList.length > 0) {
+      const normalizedMatched = uniqueById(finalList.map(normalizeArtisan));
+      setTechnicians(normalizedMatched);
+      setAllTechnicians(normalizedMatched);
+      setShowingFallback(false);
+      setLoading(false);
+      setPage(1);
+      return;
+    }
 
-  if (finalList.length > 0) {
-    setTechnicians(finalList.map(normalizeArtisan));
-    setShowingFallback(false);
-  } else {
-    setTechnicians([]);
     fetchAllArtisans();
-  }
+    setPage(1);
+  }, [location.state]);
 
-  setLoading(false);
-  setPage(1);
-}, [location.state]);
+  const handleViewProfile = (tech) => {
+    navigate("/client/a-profile", {
+      state: {
+        artisan: tech.raw,
+        draftOrderId,
+        uploadedProductId,
+        deviceType: requestDeviceType,
+        deviceBrand: requestDeviceBrand,
+        deviceModel: requestDeviceModel,
+        serviceRequired: requestServiceRequired,
+        description: requestDescription,
+        objectName: requestObjectName,
+        rawConfirm,
+      },
+    });
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-white py-14 mt-4">
-      {/* Title */}
       <div className="text-center mb-10">
         <h2 className="text-2xl font-semibold">We Found Technicians for You</h2>
         <p className="text-sm text-gray-500 mt-1">
@@ -158,9 +263,7 @@ useEffect(() => {
         </p>
       </div>
 
-      {/* Search + Sort */}
       <div className="flex items-center justify-center gap-6 mb-10">
-        {/* Search Box */}
         <div className="flex w-[520px] h-[42px] border border-blue-300 rounded-lg overflow-hidden bg-white">
           <div className="flex items-center px-3">
             <img src={search} className="w-4 opacity-60" alt="" />
@@ -184,7 +287,6 @@ useEffect(() => {
           </button>
         </div>
 
-        {/* Sort Button */}
         <button
           type="button"
           onClick={() => setSortBy(sortBy === "Newest" ? "Oldest" : "Newest")}
@@ -197,26 +299,23 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* Loading */}
       {loading && (
         <p className="text-center text-sm text-gray-500 mb-6">
           Loading technicians...
         </p>
       )}
 
-      {/* Empty state */}
-     {!loading && showingFallback && (
-  <div className="text-center mb-6">
-    <p className="text-sm text-gray-500">
-      No exact technicians matched your request.
-    </p>
-    <p className="text-sm text-blue-500 mt-1">
-      Showing other available artisans you may hire.
-    </p>
-  </div>
-)}
+      {!loading && showingFallback && (
+        <div className="text-center mb-6">
+          <p className="text-sm text-gray-500">
+            No exact technicians matched your request.
+          </p>
+          <p className="text-sm text-blue-500 mt-1">
+            Showing other available artisans you may hire.
+          </p>
+        </div>
+      )}
 
-      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {current.map((tech) => (
           <div
@@ -251,11 +350,8 @@ useEffect(() => {
 
               <button
                 type="button"
-                className="mt-3 w-full bg-[#3E83C4] text-white py-2 text-xs rounded-md hover:bg-blue-600 transition"
-                onClick={() => {
-                  // later: navigate to artisan profile page
-                  console.log("Selected artisan:", tech.raw);
-                }}
+                onClick={() => handleViewProfile(tech)}
+                className="mt-3 w-full bg-[#3E83C4] text-white py-2 text-xs rounded-md cursor-pointer hover:bg-blue-600 transition"
               >
                 View Profile
               </button>
@@ -264,7 +360,6 @@ useEffect(() => {
         ))}
       </div>
 
-      {/* Pagination */}
       {!loading && technicians.length > 0 && (
         <div className="flex items-center justify-center gap-4 mt-10">
           <div className="flex gap-3">

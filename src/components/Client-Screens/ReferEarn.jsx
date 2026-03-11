@@ -83,7 +83,7 @@ toast.success("Referral code copied!");
           </div>
         </div>
 
-        {/* How it works */}
+      
         <p className="text-sm font-medium mb-3">How it works:</p>
         <div className="space-y-3 text-sm text-gray-600 mb-6">
           <div className="flex items-center gap-3"><img src={flash} alt="flash" className="w-5" /> Share your invite link</div>
@@ -91,20 +91,20 @@ toast.success("Referral code copied!");
           <div className="flex items-center gap-3"><img src={add} alt="add" className="w-5" /> You receive Fixpoints for each referral</div>
         </div>
 
-        {/* Referral Code */}
+       
         <p className="text-sm mb-2">Your referral code:</p>
         <div className="flex mb-3">
           <input value={referralCode || ""} readOnly className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm" />
           <button onClick={() => copyText(referralCode, "Referral code copied!")} className="bg-blue-500 text-white px-5 rounded-r-md text-sm">Copy Code</button>
         </div>
 
-        {/* Referral Link */}
+       
         <div className="flex mb-5">
           <input value={referralLink} readOnly className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm" />
           <button onClick={() => copyText(referralLink, "Referral link copied!")} className="bg-gray-800 text-white px-5 rounded-r-md text-sm">Copy Link</button>
         </div>
 
-        {/* Social Share */}
+   
         <div className="flex items-center gap-5 justify-center">
           {[fb, insta, linkedin, twitter].map((icon, i) => (
             <img key={i} src={icon} onClick={shareReferral} className="w-6 cursor-pointer" alt="share" />

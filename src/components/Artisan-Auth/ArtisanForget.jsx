@@ -1,5 +1,3 @@
-
-
 import React, { useState } from "react";
 import signLogo from "../../assets/sign/sign logo.png";
 import signImage from "../../assets/sign/sign image.png";

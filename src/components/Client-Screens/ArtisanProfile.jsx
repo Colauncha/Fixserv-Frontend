@@ -8,16 +8,16 @@ import flashImage from "../../assets/client images/client-home/flash.png";
 import cameraImage from "../../assets/client images/client-home/camera.png";
 import johnOne from "../../assets/client images/client-home/Johnone.png";
 import starIcon from "../../assets/client images/client-home/star.png";
-import { useNavigate, useParams } from "react-router-dom";
-import {
-  getArtisanById,
-  getAllArtisans,
-  getArtisanServices,
-} from "../../api/artisan.api";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { getArtisanById, getAllArtisans } from "../../api/artisan.api";
 
-const ClientArtisanProfile = () => {
+const ArtisanProfile = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { artisanId } = useParams();
+
+  const passedState = location.state || {};
+  const passedArtisan = passedState?.artisan || null;
 
   const [artisan, setArtisan] = useState(null);
   const [loadingArtisan, setLoadingArtisan] = useState(true);
@@ -27,32 +27,11 @@ const ClientArtisanProfile = () => {
   const [recommendedArtisans, setRecommendedArtisans] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
-  const [artisanServiceList, setArtisanServiceList] = useState([]);
-  const [loadingServices, setLoadingServices] = useState(true);
+  const [loadingServices, setLoadingServices] = useState(false);
   const [servicesError, setServicesError] = useState("");
-
-  const [hoveredRecommendation, setHoveredRecommendation] = useState(null);
 
   const cleanText = (v, fallback = "") =>
     typeof v === "string" && v.trim() === "" ? fallback : v ?? fallback;
-
-  const yearsFromCreatedAt = artisan?.createdAt
-    ? Math.max(
-        0,
-        Math.floor(
-          (Date.now() - new Date(artisan.createdAt).getTime()) /
-            (1000 * 60 * 60 * 24 * 365)
-        )
-      )
-    : null;
-
-  const fallbackServices = [
-    { id: 1, title: "Screen Replacement", price: 12000, icon: settingImage },
-    { id: 2, title: "Battery Replacement", price: 7000, icon: battery },
-    { id: 3, title: "Charging port Fix", price: 5000, icon: flashImage },
-    { id: 4, title: "Camera Repair", price: 8000, icon: cameraImage },
-    { id: 5, title: "General Diagnostics", price: 3500, icon: settingImage },
-  ];
 
   const formatNaira = (value) => {
     const num = Number(value);
@@ -112,7 +91,7 @@ const ClientArtisanProfile = () => {
 
     return {
       ...raw,
-      id: raw?.id || raw?._id,
+      id: raw?.id || raw?._id || raw?.artisanId,
       fullName: cleanText(
         raw?.fullName,
         cleanText(raw?.businessName, "Unnamed Artisan")
@@ -133,52 +112,96 @@ const ClientArtisanProfile = () => {
     };
   };
 
-  useEffect(() => {
-    const fetchArtisanData = async () => {
-      if (!artisanId) return;
+  const yearsFromCreatedAt = artisan?.createdAt
+    ? Math.max(
+        0,
+        Math.floor(
+          (Date.now() - new Date(artisan.createdAt).getTime()) /
+            (1000 * 60 * 60 * 24 * 365)
+        )
+      )
+    : null;
 
-      try {
-        setLoadingArtisan(true);
-        setLoadingServices(true);
-        setServicesError("");
+  const fallbackServices = [
+    { id: 1, title: "Screen Replacement", price: 12000, icon: settingImage },
+    { id: 2, title: "Battery Replacement", price: 7000, icon: battery },
+    { id: 3, title: "Charging port Fix", price: 5000, icon: flashImage },
+    { id: 4, title: "Camera Repair", price: 8000, icon: cameraImage },
+    { id: 5, title: "General Diagnostics", price: 3500, icon: settingImage },
+  ];
 
-        const [artisanRes, servicesRes] = await Promise.allSettled([
-          getArtisanById(artisanId),
-          getArtisanServices(artisanId),
-        ]);
+  const requestState = {
+    draftOrderId: passedState?.draftOrderId || "",
+    uploadedProductId: passedState?.uploadedProductId || "",
+    deviceType: passedState?.deviceType || "",
+    deviceBrand: passedState?.deviceBrand || "",
+    deviceModel: passedState?.deviceModel || "",
+    serviceRequired: passedState?.serviceRequired || "",
+    description: passedState?.description || "",
+    objectName: passedState?.objectName || "",
+    rawConfirm: passedState?.rawConfirm || null,
+  };
 
-        if (artisanRes.status === "fulfilled") {
-          const artisanData = normalizeArtisan(artisanRes.value);
-          setArtisan(artisanData);
-        } else {
-          console.error("ARTISAN ERROR:", artisanRes.reason);
-          setArtisan(null);
-        }
+useEffect(() => {
+  const fetchArtisan = async () => {
+    try {
+      setLoadingArtisan(true);
+      setLoadingServices(true);
+      setServicesError("");
 
-        if (servicesRes.status === "fulfilled") {
-          setArtisanServiceList(
-            Array.isArray(servicesRes.value) ? servicesRes.value : []
-          );
-        } else {
-          console.error("SERVICES ERROR:", servicesRes.reason);
-          setArtisanServiceList([]);
-          setServicesError("Unable to load live services right now.");
-        }
-      } finally {
-        setLoadingArtisan(false);
-        setLoadingServices(false);
+      const fallbackArtisan = passedArtisan ? normalizeArtisan(passedArtisan) : null;
+      if (fallbackArtisan) {
+        setArtisan(fallbackArtisan);
       }
-    };
 
-    fetchArtisanData();
-  }, [artisanId]);
+      const targetArtisanId =
+        artisanId ||
+        passedArtisan?.id ||
+        passedArtisan?._id ||
+        passedArtisan?.artisanId ||
+        null;
+
+      if (!targetArtisanId) {
+        if (!fallbackArtisan) {
+          setArtisan(null);
+          setServicesError("Unable to load artisan details.");
+        }
+        return;
+      }
+
+      const raw = await getArtisanById(targetArtisanId);
+      const artisanData = normalizeArtisan(raw);
+
+      setArtisan(artisanData);
+    } catch (err) {
+      console.error("ARTISAN ERROR:", err);
+
+      if (!passedArtisan) {
+        setArtisan(null);
+        setServicesError("Unable to load artisan details.");
+      }
+    } finally {
+      setLoadingArtisan(false);
+      setLoadingServices(false);
+    }
+  };
+
+  fetchArtisan();
+}, [artisanId, passedArtisan]);
 
   useEffect(() => {
     const fetchRecommendedArtisans = async () => {
       try {
         setLoadingRecommendations(true);
+
         const users = await getAllArtisans();
-        setRecommendedArtisans(Array.isArray(users) ? users : []);
+        const list = Array.isArray(users)
+          ? users
+          : Array.isArray(users?.users)
+          ? users.users
+          : [];
+
+        setRecommendedArtisans(list);
       } catch (err) {
         console.error("Recommendation error:", err);
         setRecommendedArtisans([]);
@@ -190,106 +213,81 @@ const ClientArtisanProfile = () => {
     fetchRecommendedArtisans();
   }, []);
 
-  const serviceApiMapped = useMemo(() => {
-    return (Array.isArray(artisanServiceList) ? artisanServiceList : [])
-      .filter((s) => s?.isActive !== false)
-      .map((s, idx) => {
-        const title =
-          s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
-
-        return {
-          id: s?.id || s?._id || `api-${idx}`,
-          title,
-          description: s?.description || "",
-          price: s?.price ?? s?.amount ?? null,
-          estimatedDuration: s?.estimatedDuration || s?.duration || "",
-          icon: String(title).toLowerCase().includes("battery")
-            ? battery
-            : String(title).toLowerCase().includes("camera")
-            ? cameraImage
-            : String(title).toLowerCase().includes("charg")
-            ? flashImage
-            : settingImage,
-        };
-      });
-  }, [artisanServiceList]);
-
-  const profileServicesMapped = useMemo(() => {
+  const apiServices = useMemo(() => {
     const rawProfileServices = Array.isArray(artisan?.services)
       ? artisan.services
       : [];
-
-    return rawProfileServices
-      .filter((s) => s?.isActive !== false)
-      .map((s, idx) => {
-        const title =
-          s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
-
-        return {
-          id: s?.id || s?._id || `profile-${idx}`,
-          title,
-          description: s?.description || "",
-          price: s?.price ?? s?.amount ?? null,
-          estimatedDuration: s?.estimatedDuration || s?.duration || "",
-          icon: String(title).toLowerCase().includes("battery")
-            ? battery
-            : String(title).toLowerCase().includes("camera")
-            ? cameraImage
-            : String(title).toLowerCase().includes("charg")
-            ? flashImage
-            : settingImage,
-        };
-      });
-  }, [artisan]);
-
-  const skillServicesMapped = useMemo(() => {
     const rawSkillServices = Array.isArray(artisan?.skills) ? artisan.skills : [];
 
-    return rawSkillServices.map((s, idx) => {
-      const title =
-        typeof s === "string"
-          ? s
-          : s?.name || s?.title || s?.serviceName || `Service ${idx + 1}`;
+    console.log("ARTISAN FULL DATA =>", artisan);
+console.log("ARTISAN SERVICES RAW =>", artisan?.services);
 
-      return {
-        id: s?.id || s?._id || `skill-${idx}`,
-        title,
-        description: "",
-        price: null,
-        estimatedDuration: "",
-        icon: String(title).toLowerCase().includes("battery")
-          ? battery
-          : String(title).toLowerCase().includes("camera")
-          ? cameraImage
-          : String(title).toLowerCase().includes("charg")
-          ? flashImage
-          : settingImage,
-      };
-    });
+    return rawProfileServices.length > 0
+    
+      ? rawProfileServices
+          .filter((s) => s?.isActive !== false)
+          .map((s, idx) => {
+            const title =
+              s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
+
+            return {
+              id: s?.id || s?._id || `${idx}`,
+              title,
+              description: s?.description || "",
+              price: s?.price ?? s?.amount ?? null,
+              estimatedDuration: s?.estimatedDuration || s?.duration || "",
+              icon: String(title).toLowerCase().includes("battery")
+                ? battery
+                : String(title).toLowerCase().includes("camera")
+                ? cameraImage
+                : String(title).toLowerCase().includes("charg")
+                ? flashImage
+                : settingImage,
+            };
+          })
+      : rawSkillServices.map((s, idx) => {
+          const title =
+            typeof s === "string"
+              ? s
+              : s?.name || s?.title || s?.serviceName || `Service ${idx + 1}`;
+
+          return {
+            id: s?.id || s?._id || `skill-${idx}`,
+            title,
+            description: "",
+            price: null,
+            estimatedDuration: "",
+            icon: String(title).toLowerCase().includes("battery")
+              ? battery
+              : String(title).toLowerCase().includes("camera")
+              ? cameraImage
+              : String(title).toLowerCase().includes("charg")
+              ? flashImage
+              : settingImage,
+          };
+        });
   }, [artisan]);
 
-  const servicesToShow =
-    serviceApiMapped.length > 0
-      ? serviceApiMapped
-      : profileServicesMapped.length > 0
-      ? profileServicesMapped
-      : skillServicesMapped.length > 0
-      ? skillServicesMapped
-      : fallbackServices;
+  const servicesToShow = apiServices.length > 0 ? apiServices : fallbackServices;
 
   const mappedRecommendations = useMemo(() => {
     return (recommendedArtisans || [])
-      .filter((a) => String(a.id || a._id) !== String(artisanId))
+      .filter((a) => String(a.id || a._id) !== String(artisan?.id || artisanId))
       .map((a) => ({
         id: a.id || a._id,
         name: cleanText(a.fullName, cleanText(a.businessName, "Unnamed Artisan")),
         location: cleanText(a.location, "Unknown location"),
         rating: Number(a.rating || 0),
-        skills: Array.isArray(a.skillSet) ? a.skillSet : [],
-        image: a.profilePicture || johnOne,
+        skills: Array.isArray(a.skillSet)
+          ? a.skillSet
+          : Array.isArray(a.skills)
+          ? a.skills
+          : [],
+        image: a.profilePicture || a.avatar || johnOne,
         isAvailableNow: Boolean(a.isAvailableNow),
+        raw: a,
       }));
-  }, [recommendedArtisans, artisanId]);
+  }, [recommendedArtisans, artisan?.id, artisanId]);
 
   const renderStars = (rating) => {
     const r = Math.max(0, Math.min(5, Number(rating || 0)));
@@ -318,6 +316,42 @@ const ClientArtisanProfile = () => {
           ))}
       </span>
     );
+  };
+
+const handleBookRepair = () => {
+  if (!artisan) return;
+
+  navigate("/client/booking-summary-a", {
+    state: {
+      artisan,
+      draftOrderId: requestState.draftOrderId,
+      uploadedProductId: requestState.uploadedProductId,
+      deviceType: requestState.deviceType,
+      deviceBrand: requestState.deviceBrand,
+      deviceModel: requestState.deviceModel,
+      serviceRequired: requestState.serviceRequired,
+      description: requestState.description,
+      objectName: requestState.objectName,
+      rawConfirm: requestState.rawConfirm,
+    },
+  });
+};
+
+  const handleRecommendedProfile = (recommended) => {
+    navigate(`/client/artisan-profile/${recommended.id}`, {
+      state: {
+        artisan: recommended.raw,
+        draftOrderId: requestState.draftOrderId,
+        uploadedProductId: requestState.uploadedProductId,
+        deviceType: requestState.deviceType,
+        deviceBrand: requestState.deviceBrand,
+        deviceModel: requestState.deviceModel,
+        serviceRequired: requestState.serviceRequired,
+        description: requestState.description,
+        objectName: requestState.objectName,
+        rawConfirm: requestState.rawConfirm,
+      },
+    });
   };
 
   if (loadingArtisan || !artisan) {
@@ -371,12 +405,10 @@ const ClientArtisanProfile = () => {
               </div>
 
               <button
-                onClick={() =>
-                  navigate(`/client/booking/${artisan.id}`, { state: { artisan } })
-                }
+                onClick={handleBookRepair}
                 className="mt-5 bg-white text-[#3E83C4] px-6 py-2 rounded-md font-medium text-sm hover:bg-gray-100 transition cursor-pointer"
               >
-                Request Appointment
+                Book repair
               </button>
             </div>
 
@@ -537,7 +569,7 @@ const ClientArtisanProfile = () => {
                           <img src={service.icon} alt={service.title} className="w-12 h-12" />
                         </div>
 
-                        <h3 className="font-medium text-sm text-[#3e57c4]">
+                        <h3 className="font-medium text-sm text-[#3E83C4]">
                           {service.title}
                         </h3>
 
@@ -603,23 +635,15 @@ const ClientArtisanProfile = () => {
           <h2 className="text-lg font-semibold text-black mb-6">You may also like</h2>
 
           <div className="relative w-full overflow-hidden">
-            <div className="flex min-w-[200%] gap-8 marquee-two">
+            <div className="flex w-max gap-8 marquee">
               {loadingRecommendations ? (
                 <p className="text-sm text-gray-500 px-4">Loading recommendations...</p>
               ) : (
-                [...mappedRecommendations.slice(0, 6), ...mappedRecommendations.slice(0, 6)].map((a, index) => (
-
+                mappedRecommendations.slice(0, 6).map((a) => (
                   <div
-  key={`${a.id}-${index}`}
-  onMouseEnter={() => setHoveredRecommendation(a.id)}
-  onMouseLeave={() => setHoveredRecommendation(null)}
-  className={`min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm cursor-pointer hover:shadow-md transition-all duration-300 ${
-    hoveredRecommendation && hoveredRecommendation !== a.id
-      ? "opacity-30 grayscale"
-      : ""
-  }`}
->
-
+                    key={a.id}
+                    className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
+                  >
                     <div className="relative">
                       <img
                         src={a.image}
@@ -670,7 +694,7 @@ const ClientArtisanProfile = () => {
                       </div>
 
                       <button
-                        onClick={() => navigate(`/client/artisan-profile/${a.id}`)}
+                        onClick={() => handleRecommendedProfile(a)}
                         className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer"
                       >
                         View Profile
@@ -687,4 +711,4 @@ const ClientArtisanProfile = () => {
   );
 };
 
-export default ClientArtisanProfile;
+export default ArtisanProfile;

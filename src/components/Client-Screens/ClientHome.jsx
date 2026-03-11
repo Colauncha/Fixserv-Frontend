@@ -1,11 +1,9 @@
-// new code 
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import WelcomeBonus from "./WelcomeBonus";
-import ReferEarn from "./ReferEarn"; // <-- Imported ReferEarn modal
+import ReferEarn from "./ReferEarn"; 
 
-// Images
+
 import bgImage from "../../assets/client images/client-home/clientbg.png";
 import bgOverlay from "../../assets/client images/client-home/bgoverlay.png";
 import johnOne from "../../assets/client images/client-home/Johnone.png";
@@ -14,7 +12,7 @@ import johnThree from "../../assets/client images/client-home/Johnthree.png";
 import starIcon from "../../assets/client images/client-home/star.png";
 import mark from "../../assets/client images/client-home/mark.png";
 
-// Category Images
+
 import catImageOne from "../../assets/client images/client-home/catjoneone.png";
 import catImageTwo from "../../assets/client images/client-home/catjohntwo.png";
 import catImageThree from "../../assets/client images/client-home/catjohnthree.png";
@@ -22,13 +20,11 @@ import catImageFour from "../../assets/client images/client-home/catjohnfour.png
 import catImageFive from "../../assets/client images/client-home/catjohnfive.png";
 import catImageSix from "../../assets/client images/client-home/catjohnsix.png";
 
-// Banner
 import bannerBg from "../../assets/client images/client-home/banner.png";
 import bannerOverlay from "../../assets/client images/client-home/banner overlay.png";
 
-import { getArtisansByCategory } from "../../api/category.api";
+import { getAllCategories, getArtisansByCategory } from "../../api/category.api";
 
-// Wallet/Fixpoints images
 import walletIcon from "../../assets/client images/client-home/wallet.png";
 import coin from "../../assets/client images/client-home/Fixcoin.png"
 
@@ -54,7 +50,10 @@ const ClientHome = () => {
   const [categoryArtisans, setCategoryArtisans] = useState([]);
   const [loadingCategoryArtisans, setLoadingCategoryArtisans] = useState(false);
 
-  const [activeCategory, setActiveCategory] = useState("Phone");
+const [activeCategory, setActiveCategory] = useState("");
+
+  const [categoryPage, setCategoryPage] = useState(1);
+  const CATEGORY_PAGE_SIZE = 6;
 
   const [apiArtisans, setApiArtisans] = useState([]);
   const [loadingArtisans, setLoadingArtisans] = useState(false);
@@ -63,37 +62,45 @@ const ClientHome = () => {
   const [showReferEarn, setShowReferEarn] = useState(false); // <-- State for referral modal
 
   const searchSectionRef = useRef(null);
+  const marqueeSectionRef = useRef(null);
+
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [animatedCount, setAnimatedCount] = useState(0);
   const [referralCode, setReferralCode] = useState("");
+const [hoveredTopArtisan, setHoveredTopArtisan] = useState(null);
+const [hoveredNewArtisan, setHoveredNewArtisan] = useState(null);
+
+
 
   const previousCountRef = useRef(0);
 
-  const categories = ["Phone", "Tablet", "Laptop", "Home Appliances"];
+  const [categories, setCategories] = useState([]);
 
   /* =========================
      HELPERS
   ========================== */
 
-  const getCategorySlug = (cat) => {
-    const map = {
-      Phone: "phone",
-      Tablet: "tablet",
-      Laptop: "laptop repairs",
-      "Home Appliances": "home appliances",
-    };
-    return map[cat] || cat.toLowerCase();
+  const normalizeCategoryLabel = (value) => {
+    return String(value || "")
+      .trim()
+      .replace(/\s+/g, " ");
   };
 
-  const getCategoryImage = (cat) => {
-    const map = {
-      Phone: catImageOne,
-      Tablet: catImageTwo,
-      Laptop: catImageThree,
-      "Home Appliances": catImageFour,
-    };
-    return map[cat] || catImageOne;
+const getCategoryImage = (cat) => {
+  const value = String(cat || "").trim().toUpperCase();
+
+  const map = {
+    PHONE: catImageOne,
+    PHONES: catImageOne,
+    TABLET: catImageTwo,
+    TABLETS: catImageTwo,
+    LAPTOP: catImageThree,
+    "LAPTOP REPAIRS": catImageThree,
+    "HOME APPLIANCES": catImageFour,
   };
+
+  return map[value] || catImageOne;
+};
 
   const fetchArtisans = async () => {
   const token = localStorage.getItem("fixserv_token");
@@ -130,24 +137,68 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const data = await getAllCategories();
+      console.log("CATEGORIES FROM BACKEND =>", data);
+
+      if (!data?.success) {
+        throw new Error(data?.message || "Failed to fetch categories");
+      }
+
+      const cleanedCategories = Array.from(
+        new Set(
+          (data?.categories || [])
+            .map((item) => normalizeCategoryLabel(item))
+            .filter(Boolean)
+        )
+      );
+
+      setCategories(cleanedCategories);
+
+      setActiveCategory((prev) => {
+        if (prev && cleanedCategories.includes(prev)) return prev;
+        return cleanedCategories[0] || "";
+      });
+    } catch (err) {
+      console.error(
+        "Error fetching categories:",
+        err?.response?.data || err?.message
+      );
+      setCategories([]);
+      setActiveCategory("");
+    }
+  };
+
+  fetchCategories();
+}, []);
+
+useEffect(() => {
   const fetchCategoryArtisans = async () => {
     try {
+      if (!activeCategory) {
+        setCategoryArtisans([]);
+        return;
+      }
+
       setLoadingCategoryArtisans(true);
 
-      const categorySlug = getCategorySlug(activeCategory);
-
       const data = await getArtisansByCategory({
-        category: categorySlug,
-        // location: user?.location || "",  // optional if you want to filter by user location
+        category: activeCategory,
         page: 1,
         limit: 10,
       });
 
-      if (!data?.success) throw new Error(data?.message || "Failed to fetch category artisans");
+      if (!data?.success) {
+        throw new Error(data?.message || "Failed to fetch category artisans");
+      }
 
-      setCategoryArtisans(data.artisans || []);
+      setCategoryArtisans(data?.artisans || []);
     } catch (err) {
-      console.error("Error fetching category artisans:", err?.response?.data || err?.message);
+      console.error(
+        "Error fetching category artisans:",
+        err?.response?.data || err?.message
+      );
       setCategoryArtisans([]);
     } finally {
       setLoadingCategoryArtisans(false);
@@ -157,9 +208,10 @@ useEffect(() => {
   fetchCategoryArtisans();
 }, [activeCategory]);
 
-  /* =========================
-     SEARCH LOGIC
-  ========================== */
+  useEffect(() => {
+    setCategoryPage(1);
+  }, [activeCategory]);
+
 
   const handleSearch = async () => {
     const q = searchQuery.trim();
@@ -230,9 +282,6 @@ useEffect(() => {
     }
   }, [isSearching, searchLoading]);
 
-     /* =========================
-     WELCOME BONUS / REFER & EARN LOGIC (FIXED)
-  ========================== */
 
   const userId = user?.id || user?._id;
 
@@ -264,7 +313,6 @@ useEffect(() => {
       return;
     }
 
-    // done
     setShowWelcomeBonus(false);
     setShowReferEarn(false);
   }, [userId, ONBOARDING_KEY]);
@@ -299,9 +347,6 @@ useEffect(() => {
   fetchReferralCode();
 }, [user?.id, user?._id]);
 
-  /* =========================
-     DERIVED DATA
-  ========================== */
 
 const mappedApiArtisans = (apiArtisans || []).map((artisan) => ({
   id: artisan.id || artisan._id,
@@ -312,12 +357,11 @@ const mappedApiArtisans = (apiArtisans || []).map((artisan) => ({
   image:
     artisan.profilePicture ||
     artisan.profileImage ||
-    johnOne, // fallback
+    johnOne, 
   available: true,
 }));
   
   const getNewest = (list = [], count = 6) => {
-  // backend usually includes createdAt/updatedAt even if not documented
   const sorted = [...list].sort((a, b) => {
     const aDate = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
     const bDate = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
@@ -359,6 +403,16 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
     available: true,
   }));
 
+    const totalCategoryPages = Math.max(
+    1,
+    Math.ceil(filteredArtisans.length / CATEGORY_PAGE_SIZE)
+  );
+
+  const paginatedCategoryArtisans = filteredArtisans.slice(
+    (categoryPage - 1) * CATEGORY_PAGE_SIZE,
+    categoryPage * CATEGORY_PAGE_SIZE
+  );
+
   useEffect(() => {
     const end = mappedSearchResults.length;
     if (previousCountRef.current === end) return;
@@ -386,13 +440,10 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
     return () => clearInterval(counter);
   }, [mappedSearchResults.length]);
 
-  /* =========================
-     RENDER
-  ========================== */
 
   return (
     <div className="w-full">
-      {/* HERO */}
+
       <section className="relative w-full h-[420px] flex items-center justify-center mt-4">
         <img src={bgImage} alt="Client background" className="absolute inset-0 w-full h-full object-cover" />
         <img src={bgOverlay} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -405,7 +456,6 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
             Connect with skilled and trusted professionals in minutes.
           </p>
 
-          {/* Search Bar */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -444,7 +494,7 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
         </div>
       </section>
 
-      {/* SEARCH RESULTS SECTION */}
+
       {isSearching && (
         <section ref={searchSectionRef} className="w-full py-14 transition-opacity duration-500 ease-in-out opacity-100 animate-fadeIn">
            <div className="max-w-7xl mx-auto px-2 md:px-6">
@@ -550,17 +600,19 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
         </section>
       )}
 
-      {/* TOP ARTISANS, CATEGORY, NEW ON FIXSERV, BANNER */}
-      <section className="w-full py-14 overflow-hidden">
+
+<section ref={marqueeSectionRef} className="w-full py-14 overflow-hidden">
   <div className="max-w-7xl mx-auto px-2 md:px-6">
     {/* Title */}
     <h2 className="text-lg font-semibold text-black mb-6">
       Top Artisans near you
     </h2>
 
-    {/* Marquee Wrapper */}
+
     <div className="relative w-full overflow-hidden">
-      <div className="flex w-max gap-8 marquee">
+<div className="flex min-w-[200%] gap-8 marquee-one">
+
+
   {[...Array(2)].map((_, loopIndex) => (
     <React.Fragment key={loopIndex}>
       {loadingArtisans ? (
@@ -570,9 +622,15 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
       ) : (
         mappedApiArtisans.slice(0, 6).map((artisan) => (
           <div
-            key={`${loopIndex}-${artisan.id}`}
-            className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
-          >
+  key={`${loopIndex}-${artisan.id}`}
+onMouseEnter={() => setHoveredTopArtisan(artisan.id)}
+onMouseLeave={() => setHoveredTopArtisan(null)}
+  className={`min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer ${
+    hoveredTopArtisan && hoveredTopArtisan !== artisan.id
+ ? "opacity-30 grayscale" : ""
+  }`}
+>
+
             <div className="relative">
               <img
   src={artisan.image}
@@ -625,7 +683,7 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
               </div>
 
               <button
-                // onClick={() => navigate("/client/artisan-profile")}
+
                 onClick={() =>
     navigate(`/client/artisan-profile/${artisan.id}`)
   }
@@ -644,7 +702,7 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
     </div>
   </div>
 </section>
-      {/* ...all other sections stay the same as your original code... */}
+
 <section className="w-full py-14 overflow-hidden">
   <div className="max-w-7xl mx-auto px-2 md:px-6">
     {/* Title */}
@@ -652,9 +710,10 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
       New on Fixserv
     </h2>
 
-    {/* Marquee Wrapper */}
+
     <div className="relative w-full overflow-hidden">
-      <div className="flex w-max gap-8 marquee">
+      <div className="flex min-w-[200%] gap-8 marquee-two">
+
         {[...Array(2)].map((_, loopIndex) => (
           <React.Fragment key={loopIndex}>
             {loadingArtisans ? (
@@ -664,9 +723,15 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
             ) : (
               mappedNewArtisans.map((artisan) => (
                 <div
-                  key={`${loopIndex}-${artisan.id}`}
-                  className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
-                >
+  key={`${loopIndex}-${artisan.id}`}
+onMouseEnter={() => setHoveredNewArtisan(artisan.id)}
+onMouseLeave={() => setHoveredNewArtisan(null)}
+  className={`min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer ${
+    hoveredNewArtisan && hoveredNewArtisan !== artisan.id
+ ? "opacity-30 grayscale" : ""
+  }`}
+>
+
                   <div className="relative">
                     <img
                       src={artisan.image}
@@ -738,7 +803,7 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
 <section className="w-full py-14 overflow-hidden">
   <div className="max-w-7xl mx-auto px-2 md:px-6">
 
-    {/* CATEGORY */}
+
     <p className="text-sm font-medium text-black mb-3">
       By Category:
     </p>
@@ -760,19 +825,24 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
       ))}
     </div>
 
-    {/* ARTISANS GRID */}
     <div className="relative w-full mt-10">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
 
 {loadingCategoryArtisans && (
   <p className="text-sm text-gray-500">Loading category artisans...</p>
 )}
-        {filteredArtisans.map((artisan) => (
+
+{!loadingCategoryArtisans && activeCategory && filteredArtisans.length === 0 && (
+  <p className="text-sm text-gray-500">
+    No artisans found for {activeCategory}.
+  </p>
+)}
+                {paginatedCategoryArtisans.map((artisan) => (
           <div
             key={artisan.id}
             className="border border-[#c9d9e8] rounded-xl p-4 flex gap-4 items-center"
           >
-            {/* IMAGE */}
+           
             <div className="relative">
               <img
                 src={artisan.image}
@@ -780,7 +850,7 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
                 className="w-70 h-45 rounded-xl object-cover"
               />
 
-              {/* EARLY USER BADGE */}
+            
               <span className="absolute -top-0.5 -right-2 bg-[#6C63FF] text-white text-[10px] px-3 py-1 rounded-full">
                 Early User
               </span>
@@ -795,10 +865,8 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
                 <span className="text-[#3E83C4] text-xs">✔</span>
               </div>
 
-             <p className="text-lg text-[#535353] mt-2 mb-2">
-  {(categoryArtisans?.[0]?.categories && categoryArtisans?.[0]?.categories.length)
-    ? categoryArtisans?.[0]?.categories.join(", ")
-    : "Service Provider"}
+            <p className="text-lg text-[#535353] mt-2 mb-2">
+  {activeCategory || "Service Provider"}
 </p>
 
               <div className="flex items-center gap-1 mt-6 text-sm text-black">
@@ -824,6 +892,50 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
       </div>
     </div>
 
+      {!loadingCategoryArtisans && filteredArtisans.length > CATEGORY_PAGE_SIZE && (
+        <div className="flex items-center justify-center gap-2 mt-8 flex-wrap">
+          <button
+            onClick={() => setCategoryPage((prev) => Math.max(prev - 1, 1))}
+            disabled={categoryPage === 1}
+            className={`px-4 py-2 rounded-md text-sm font-medium border transition ${
+              categoryPage === 1
+                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                : "bg-white text-[#3E83C4] border-[#3E83C4] hover:bg-[#3E83C4] hover:text-white cursor-pointer"
+            }`}
+          >
+            Prev
+          </button>
+
+          {Array.from({ length: totalCategoryPages }, (_, index) => index + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCategoryPage(page)}
+              className={`w-10 h-10 rounded-md text-sm font-medium transition ${
+                categoryPage === page
+                  ? "bg-[#3E83C4] text-white"
+                  : "bg-[#EAF4FF] text-[#3E83C4] hover:bg-[#d7ebff] cursor-pointer"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
+            onClick={() =>
+              setCategoryPage((prev) => Math.min(prev + 1, totalCategoryPages))
+            }
+            disabled={categoryPage === totalCategoryPages}
+            className={`px-4 py-2 rounded-md text-sm font-medium border transition ${
+              categoryPage === totalCategoryPages
+                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                : "bg-white text-[#3E83C4] border-[#3E83C4] hover:bg-[#3E83C4] hover:text-white cursor-pointer"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      )}  
+  
   </div>
 </section>
 
@@ -858,17 +970,17 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
       <button className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-7 py-3 rounded-md font-medium transition cursor-pointer">
         Chat With Us
       </button>
+      {/* <button onClick={() => navigate("/chat-with-us")} className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-7 py-3 rounded-md font-medium transition cursor-pointer">
+        Chat With Us
+      </button> */}
     </div>
   </div>
 </section>
-      {/* =====================
-         MODALS
-      ====================== */}
+
             {showWelcomeBonus && (
   <WelcomeBonus
     onClose={() => {
-      // if user closes without claiming, you can either keep step as welcome or move on.
-      // I’ll keep it as welcome so it will show again until they claim.
+
       setShowWelcomeBonus(false);
     }}
     onClaim={() => {

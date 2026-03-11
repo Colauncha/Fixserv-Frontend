@@ -14,9 +14,17 @@ const ProtectedRoute = ({ allowedRoles }) => {
 
   if (loading) return null;
 
-  if (!isAuthenticated) {
-    return <Navigate to="/log-in" replace />;
+if (!isAuthenticated) {
+  if (location.pathname.startsWith("/artisan")) {
+    return <Navigate to="/artisan-login" replace />;
   }
+
+  if (location.pathname.startsWith("/admin")) {
+    return <Navigate to="/admin-login" replace />;
+  }
+
+  return <Navigate to="/log-in" replace />;
+}
 
   if (!user?.role || !allowedRoles.includes(user.role)) {
     return <Navigate to={dashboardByRole[user?.role] || "/"} replace />;

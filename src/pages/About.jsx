@@ -289,50 +289,42 @@ const About = () => {
 
           {/* RIGHT — ACCORDION */}
           <div className="space-y-4">
-            {faqs.map((faq, index) => (
-              <div
-                key={index}
-                className="bg-[#EEF6FF] rounded-md overflow-hidden"
-              >
-                {/* QUESTION */}
-                <button
-                  onClick={() => toggleFAQ(index)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-left"
-                >
-                  <span className="text-black font-medium">
-                    {faq.question}
-                  </span>
-                  <span className="text-xl text-black cursor-pointer">
-                    {activeIndex === index ? "−" : "+"}
-                  </span>
-                </button>
+  {faqs.map((faq, index) => (
+    <div key={index} className="bg-[#EEF6FF] rounded-md overflow-hidden">
 
-                {/* ANSWER */}
-                <div
-                  className={`px-5 text-black text-sm transition-all duration-300 ease-in-out
-                    ${
-                      activeIndex === index
-                        ? "max-h-40 pb-4 opacity-100"
-                        : "max-h-0 opacity-0 overflow-hidden"
-                    }
-                  `}
-                >
-                  {faq.answer}
-                </div>
-              </div>
-            ))}
+      {/* QUESTION */}
+      <button
+        onClick={() => toggleFAQ(index)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left"
+      >
+        <span className="text-black font-medium">
+          {faq.question}
+        </span>
 
-            {/* CTA */}
-            <div className="pt-6">
-              <p className="text-black mb-3">
-                Got anymore questions?
-              </p>
+        <span
+          className={`text-2xl font-bold transition-transform duration-300 ${
+            activeIndex === index ? "rotate-45" : "rotate-0"
+          }`}
+        >
+          +
+        </span>
+      </button>
 
-              <button onClick={() => navigate("/contactUs")} className="border-2 border-[#3E83C4] text-[#3E83C4] px-6 py-2 rounded-md font-medium hover:bg-[#EEF6FF] transition cursor-pointer">
-                Get In Touch
-              </button>
-            </div>
-          </div>
+      {/* ANSWER */}
+      <div
+        className={`grid transition-all duration-300 ease-in-out ${
+          activeIndex === index
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden px-5 pb-4 text-sm text-black">
+          {faq.answer}
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
 
         </div>
       </div>

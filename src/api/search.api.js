@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const SEARCH_API = axios.create({
-  baseURL: "", // ✅ relative so Vite proxy handles it
+  baseURL: "", 
   headers: { "Content-Type": "application/json" },
   timeout: 30000,
 });
@@ -26,7 +26,7 @@ SEARCH_API.interceptors.response.use(
       errors: error?.response?.data?.errors,
     });
 
-    // 👇 shows the exact message if it's validation
+    // shows the exact message if it's validation
     const first = error?.response?.data?.errors?.[0];
     if (first) console.log("SEARCH FIRST ERROR =>", first);
 
@@ -39,7 +39,7 @@ export const searchServicesAndArtisans = async (params) => {
     keyword: (params?.keyword || "").trim(),
   };
 
-  // ✅ Only include isAvailableNow if explicitly provided
+  // Only include isAvailableNow if explicitly provided
   if (typeof params?.isAvailableNow !== "undefined") {
     queryParams.isAvailableNow = params.isAvailableNow;
   }

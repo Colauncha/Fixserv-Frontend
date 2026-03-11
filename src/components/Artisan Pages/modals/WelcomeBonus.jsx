@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import welcomeImg from "../../assets/client images/bonus.png";
 import React, { useEffect, useState } from "react";
@@ -8,7 +7,7 @@ const WelcomeBonus = ({ onClose }) => {
 const [bonusPoints, setBonusPoints] = useState(200);
 
 
-  // Close on ESC key
+
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === "Escape") {
@@ -62,9 +61,6 @@ const [bonusPoints, setBonusPoints] = useState(200);
         </p>
 
         {/* Points */}
-        {/* <p className="text-[#3E83C4] font-semibold text-lg mb-2">
-          +200 points
-        </p> */}
         <p className="text-[#3E83C4] font-semibold text-lg mb-2">
 +200 points
 </p>
@@ -74,7 +70,7 @@ const [bonusPoints, setBonusPoints] = useState(200);
           Every Fixpoint brings you closer to rewards and exclusive benefits
         </p>
 
-        {/* Claim Button */}
+       
         <button
           onClick={() => {
             onClose();
