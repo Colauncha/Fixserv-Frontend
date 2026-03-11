@@ -113,42 +113,29 @@ const TrackRepairA = () => {
     return () => clearInterval(interval);
   }, [orderId, enableLiveTracking]);
 
-  const booking = useMemo(() => {
-    if (order) {
-      const createdAt = formatDate(order.createdAt);
-      const fallbackImageUrl =
-        localStorage.getItem("fixserv_last_uploaded_image_url") || "";
+const booking = useMemo(() => {
+  if (!bookingFromState) return null;
 
-      return {
-        id: order.id || order._id || orderId,
-        status: order.status || "PENDING_ARTISAN_RESPONSE",
-        currentStep: statusToStep(order.status),
-        timeline: [createdAt || null, null, null, null, null],
-        brand: order.deviceBrand || bookingFromState?.brand || "",
-        model: order.deviceModel || bookingFromState?.model || "",
-        damagedDeviceImageUrl:
-          order.damagedDeviceImageUrl ||
-          bookingFromState?.damagedDeviceImageUrl ||
-          fallbackImageUrl,
-      };
-    }
+  const createdAt = formatDate(order?.createdAt || new Date().toISOString());
 
-    if (bookingFromState) {
-      const nowStamp = formatDate(new Date().toISOString());
+  return {
+    id: bookingFromState.id || orderId,
 
-      return {
-        id: bookingFromState.id || orderId,
-        status: "PENDING_ARTISAN_RESPONSE",
-        currentStep: 0,
-        timeline: [nowStamp, null, null, null, null],
-        brand: bookingFromState.brand || "",
-        model: bookingFromState.model || "",
-        damagedDeviceImageUrl: bookingFromState.damagedDeviceImageUrl || "",
-      };
-    }
+    // status comes from API if available
+    status: order?.status || "PENDING_ARTISAN_RESPONSE",
 
-    return null;
-  }, [order, bookingFromState, orderId]);
+    currentStep: order
+      ? statusToStep(order.status)
+      : statusToStep("PENDING_ARTISAN_RESPONSE"),
+
+    timeline: [createdAt || null, null, null, null, null],
+
+    // keep original booking data EXACTLY
+    brand: bookingFromState.brand,
+    model: bookingFromState.model,
+    damagedDeviceImageUrl: bookingFromState.damagedDeviceImageUrl || "",
+  };
+}, [order, bookingFromState, orderId]);
 
   const displayStatus = booking?.status || "PENDING_ARTISAN_RESPONSE";
 

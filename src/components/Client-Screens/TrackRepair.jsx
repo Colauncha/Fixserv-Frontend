@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { CheckCircle2, Circle, ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { getOrderById } from "../../api/order.api";
@@ -21,6 +21,18 @@ const statusToStep = (status) => {
   if (s === "COMPLETED") return 4;
 
   return 0;
+};
+
+const formatStatusLabel = (status) => {
+  const s = String(status || "").toUpperCase();
+
+  if (s === "PENDING_ARTISAN_RESPONSE") return "Pending Artisan Response";
+  if (s === "ACCEPTED") return "Accepted";
+  if (s === "IN_PROGRESS") return "In Progress";
+  if (s === "WORK_COMPLETED") return "Work Completed";
+  if (s === "COMPLETED") return "Completed";
+
+  return status || "Pending Artisan Response";
 };
 
 const formatDate = (value) => {
@@ -87,18 +99,28 @@ const TrackRepair = () => {
   }, [orderId, shouldFetchLiveOrder]);
 
   const booking = useMemo(() => {
+    const fallbackImageUrl =
+      localStorage.getItem("fixserv_last_uploaded_image_url") || "";
+
     if (order) {
       const createdAt = formatDate(order.createdAt);
-      const fallbackImageUrl =
-        localStorage.getItem("fixserv_last_uploaded_image_url") || "";
 
       return {
-        id: order.id || order._id || orderId,
+        id: order.id || order._id || order.orderId || orderId,
+        orderId: order.id || order._id || order.orderId || orderId,
         status: order.status || "PENDING_ARTISAN_RESPONSE",
         currentStep: statusToStep(order.status),
         timeline: [createdAt || null, null, null, null, null],
-        brand: order.deviceBrand || bookingFromState?.brand || "",
-        model: order.deviceModel || bookingFromState?.model || "",
+        brand:
+          order.deviceBrand ||
+          bookingFromState?.brand ||
+          bookingFromState?.deviceBrand ||
+          "",
+        model:
+          order.deviceModel ||
+          bookingFromState?.model ||
+          bookingFromState?.deviceModel ||
+          "",
         damagedDeviceImageUrl:
           order.damagedDeviceImageUrl ||
           bookingFromState?.damagedDeviceImageUrl ||
@@ -110,13 +132,25 @@ const TrackRepair = () => {
       const nowStamp = formatDate(new Date().toISOString());
 
       return {
-        id: bookingFromState.id || orderId,
-        status: "PENDING_ARTISAN_RESPONSE",
-        currentStep: 0,
+        id:
+          bookingFromState.id ||
+          bookingFromState.orderId ||
+          bookingFromState.draftOrderId ||
+          orderId,
+        orderId:
+          bookingFromState.orderId ||
+          bookingFromState.id ||
+          bookingFromState.draftOrderId ||
+          orderId,
+        status: bookingFromState.status || "PENDING_ARTISAN_RESPONSE",
+        currentStep: statusToStep(
+          bookingFromState.status || "PENDING_ARTISAN_RESPONSE"
+        ),
         timeline: [nowStamp, null, null, null, null],
-        brand: bookingFromState.brand || "",
-        model: bookingFromState.model || "",
-        damagedDeviceImageUrl: bookingFromState.damagedDeviceImageUrl || "",
+        brand: bookingFromState.brand || bookingFromState.deviceBrand || "",
+        model: bookingFromState.model || bookingFromState.deviceModel || "",
+        damagedDeviceImageUrl:
+          bookingFromState.damagedDeviceImageUrl || fallbackImageUrl,
       };
     }
 
@@ -177,22 +211,30 @@ const TrackRepair = () => {
           </h3>
 
           <p className="text-lg font-normal text-black">
-            {`${booking.brand} ${booking.model}`.trim()}
+            {`${booking.brand} ${booking.model}`.trim() || "Device repair"}
           </p>
         </div>
 
         <div className="flex justify-center items-center gap-2 mt-3">
           <p className="text-sm text-[#535353]">Status:</p>
           <span className="bg-[#F6E4C7] text-[#F99F10] text-xs px-3 py-[2px] rounded-full">
-            {displayStatus}
+            {formatStatusLabel(displayStatus)}
           </span>
         </div>
 
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500">
-            Live tracking is temporarily unavailable. Showing your latest booking details.
-          </p>
-        </div>
+        {!shouldFetchLiveOrder && (
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500">
+              Live tracking is temporarily unavailable. Showing your latest booking details.
+            </p>
+          </div>
+        )}
+
+        {orderError ? (
+          <div className="mt-4 text-center">
+            <p className="text-xs text-red-500">{orderError}</p>
+          </div>
+        ) : null}
 
         <div className="mt-10">
           {booking.damagedDeviceImageUrl && (

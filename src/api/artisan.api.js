@@ -1,4 +1,5 @@
 const USER_BASE_URL = "https://dev-user-api.fixserv.co/api";
+const SERVICE_BASE_URL = "https://dev-service-api.fixserv.co/api/service";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("fixserv_token");
@@ -47,8 +48,24 @@ export const getAllArtisans = async () => {
   return json?.users || json?.data || [];
 };
 
+export const updateArtisanData = async (artisanId, payload) => {
+  const res = await fetch(`${USER_BASE_URL}/admin/${artisanId}`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const json = await safeJson(res);
+
+  if (!res.ok) {
+    throw new Error(json?.message || `Failed to update artisan data (${res.status})`);
+  }
+
+  return json?.data || json?.user || json;
+};
+
 export const getArtisanServices = async (artisanId) => {
-  const res = await fetch(`/api/service/artisan/${artisanId}`, {
+  const res = await fetch(`${SERVICE_BASE_URL}/artisan/${artisanId}`, {
     headers: getAuthHeaders(),
   });
 
@@ -64,4 +81,36 @@ export const getArtisanServices = async (artisanId) => {
   if (Array.isArray(json?.data?.services)) return json.data.services;
 
   return [];
+};
+
+export const createArtisanService = async (payload) => {
+  const res = await fetch(`${SERVICE_BASE_URL}/createService`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const json = await safeJson(res);
+
+  if (!res.ok) {
+    throw new Error(json?.message || `Failed to create service (${res.status})`);
+  }
+
+  return json?.data || json?.service || json;
+};
+
+export const updateArtisanService = async (serviceId, payload) => {
+  const res = await fetch(`${SERVICE_BASE_URL}/${serviceId}`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const json = await safeJson(res);
+
+  if (!res.ok) {
+    throw new Error(json?.message || `Failed to update service (${res.status})`);
+  }
+
+  return json?.data || json?.service || json;
 };

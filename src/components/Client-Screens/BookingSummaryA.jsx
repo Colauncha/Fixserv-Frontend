@@ -44,43 +44,44 @@ const BookingSummaryA = () => {
   const artisan = state?.artisan || null;
 
   const extractConfirmedOrderId = (rawConfirm, fallbackId = "") => {
-  return (
-    rawConfirm?.data?.orderId ||
-    rawConfirm?.data?.id ||
-    rawConfirm?.data?.order?.id ||
-    rawConfirm?.data?.order?._id ||
-    rawConfirm?.orderId ||
-    rawConfirm?.id ||
-    rawConfirm?.order?.id ||
-    rawConfirm?.order?._id ||
-    fallbackId
+    return (
+      rawConfirm?.data?.orderId ||
+      rawConfirm?.data?.id ||
+      rawConfirm?.data?.order?.id ||
+      rawConfirm?.data?.order?._id ||
+      rawConfirm?.orderId ||
+      rawConfirm?.id ||
+      rawConfirm?.order?.id ||
+      rawConfirm?.order?._id ||
+      fallbackId
+    );
+  };
+
+  const confirmedOrderId = extractConfirmedOrderId(
+    state?.rawConfirm,
+    state?.draftOrderId || ""
   );
-};
 
-const confirmedOrderId = extractConfirmedOrderId(
-  state?.rawConfirm,
-  state?.draftOrderId || ""
-);
-
-const booking = {
-  draftOrderId: state?.draftOrderId || "",
-  orderId: confirmedOrderId,
-  uploadedProductId: state?.uploadedProductId || "",
-  deviceType: state?.deviceType || "",
-  brand: state?.deviceBrand || "",
-  model: state?.deviceModel || "",
-  serviceRequired: state?.serviceRequired || "",
-  issueDescription: state?.description || "",
-  objectName: state?.objectName || "",
-  rawConfirm: state?.rawConfirm || null,
-};
+  const booking = {
+    draftOrderId: state?.draftOrderId || "",
+    orderId: confirmedOrderId,
+    uploadedProductId: state?.uploadedProductId || "",
+    deviceType: state?.deviceType || "",
+    brand: state?.deviceBrand || "",
+    model: state?.deviceModel || "",
+    serviceRequired: state?.serviceRequired || "",
+    issueDescription: state?.description || "",
+    objectName: state?.objectName || "",
+    rawConfirm: state?.rawConfirm || null,
+    serviceCost: state?.serviceCost ?? null,
+  };
 
   const cleanText = (v, fallback = "") =>
     typeof v === "string" && v.trim() === "" ? fallback : v ?? fallback;
 
   const formatNaira = (value) => {
     const num = Number(value);
-    if (Number.isNaN(num)) return value;
+    if (value == null || Number.isNaN(num)) return value;
     return `₦${num.toLocaleString("en-NG")}`;
   };
 
@@ -89,16 +90,32 @@ const booking = {
       ? booking.serviceRequired
       : "Selected Service";
 
-const bookingIdToShow = finalBooking?.id || booking?.orderId || booking?.draftOrderId || "—";
+  const bookingIdToShow =
+    finalBooking?.id || booking?.orderId || booking?.draftOrderId || "—";
 
   const professionLabel =
     artisan?.profession ||
     artisan?.roleTitle ||
     artisan?.categoryTitle ||
     artisan?.specialty ||
+    (Array.isArray(artisan?.skills) && artisan.skills.length > 0
+      ? typeof artisan.skills[0] === "string"
+        ? artisan.skills[0]
+        : artisan.skills[0]?.name || artisan.skills[0]?.title || ""
+      : "") ||
+    (Array.isArray(artisan?.categories) && artisan.categories.length > 0
+      ? typeof artisan.categories[0] === "string"
+        ? artisan.categories[0]
+        : artisan.categories[0]?.name || artisan.categories[0]?.title || ""
+      : "") ||
     "Technician";
 
-  const reviewsCount = Number(artisan?.reviewsCount || artisan?.reviews || 0);
+  const reviewsCount = Number(
+    artisan?.reviewsCount ||
+      (Array.isArray(artisan?.reviewsList) ? artisan.reviewsList.length : 0) ||
+      artisan?.reviews ||
+      0
+  );
 
   const yearsFromCreatedAt = artisan?.createdAt
     ? Math.max(
@@ -115,39 +132,50 @@ const bookingIdToShow = finalBooking?.id || booking?.orderId || booking?.draftOr
       ? artisan.categories.slice(0, 3)
       : ["Phone", "Tablet", "Laptop"];
 
-  const selectedServiceFromArtisan = useMemo(() => {
+  const artisanServices = useMemo(() => {
     const services = Array.isArray(artisan?.services) ? artisan.services : [];
+    return services.filter((s) => s?.isActive !== false);
+  }, [artisan]);
 
+  const selectedServiceFromArtisan = useMemo(() => {
     const normalizedRequired = String(booking?.serviceRequired || "")
       .toLowerCase()
       .trim();
 
-    if (!normalizedRequired || services.length === 0) return null;
+    if (artisanServices.length === 0) return null;
+
+    if (!normalizedRequired) {
+      return artisanServices[0] || null;
+    }
 
     return (
-      services.find((s) => {
+      artisanServices.find((s) => {
         const title = String(
           s?.title || s?.name || s?.serviceName || ""
         ).toLowerCase().trim();
 
-        return title === normalizedRequired || title.includes(normalizedRequired);
-      }) || null
+        return (
+          title === normalizedRequired ||
+          title.includes(normalizedRequired) ||
+          normalizedRequired.includes(title)
+        );
+      }) || artisanServices[0] || null
     );
-  }, [artisan, booking?.serviceRequired]);
+  }, [artisanServices, booking?.serviceRequired]);
 
-const serviceCost =
-  selectedServiceFromArtisan?.price ??
-  booking?.serviceCost ??
-  artisan?.startingPrice ??
-  null;
+  const serviceCost =
+    selectedServiceFromArtisan?.price ??
+    booking?.serviceCost ??
+    artisan?.service?.price ??
+    artisan?.startingPrice ??
+    null;
 
-const platformFee = booking?.platformFee ?? null;
-const taxFee = booking?.taxFee ?? null;
+  const platformFee = 1000;
 
-const totalFee =
-  serviceCost != null && platformFee != null && taxFee != null
-    ? Number(serviceCost) + Number(platformFee) + Number(taxFee)
-    : null;
+  const totalFee =
+    serviceCost != null
+      ? Number(serviceCost) + Number(platformFee)
+      : null;
 
   const handleWalletPayment = async () => {
     try {
@@ -156,31 +184,31 @@ const totalFee =
       setActiveModal(MODAL.PROCESSING);
 
       if (!artisan) throw new Error("Selected artisan not found.");
-if (!booking?.orderId && !booking?.draftOrderId) {
-  throw new Error("Booking id not found. Please start again.");
-}
+      if (!booking?.orderId && !booking?.draftOrderId) {
+        throw new Error("Booking id not found. Please start again.");
+      }
 
       await new Promise((resolve) => setTimeout(resolve, 1200));
 
-const finalOrderId = booking.orderId || booking.draftOrderId;
+      const finalOrderId = booking.orderId || booking.draftOrderId;
 
-const finalData = {
-  id: finalOrderId,
-  uploadedProductId: booking.uploadedProductId,
-  deviceType: booking.deviceType,
-  brand: booking.brand,
-  model: booking.model,
-  serviceRequired: booking.serviceRequired,
-  issueDescription: booking.issueDescription,
-  objectName: booking.objectName,
-  serviceCost,
-  platformFee,
-  taxFee,
-  totalFee,
-  artisan,
-};
+      const finalData = {
+        id: finalOrderId,
+        orderId: finalOrderId,
+        uploadedProductId: booking.uploadedProductId,
+        deviceType: booking.deviceType,
+        brand: booking.brand,
+        model: booking.model,
+        serviceRequired: booking.serviceRequired,
+        issueDescription: booking.issueDescription,
+        objectName: booking.objectName,
+        serviceCost,
+        platformFee,
+        totalFee,
+        artisan,
+      };
 
-localStorage.setItem("fixserv_last_order_id", finalOrderId);
+      localStorage.setItem("fixserv_last_order_id", finalOrderId);
 
       setFinalBooking(finalData);
       setActiveModal(MODAL.SUCCESS);
@@ -205,7 +233,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
     };
   }, [activeModal]);
 
-  if (!artisan || !booking?.draftOrderId) {
+  if (!artisan || (!booking?.draftOrderId && !booking?.orderId)) {
     return (
       <div className="py-20 text-center text-gray-500">
         Booking details not found. Please start again.
@@ -238,7 +266,12 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
             <div className="bg-[#EEF6FF] rounded-xl p-4 w-[290px]">
               <div className="flex flex-col">
                 <img
-                  src={artisan?.profilePicture || artisan?.avatar || profileImage}
+                  src={
+                    artisan?.profilePicture ||
+                    artisan?.profileImage ||
+                    artisan?.avatar ||
+                    profileImage
+                  }
                   alt="artisan"
                   className="w-[250px] h-[220px] rounded-xl object-cover mb-4"
                 />
@@ -333,18 +366,15 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
                 <div className="pt-6 space-y-2">
                   <p>
                     <span className="text-[#656565]">Service Cost:</span>{" "}
-                    {serviceCost == null ? "To be confirmed" : formatNaira(serviceCost)}
+                    {serviceCost == null ? "—" : formatNaira(serviceCost)}
                   </p>
                   <p>
                     <span className="text-[#656565]">Platform Fee:</span>{" "}
-                    {platformFee == null ? "To be confirmed" : formatNaira(platformFee)}
+                    {formatNaira(platformFee)}
                   </p>
-                  <p>
-                    <span className="text-[#656565]">Tax Fee:</span>{" "}
-                    {taxFee == null ? "To be confirmed" : formatNaira(taxFee)}
-                  </p>
+
                   <p className="text-base font-semibold text-blue-600 pt-2">
-                    Total Fee: {totalFee == null ? "To be confirmed" : formatNaira(totalFee)}
+                    Total Fee: {totalFee == null ? "—" : formatNaira(totalFee)}
                   </p>
                 </div>
               </div>
@@ -499,7 +529,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
                         </p>
 
                         <div className="text-sm space-y-1 text-left mt-4">
-                          <p>Total: {formatNaira(totalFee)}</p>
+                          <p>Total: {totalFee == null ? "—" : formatNaira(totalFee)}</p>
                           <p>Balance: ₦—</p>
                           <p>Balance After Payment: ₦—</p>
                         </div>
@@ -554,12 +584,12 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
                         <button
                           onClick={() =>
                             navigate(`/client/track-repair-a/${finalBooking?.id}`, {
-  state: {
-    orderId: finalBooking?.id,
-    artisan,
-    booking: finalBooking,
-  },
-})
+                              state: {
+                                orderId: finalBooking?.id,
+                                artisan,
+                                booking: finalBooking,
+                              },
+                            })
                           }
                           disabled={!finalBooking?.id}
                           className={`w-full bg-blue-600 text-white py-2 rounded-md ${

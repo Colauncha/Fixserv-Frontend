@@ -48,8 +48,9 @@ const BookingSummary = () => {
 
   const [selected, setSelected] = useState("Mastercard");
 
-  const artisan = location.state?.artisan;
-  const booking = location.state?.booking;
+  const state = location.state || {};
+  const artisan = state?.artisan || null;
+  const booking = state?.booking || null;
 
   const cleanText = (v, fallback = "") =>
     typeof v === "string" && v.trim() === "" ? fallback : v ?? fallback;
@@ -77,6 +78,16 @@ const BookingSummary = () => {
     artisan?.roleTitle ||
     artisan?.categoryTitle ||
     artisan?.specialty ||
+    (Array.isArray(artisan?.skills) && artisan.skills.length > 0
+      ? typeof artisan.skills[0] === "string"
+        ? artisan.skills[0]
+        : artisan.skills[0]?.name || artisan.skills[0]?.title || ""
+      : "") ||
+    (Array.isArray(artisan?.categories) && artisan.categories.length > 0
+      ? typeof artisan.categories[0] === "string"
+        ? artisan.categories[0]
+        : artisan.categories[0]?.name || artisan.categories[0]?.title || ""
+      : "") ||
     "Technician";
 
   const reviewsCount = Number(
@@ -111,7 +122,7 @@ const BookingSummary = () => {
 
   useEffect(() => {
     const fetchServices = async () => {
-      if (!artisan?.id && !artisan?._id) {
+      if (!artisan?.id && !artisan?._id && !artisan?.artisanId) {
         setArtisanServiceList([]);
         setLoadingServices(false);
         return;
@@ -119,7 +130,7 @@ const BookingSummary = () => {
 
       try {
         setLoadingServices(true);
-        const artisanId = artisan?.id || artisan?._id;
+        const artisanId = artisan?.id || artisan?._id || artisan?.artisanId;
         const res = await getArtisanServices(artisanId);
         setArtisanServiceList(Array.isArray(res) ? res : []);
       } catch (err) {
@@ -143,7 +154,7 @@ const BookingSummary = () => {
           `Service ${idx + 1}`;
 
     return {
-      id: service?.id || service?._id || `${prefix}-${idx}`,
+      id: service?.id || service?._id || service?.serviceId || `${prefix}-${idx}`,
       title,
       description: service?.description || "",
       price: service?.price ?? service?.amount ?? null,
@@ -210,15 +221,13 @@ const BookingSummary = () => {
     artisan?.startingPrice ??
     null;
 
-  const platformFee = booking?.platformFee ?? null;
-  const taxFee = booking?.taxFee ?? null;
+const platformFee = 1000;
+// const taxFee = booking?.taxFee ?? null;
 
-  const totalFee =
-    serviceCost != null && platformFee != null && taxFee != null
-      ? Number(serviceCost) + Number(platformFee) + Number(taxFee)
-      : serviceCost != null
-      ? Number(serviceCost)
-      : null;
+const totalFee =
+  serviceCost != null
+    ? Number(serviceCost) + Number(platformFee)
+    : null;
 
   const uploadDeviceImage = async (token, userId) => {
     const fd = new FormData();
@@ -333,11 +342,14 @@ const BookingSummary = () => {
       setFinalBooking({
         ...booking,
         id: orderId,
+        orderId,
+        uploadedProductId: uploaded.uploadedProductId,
         damagedDeviceImageUrl: uploaded.imageUrl,
         serviceCost,
-        platformFee,
-        taxFee,
-        totalFee,
+platformFee,
+// taxFee,
+totalFee,
+        artisan,
       });
 
       setActiveModal(MODAL.SUCCESS);
@@ -395,7 +407,12 @@ const BookingSummary = () => {
             <div className="bg-[#EEF6FF] rounded-xl p-4 w-[290px]">
               <div className="flex flex-col">
                 <img
-                  src={artisan?.profilePicture || artisan?.avatar || profileImage}
+                  src={
+                    artisan?.profilePicture ||
+                    artisan?.profileImage ||
+                    artisan?.avatar ||
+                    profileImage
+                  }
                   alt="artisan"
                   className="w-[250px] h-[220px] rounded-xl object-cover mb-4"
                 />
@@ -502,21 +519,23 @@ const BookingSummary = () => {
                       : formatNaira(serviceCost)}
                   </p>
                   <p>
-                    <span className="text-[#656565]">Platform Fee:</span>{" "}
-                    {platformFee == null ? "To be confirmed" : formatNaira(platformFee)}
-                  </p>
-                  <p>
-                    <span className="text-[#656565]">Tax Fee:</span>{" "}
-                    {taxFee == null ? "To be confirmed" : formatNaira(taxFee)}
-                  </p>
-                  <p className="text-base font-semibold text-blue-600 pt-2">
-                    Total Fee:{" "}
-                    {loadingServices
-                      ? "Loading..."
-                      : totalFee == null
-                      ? "To be confirmed"
-                      : formatNaira(totalFee)}
-                  </p>
+  <span className="text-[#656565]">Platform Fee:</span>{" "}
+  {formatNaira(platformFee)}
+</p>
+
+{/* <p>
+  <span className="text-[#656565]">Tax Fee:</span>{" "}
+  {taxFee == null ? "To be confirmed" : formatNaira(taxFee)}
+</p> */}
+
+<p className="text-base font-semibold text-blue-600 pt-2">
+  Total Fee:{" "}
+  {loadingServices
+    ? "Loading..."
+    : totalFee == null
+    ? "To be confirmed"
+    : formatNaira(totalFee)}
+</p>
                 </div>
               </div>
             </div>

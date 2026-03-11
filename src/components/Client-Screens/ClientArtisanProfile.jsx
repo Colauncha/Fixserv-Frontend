@@ -8,16 +8,157 @@ import flashImage from "../../assets/client images/client-home/flash.png";
 import cameraImage from "../../assets/client images/client-home/camera.png";
 import johnOne from "../../assets/client images/client-home/Johnone.png";
 import starIcon from "../../assets/client images/client-home/star.png";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   getArtisanById,
   getAllArtisans,
   getArtisanServices,
 } from "../../api/artisan.api";
 
+const DAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
+
+const cleanText = (v, fallback = "") =>
+  typeof v === "string" && v.trim() === "" ? fallback : v ?? fallback;
+
+const getServiceIcon = (title) => {
+  const value = String(title || "").toLowerCase();
+
+  if (value.includes("battery")) return battery;
+  if (value.includes("camera")) return cameraImage;
+  if (value.includes("charg")) return flashImage;
+  return settingImage;
+};
+
+const normalizeBusinessHours = (bh = {}) => {
+  const out = {};
+
+  for (const d of DAYS) {
+    const open = bh?.[d]?.open;
+    const close = bh?.[d]?.close;
+
+    const isClosed =
+      !open ||
+      !close ||
+      String(open).toLowerCase() === "closed" ||
+      String(close).toLowerCase() === "closed";
+
+    out[d] = isClosed ? null : { open, close };
+  }
+
+  return out;
+};
+
+const normalizeServiceItem = (s, idx = 0, prefix = "service") => {
+  const title = s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
+
+  return {
+    id: s?.id || s?._id || s?.serviceId || `${prefix}-${idx}`,
+    title,
+    description: s?.description || "",
+    price: s?.price ?? s?.amount ?? null,
+    estimatedDuration: s?.estimatedDuration || s?.duration || "",
+    isActive: s?.isActive !== false,
+    icon: getServiceIcon(title),
+  };
+};
+
+const normalizeArtisan = (raw) => {
+  const rawReviews = raw?.reviews;
+
+  const reviewsList = Array.isArray(raw?.reviewsList)
+    ? raw.reviewsList
+    : Array.isArray(raw?.reviewsData)
+    ? raw.reviewsData
+    : Array.isArray(rawReviews)
+    ? rawReviews
+    : [];
+
+  const reviewsCount = Number(
+    raw?.reviewsCount ||
+      (Array.isArray(rawReviews) ? rawReviews.length : rawReviews) ||
+      0
+  );
+
+  const skills = Array.isArray(raw?.skillSet)
+    ? raw.skillSet
+    : Array.isArray(raw?.skills)
+    ? raw.skills
+    : [];
+
+  const combinedServices = [
+    ...(Array.isArray(raw?.services) ? raw.services : []),
+    ...(raw?.service && typeof raw.service === "object" ? [raw.service] : []),
+    ...(raw?.currentService && typeof raw.currentService === "object"
+      ? [raw.currentService]
+      : []),
+    ...(raw?.primaryService && typeof raw.primaryService === "object"
+      ? [raw.primaryService]
+      : []),
+  ];
+
+  const uniqueServicesMap = new Map();
+
+  combinedServices.forEach((service, idx) => {
+    const normalized = normalizeServiceItem(service, idx, "profile");
+    const key =
+      normalized.id ||
+      `${normalized.title}-${normalized.price}-${normalized.estimatedDuration}`;
+    if (!uniqueServicesMap.has(key)) {
+      uniqueServicesMap.set(key, normalized);
+    }
+  });
+
+  const normalizedServices = Array.from(uniqueServicesMap.values());
+  const primaryService = normalizedServices[0] || null;
+
+  return {
+    ...raw,
+    id: raw?.id || raw?._id || raw?.artisanId,
+    fullName: cleanText(
+      raw?.fullName,
+      cleanText(raw?.businessName, "Unnamed Artisan")
+    ),
+    businessName: cleanText(raw?.businessName, ""),
+    location: cleanText(raw?.location, "Unknown location"),
+    categories: Array.isArray(raw?.categories) ? raw.categories : [],
+    skills,
+    rating: Number(raw?.rating || 0),
+    bio: cleanText(
+      raw?.bio || raw?.about || raw?.description || primaryService?.description,
+      ""
+    ),
+    services: normalizedServices,
+    service: primaryService,
+    reviewsList,
+    reviewsCount,
+    businessHours: normalizeBusinessHours(raw?.businessHours),
+    createdAt: raw?.createdAt,
+    totalRepairs: Number(raw?.totalRepairs || raw?.jobsDone || 0),
+    profilePicture:
+      raw?.profilePicture ||
+      raw?.profileImage ||
+      raw?.avatar ||
+      raw?.photoURL ||
+      raw?.imageUrl ||
+      "",
+  };
+};
+
 const ClientArtisanProfile = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { artisanId } = useParams();
+
+  const passedState = location.state || {};
+  const passedArtisan = passedState?.artisan || null;
 
   const [artisan, setArtisan] = useState(null);
   const [loadingArtisan, setLoadingArtisan] = useState(true);
@@ -33,8 +174,17 @@ const ClientArtisanProfile = () => {
 
   const [hoveredRecommendation, setHoveredRecommendation] = useState(null);
 
-  const cleanText = (v, fallback = "") =>
-    typeof v === "string" && v.trim() === "" ? fallback : v ?? fallback;
+  const requestState = {
+    draftOrderId: passedState?.draftOrderId || "",
+    uploadedProductId: passedState?.uploadedProductId || "",
+    deviceType: passedState?.deviceType || "",
+    deviceBrand: passedState?.deviceBrand || "",
+    deviceModel: passedState?.deviceModel || "",
+    serviceRequired: passedState?.serviceRequired || "",
+    description: passedState?.description || "",
+    objectName: passedState?.objectName || "",
+    rawConfirm: passedState?.rawConfirm || null,
+  };
 
   const yearsFromCreatedAt = artisan?.createdAt
     ? Math.max(
@@ -60,109 +210,79 @@ const ClientArtisanProfile = () => {
     return `₦${num.toLocaleString("en-NG")}`;
   };
 
-  const normalizeBusinessHours = (bh = {}) => {
-    const days = [
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-      "sunday",
-    ];
-
-    const out = {};
-    for (const d of days) {
-      const open = bh?.[d]?.open;
-      const close = bh?.[d]?.close;
-
-      const isClosed =
-        !open ||
-        !close ||
-        String(open).toLowerCase() === "closed" ||
-        String(close).toLowerCase() === "closed";
-
-      out[d] = isClosed ? null : { open, close };
-    }
-    return out;
-  };
-
-  const normalizeArtisan = (raw) => {
-    const rawReviews = raw?.reviews;
-
-    const reviewsList = Array.isArray(raw?.reviewsList)
-      ? raw.reviewsList
-      : Array.isArray(raw?.reviewsData)
-      ? raw.reviewsData
-      : Array.isArray(rawReviews)
-      ? rawReviews
-      : [];
-
-    const reviewsCount = Number(
-      raw?.reviewsCount ||
-        (Array.isArray(rawReviews) ? rawReviews.length : rawReviews) ||
-        0
-    );
-
-    const skills = Array.isArray(raw?.skillSet)
-      ? raw.skillSet
-      : Array.isArray(raw?.skills)
-      ? raw.skills
-      : [];
-
-    return {
-      ...raw,
-      id: raw?.id || raw?._id,
-      fullName: cleanText(
-        raw?.fullName,
-        cleanText(raw?.businessName, "Unnamed Artisan")
-      ),
-      businessName: cleanText(raw?.businessName, ""),
-      location: cleanText(raw?.location, "Unknown location"),
-      categories: Array.isArray(raw?.categories) ? raw.categories : [],
-      skills,
-      rating: Number(raw?.rating || 0),
-      bio: cleanText(raw?.bio || raw?.about || raw?.description, ""),
-      services: Array.isArray(raw?.services) ? raw.services : [],
-      reviewsList,
-      reviewsCount,
-      businessHours: normalizeBusinessHours(raw?.businessHours),
-      createdAt: raw?.createdAt,
-      totalRepairs: Number(raw?.totalRepairs || raw?.jobsDone || 0),
-      profilePicture: raw?.profilePicture || raw?.avatar || raw?.photoURL || "",
-    };
-  };
-
   useEffect(() => {
     const fetchArtisanData = async () => {
-      if (!artisanId) return;
-
       try {
         setLoadingArtisan(true);
         setLoadingServices(true);
         setServicesError("");
 
+        const fallbackArtisan = passedArtisan ? normalizeArtisan(passedArtisan) : null;
+        if (fallbackArtisan) {
+          setArtisan(fallbackArtisan);
+        }
+
+        const targetArtisanId =
+          artisanId ||
+          passedArtisan?.id ||
+          passedArtisan?._id ||
+          passedArtisan?.artisanId ||
+          null;
+
+        if (!targetArtisanId) {
+          if (!fallbackArtisan) {
+            setArtisan(null);
+            setServicesError("Unable to load artisan details.");
+          }
+          return;
+        }
+
         const [artisanRes, servicesRes] = await Promise.allSettled([
-          getArtisanById(artisanId),
-          getArtisanServices(artisanId),
+          getArtisanById(targetArtisanId),
+          getArtisanServices(targetArtisanId),
         ]);
 
+        let artisanData = null;
+        let liveServices = [];
+
         if (artisanRes.status === "fulfilled") {
-          const artisanData = normalizeArtisan(artisanRes.value);
-          setArtisan(artisanData);
+          artisanData = normalizeArtisan(artisanRes.value);
         } else {
           console.error("ARTISAN ERROR:", artisanRes.reason);
-          setArtisan(null);
         }
 
         if (servicesRes.status === "fulfilled") {
-          setArtisanServiceList(
-            Array.isArray(servicesRes.value) ? servicesRes.value : []
-          );
+          liveServices = Array.isArray(servicesRes.value) ? servicesRes.value : [];
+          setArtisanServiceList(liveServices);
         } else {
           console.error("SERVICES ERROR:", servicesRes.reason);
           setArtisanServiceList([]);
           setServicesError("Unable to load live services right now.");
+        }
+
+        if (artisanData) {
+          const normalizedLiveServices = liveServices
+            .map((s, idx) => normalizeServiceItem(s, idx, "api"))
+            .filter((s) => s.isActive !== false);
+
+          const mergedServices =
+            normalizedLiveServices.length > 0
+              ? normalizedLiveServices
+              : Array.isArray(artisanData.services)
+              ? artisanData.services
+              : [];
+
+          setArtisan({
+            ...artisanData,
+            services: mergedServices,
+            service: mergedServices[0] || artisanData.service || null,
+            bio:
+              artisanData.bio ||
+              mergedServices[0]?.description ||
+              "No bio added yet.",
+          });
+        } else if (!fallbackArtisan) {
+          setArtisan(null);
         }
       } finally {
         setLoadingArtisan(false);
@@ -171,7 +291,7 @@ const ClientArtisanProfile = () => {
     };
 
     fetchArtisanData();
-  }, [artisanId]);
+  }, [artisanId, passedArtisan]);
 
   useEffect(() => {
     const fetchRecommendedArtisans = async () => {
@@ -192,26 +312,8 @@ const ClientArtisanProfile = () => {
 
   const serviceApiMapped = useMemo(() => {
     return (Array.isArray(artisanServiceList) ? artisanServiceList : [])
-      .filter((s) => s?.isActive !== false)
-      .map((s, idx) => {
-        const title =
-          s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
-
-        return {
-          id: s?.id || s?._id || `api-${idx}`,
-          title,
-          description: s?.description || "",
-          price: s?.price ?? s?.amount ?? null,
-          estimatedDuration: s?.estimatedDuration || s?.duration || "",
-          icon: String(title).toLowerCase().includes("battery")
-            ? battery
-            : String(title).toLowerCase().includes("camera")
-            ? cameraImage
-            : String(title).toLowerCase().includes("charg")
-            ? flashImage
-            : settingImage,
-        };
-      });
+      .map((s, idx) => normalizeServiceItem(s, idx, "api"))
+      .filter((s) => s.isActive !== false);
   }, [artisanServiceList]);
 
   const profileServicesMapped = useMemo(() => {
@@ -220,26 +322,8 @@ const ClientArtisanProfile = () => {
       : [];
 
     return rawProfileServices
-      .filter((s) => s?.isActive !== false)
-      .map((s, idx) => {
-        const title =
-          s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
-
-        return {
-          id: s?.id || s?._id || `profile-${idx}`,
-          title,
-          description: s?.description || "",
-          price: s?.price ?? s?.amount ?? null,
-          estimatedDuration: s?.estimatedDuration || s?.duration || "",
-          icon: String(title).toLowerCase().includes("battery")
-            ? battery
-            : String(title).toLowerCase().includes("camera")
-            ? cameraImage
-            : String(title).toLowerCase().includes("charg")
-            ? flashImage
-            : settingImage,
-        };
-      });
+      .map((s, idx) => normalizeServiceItem(s, idx, "profile"))
+      .filter((s) => s.isActive !== false);
   }, [artisan]);
 
   const skillServicesMapped = useMemo(() => {
@@ -257,13 +341,7 @@ const ClientArtisanProfile = () => {
         description: "",
         price: null,
         estimatedDuration: "",
-        icon: String(title).toLowerCase().includes("battery")
-          ? battery
-          : String(title).toLowerCase().includes("camera")
-          ? cameraImage
-          : String(title).toLowerCase().includes("charg")
-          ? flashImage
-          : settingImage,
+        icon: getServiceIcon(title),
       };
     });
   }, [artisan]);
@@ -279,17 +357,19 @@ const ClientArtisanProfile = () => {
 
   const mappedRecommendations = useMemo(() => {
     return (recommendedArtisans || [])
-      .filter((a) => String(a.id || a._id) !== String(artisanId))
+      .map((a) => normalizeArtisan(a))
+      .filter((a) => String(a.id) !== String(artisan?.id || artisanId))
       .map((a) => ({
-        id: a.id || a._id,
+        id: a.id,
         name: cleanText(a.fullName, cleanText(a.businessName, "Unnamed Artisan")),
         location: cleanText(a.location, "Unknown location"),
         rating: Number(a.rating || 0),
-        skills: Array.isArray(a.skillSet) ? a.skillSet : [],
+        skills: Array.isArray(a.skills) ? a.skills : [],
         image: a.profilePicture || johnOne,
         isAvailableNow: Boolean(a.isAvailableNow),
+        raw: a,
       }));
-  }, [recommendedArtisans, artisanId]);
+  }, [recommendedArtisans, artisan?.id, artisanId]);
 
   const renderStars = (rating) => {
     const r = Math.max(0, Math.min(5, Number(rating || 0)));
@@ -318,6 +398,23 @@ const ClientArtisanProfile = () => {
           ))}
       </span>
     );
+  };
+
+  const handleRecommendedProfile = (recommended) => {
+    navigate(`/client/artisan-profile/${recommended.id}`, {
+      state: {
+        artisan: recommended.raw,
+        draftOrderId: requestState.draftOrderId,
+        uploadedProductId: requestState.uploadedProductId,
+        deviceType: requestState.deviceType,
+        deviceBrand: requestState.deviceBrand,
+        deviceModel: requestState.deviceModel,
+        serviceRequired: requestState.serviceRequired,
+        description: requestState.description,
+        objectName: requestState.objectName,
+        rawConfirm: requestState.rawConfirm,
+      },
+    });
   };
 
   if (loadingArtisan || !artisan) {
@@ -356,7 +453,9 @@ const ClientArtisanProfile = () => {
                 <img src={tick} alt="verified" className="w-5 h-5" />
               </div>
 
-              <p className="text-sm opacity-90 mt-1">Technician</p>
+              <p className="text-sm opacity-90 mt-1">
+                {artisan.businessName || "Technician"}
+              </p>
 
               <div className="mt-3 space-y-1 text-sm opacity-90">
                 <p>
@@ -372,7 +471,20 @@ const ClientArtisanProfile = () => {
 
               <button
                 onClick={() =>
-                  navigate(`/client/booking/${artisan.id}`, { state: { artisan } })
+                  navigate(`/client/booking/${artisan.id}`, {
+                    state: {
+                      artisan,
+                      draftOrderId: requestState.draftOrderId,
+                      uploadedProductId: requestState.uploadedProductId,
+                      deviceType: requestState.deviceType,
+                      deviceBrand: requestState.deviceBrand,
+                      deviceModel: requestState.deviceModel,
+                      serviceRequired: requestState.serviceRequired,
+                      description: requestState.description,
+                      objectName: requestState.objectName,
+                      rawConfirm: requestState.rawConfirm,
+                    },
+                  })
                 }
                 className="mt-5 bg-white text-[#3E83C4] px-6 py-2 rounded-md font-medium text-sm hover:bg-gray-100 transition cursor-pointer"
               >
@@ -388,6 +500,8 @@ const ClientArtisanProfile = () => {
               <div className="flex gap-2">
                 {(artisan.categories?.length
                   ? artisan.categories
+                  : artisan.skills?.length
+                  ? artisan.skills
                   : ["Phone", "Tablet", "Laptop"]
                 )
                   .slice(0, 3)
@@ -446,7 +560,7 @@ const ClientArtisanProfile = () => {
             <h2 className="text-3xl font-bold text-black mb-8">About Me</h2>
             <div className="bg-white">
               <p className="text-[#535353] leading-relaxed text-lg">
-                {artisan.bio || "No bio added yet."}
+                {artisan.bio || artisan.service?.description || "No bio added yet."}
               </p>
             </div>
           </div>
@@ -553,12 +667,6 @@ const ClientArtisanProfile = () => {
                             {service.estimatedDuration}
                           </p>
                         ) : null}
-
-                        {service.description ? (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            {service.description}
-                          </p>
-                        ) : null}
                       </div>
                     ))}
                   </div>
@@ -608,18 +716,16 @@ const ClientArtisanProfile = () => {
                 <p className="text-sm text-gray-500 px-4">Loading recommendations...</p>
               ) : (
                 [...mappedRecommendations.slice(0, 6), ...mappedRecommendations.slice(0, 6)].map((a, index) => (
-
                   <div
-  key={`${a.id}-${index}`}
-  onMouseEnter={() => setHoveredRecommendation(a.id)}
-  onMouseLeave={() => setHoveredRecommendation(null)}
-  className={`min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm cursor-pointer hover:shadow-md transition-all duration-300 ${
-    hoveredRecommendation && hoveredRecommendation !== a.id
-      ? "opacity-30 grayscale"
-      : ""
-  }`}
->
-
+                    key={`${a.id}-${index}`}
+                    onMouseEnter={() => setHoveredRecommendation(a.id)}
+                    onMouseLeave={() => setHoveredRecommendation(null)}
+                    className={`min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm cursor-pointer hover:shadow-md transition-all duration-300 ${
+                      hoveredRecommendation && hoveredRecommendation !== a.id
+                        ? "opacity-30 grayscale"
+                        : ""
+                    }`}
+                  >
                     <div className="relative">
                       <img
                         src={a.image}
@@ -670,7 +776,7 @@ const ClientArtisanProfile = () => {
                       </div>
 
                       <button
-                        onClick={() => navigate(`/client/artisan-profile/${a.id}`)}
+                        onClick={() => handleRecommendedProfile(a)}
                         className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer"
                       >
                         View Profile

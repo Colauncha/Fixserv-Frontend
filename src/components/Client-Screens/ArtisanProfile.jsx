@@ -9,7 +9,11 @@ import cameraImage from "../../assets/client images/client-home/camera.png";
 import johnOne from "../../assets/client images/client-home/Johnone.png";
 import starIcon from "../../assets/client images/client-home/star.png";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getArtisanById, getAllArtisans } from "../../api/artisan.api";
+import {
+  getArtisanById,
+  getAllArtisans,
+  getArtisanServices,
+} from "../../api/artisan.api";
 
 const ArtisanProfile = () => {
   const navigate = useNavigate();
@@ -66,51 +70,75 @@ const ArtisanProfile = () => {
     return out;
   };
 
-  const normalizeArtisan = (raw) => {
-    const rawReviews = raw?.reviews;
+const normalizeArtisan = (raw, servicesFromApi = []) => {
+  const rawReviews = raw?.reviews;
 
-    const reviewsList = Array.isArray(raw?.reviewsList)
-      ? raw.reviewsList
-      : Array.isArray(raw?.reviewsData)
-      ? raw.reviewsData
-      : Array.isArray(rawReviews)
-      ? rawReviews
-      : [];
+  const reviewsList = Array.isArray(raw?.reviewsList)
+    ? raw.reviewsList
+    : Array.isArray(raw?.reviewsData)
+    ? raw.reviewsData
+    : Array.isArray(rawReviews)
+    ? rawReviews
+    : [];
 
-    const reviewsCount = Number(
-      raw?.reviewsCount ||
-        (Array.isArray(rawReviews) ? rawReviews.length : rawReviews) ||
-        0
-    );
+  const reviewsCount = Number(
+    raw?.reviewsCount ||
+      (Array.isArray(rawReviews) ? rawReviews.length : rawReviews) ||
+      0
+  );
 
-    const skills = Array.isArray(raw?.skillSet)
-      ? raw.skillSet
-      : Array.isArray(raw?.skills)
-      ? raw.skills
-      : [];
+  const skills = Array.isArray(raw?.skillSet)
+    ? raw.skillSet
+    : Array.isArray(raw?.skills)
+    ? raw.skills
+    : [];
 
-    return {
-      ...raw,
-      id: raw?.id || raw?._id || raw?.artisanId,
-      fullName: cleanText(
-        raw?.fullName,
-        cleanText(raw?.businessName, "Unnamed Artisan")
-      ),
-      businessName: cleanText(raw?.businessName, ""),
-      location: cleanText(raw?.location, "Unknown location"),
-      categories: Array.isArray(raw?.categories) ? raw.categories : [],
-      skills,
-      rating: Number(raw?.rating || 0),
-      bio: cleanText(raw?.bio || raw?.about || raw?.description, ""),
-      services: Array.isArray(raw?.services) ? raw.services : [],
-      reviewsList,
-      reviewsCount,
-      businessHours: normalizeBusinessHours(raw?.businessHours),
-      createdAt: raw?.createdAt,
-      totalRepairs: Number(raw?.totalRepairs || raw?.jobsDone || 0),
-      profilePicture: raw?.profilePicture || raw?.avatar || raw?.photoURL || "",
-    };
+  const mergedServices = Array.isArray(servicesFromApi)
+    ? servicesFromApi
+    : Array.isArray(raw?.services)
+    ? raw.services
+    : [];
+
+  const primaryServiceDescription =
+    Array.isArray(mergedServices) && mergedServices.length > 0
+      ? mergedServices[0]?.description || ""
+      : "";
+
+  return {
+    ...raw,
+    id: raw?.id || raw?._id || raw?.artisanId,
+    fullName: cleanText(
+      raw?.fullName,
+      cleanText(raw?.businessName, "Unnamed Artisan")
+    ),
+    businessName: cleanText(raw?.businessName, ""),
+    location: cleanText(raw?.location, "Unknown location"),
+    email: cleanText(raw?.email, ""),
+    phoneNumber: cleanText(raw?.phoneNumber || raw?.phone, ""),
+    role: cleanText(raw?.role, ""),
+    categories: Array.isArray(raw?.categories) ? raw.categories : [],
+    skills,
+    skillSet: skills,
+    rating: Number(raw?.rating || 0),
+    bio: cleanText(
+      raw?.bio || raw?.about || raw?.description || primaryServiceDescription,
+      ""
+    ),
+    services: mergedServices,
+    reviewsList,
+    reviewsCount,
+    businessHours: normalizeBusinessHours(raw?.businessHours),
+    createdAt: raw?.createdAt,
+    totalRepairs: Number(raw?.totalRepairs || raw?.jobsDone || 0),
+    profilePicture:
+      raw?.profilePicture ||
+      raw?.profileImage ||
+      raw?.avatar ||
+      raw?.photoURL ||
+      raw?.imageUrl ||
+      "",
   };
+};
 
   const yearsFromCreatedAt = artisan?.createdAt
     ? Math.max(
@@ -169,9 +197,19 @@ useEffect(() => {
         return;
       }
 
-      const raw = await getArtisanById(targetArtisanId);
-      const artisanData = normalizeArtisan(raw);
+      const [rawProfile, rawServices] = await Promise.all([
+        getArtisanById(targetArtisanId),
+        getArtisanServices(targetArtisanId).catch((err) => {
+          console.error("ARTISAN SERVICES ERROR:", err);
+          setServicesError("Unable to load artisan services.");
+          return [];
+        }),
+      ]);
 
+      console.log("ARTISAN PROFILE RAW =>", rawProfile);
+      console.log("ARTISAN SERVICES RAW =>", rawServices);
+
+      const artisanData = normalizeArtisan(rawProfile, rawServices);
       setArtisan(artisanData);
     } catch (err) {
       console.error("ARTISAN ERROR:", err);
@@ -213,50 +251,30 @@ useEffect(() => {
     fetchRecommendedArtisans();
   }, []);
 
-  const apiServices = useMemo(() => {
-    const rawProfileServices = Array.isArray(artisan?.services)
-      ? artisan.services
-      : [];
-    const rawSkillServices = Array.isArray(artisan?.skills) ? artisan.skills : [];
+const apiServices = useMemo(() => {
+  const rawProfileServices = Array.isArray(artisan?.services)
+    ? artisan.services
+    : [];
+  const rawSkillServices = Array.isArray(artisan?.skills) ? artisan.skills : [];
 
-    console.log("ARTISAN FULL DATA =>", artisan);
-console.log("ARTISAN SERVICES RAW =>", artisan?.services);
+  console.log("ARTISAN FULL DATA =>", artisan);
+  console.log("ARTISAN SERVICES RAW =>", artisan?.services);
 
-    return rawProfileServices.length > 0
-    
-      ? rawProfileServices
-          .filter((s) => s?.isActive !== false)
-          .map((s, idx) => {
-            const title =
-              s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
-
-            return {
-              id: s?.id || s?._id || `${idx}`,
-              title,
-              description: s?.description || "",
-              price: s?.price ?? s?.amount ?? null,
-              estimatedDuration: s?.estimatedDuration || s?.duration || "",
-              icon: String(title).toLowerCase().includes("battery")
-                ? battery
-                : String(title).toLowerCase().includes("camera")
-                ? cameraImage
-                : String(title).toLowerCase().includes("charg")
-                ? flashImage
-                : settingImage,
-            };
-          })
-      : rawSkillServices.map((s, idx) => {
+  return rawProfileServices.length > 0
+    ? rawProfileServices
+        .filter((s) => s?.isActive !== false)
+        .map((s, idx) => {
           const title =
-            typeof s === "string"
-              ? s
-              : s?.name || s?.title || s?.serviceName || `Service ${idx + 1}`;
+            s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
 
           return {
-            id: s?.id || s?._id || `skill-${idx}`,
+            id: s?.id || s?._id || s?.serviceId || `${idx}`,
             title,
-            description: "",
-            price: null,
-            estimatedDuration: "",
+            description: s?.description || "",
+            price: s?.price ?? s?.amount ?? null,
+            estimatedDuration: s?.estimatedDuration || s?.duration || "",
+            rating: Number(s?.rating || 0),
+            isActive: s?.isActive,
             icon: String(title).toLowerCase().includes("battery")
               ? battery
               : String(title).toLowerCase().includes("camera")
@@ -265,8 +283,31 @@ console.log("ARTISAN SERVICES RAW =>", artisan?.services);
               ? flashImage
               : settingImage,
           };
-        });
-  }, [artisan]);
+        })
+    : rawSkillServices.map((s, idx) => {
+        const title =
+          typeof s === "string"
+            ? s
+            : s?.name || s?.title || s?.serviceName || `Service ${idx + 1}`;
+
+        return {
+          id: s?.id || s?._id || `skill-${idx}`,
+          title,
+          description: "",
+          price: null,
+          estimatedDuration: "",
+          rating: 0,
+          isActive: true,
+          icon: String(title).toLowerCase().includes("battery")
+            ? battery
+            : String(title).toLowerCase().includes("camera")
+            ? cameraImage
+            : String(title).toLowerCase().includes("charg")
+            ? flashImage
+            : settingImage,
+        };
+      });
+}, [artisan]);
 
   const servicesToShow = apiServices.length > 0 ? apiServices : fallbackServices;
 
@@ -393,16 +434,27 @@ const handleBookRepair = () => {
               <p className="text-sm opacity-90 mt-1">Technician</p>
 
               <div className="mt-3 space-y-1 text-sm opacity-90">
-                <p>
-                  Experience:{" "}
-                  <span className="font-medium">
-                    {yearsFromCreatedAt != null ? `${yearsFromCreatedAt}+ years` : "—"}
-                  </span>
-                </p>
-                <p>
-                  Location: <span className="font-medium">{artisan.location}</span>
-                </p>
-              </div>
+  <p>
+    Experience:{" "}
+    <span className="font-medium">
+      {yearsFromCreatedAt != null ? `${yearsFromCreatedAt}+ years` : "—"}
+    </span>
+  </p>
+  <p>
+    Location: <span className="font-medium">{artisan.location}</span>
+  </p>
+  <p>
+    Business Name:{" "}
+    <span className="font-medium">{artisan.businessName || "—"}</span>
+  </p>
+  <p>
+    Phone:{" "}
+    <span className="font-medium">{artisan.phoneNumber || "—"}</span>
+  </p>
+  <p>
+    Email: <span className="font-medium">{artisan.email || "—"}</span>
+  </p>
+</div>
 
               <button
                 onClick={handleBookRepair}
@@ -475,13 +527,38 @@ const handleBookRepair = () => {
       <section className="w-full px-8 md:px-18 py-14 overflow-hidden">
         <div className="max-w-7xl mx-auto px-2 md:px-6">
           <div className="mb-16">
-            <h2 className="text-3xl font-bold text-black mb-8">About Me</h2>
-            <div className="bg-white">
-              <p className="text-[#535353] leading-relaxed text-lg">
-                {artisan.bio || "No bio added yet."}
-              </p>
-            </div>
-          </div>
+  <h2 className="text-3xl font-bold text-black mb-8">About Me</h2>
+  <div className="bg-white">
+    <p className="text-[#535353] leading-relaxed text-lg">
+      {artisan.bio || "No bio added yet."}
+    </p>
+  </div>
+
+  <div className="mt-8">
+    <h3 className="text-xl font-semibold text-black mb-4">Skills</h3>
+    <div className="flex flex-wrap gap-3">
+      {(artisan.skills || []).length > 0 ? (
+        artisan.skills.map((skill, idx) => {
+          const label =
+            typeof skill === "string"
+              ? skill
+              : skill?.name || skill?.title || `Skill ${idx + 1}`;
+
+          return (
+            <span
+              key={label + idx}
+              className="bg-[#C1DAF3] text-[#3E83C4] px-4 py-2 rounded-full text-sm"
+            >
+              {label}
+            </span>
+          );
+        })
+      ) : (
+        <p className="text-[#535353]">No skills added yet.</p>
+      )}
+    </div>
+  </div>
+</div>
 
           <div className="space-y-3 text-sm text-[#535353]">
             {[
