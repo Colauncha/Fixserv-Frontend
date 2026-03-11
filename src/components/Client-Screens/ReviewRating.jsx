@@ -23,7 +23,6 @@ const ReviewRating = () => {
             </p>
           </div>
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-[#F1F1F1] rounded-lg p-6">
               <p className="text-sm text-black">Reviews Given</p>
@@ -41,7 +40,7 @@ const ReviewRating = () => {
             </div>
           </div>
 
-          {/* Leave Review Button */}
+      
           <div className="mb-10">
            <button
   onClick={() => setShowReviewModal(true)}
@@ -52,10 +51,10 @@ const ReviewRating = () => {
 
           </div>
 
-          {/* Reviews Section */}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
 
-            {/* Left Review */}
+            
             <div>
               <h3 className="text-lg font-semibold mb-4">My Reviews</h3>
 
@@ -97,7 +96,7 @@ const ReviewRating = () => {
               </div>
             </div>
 
-            {/* Right Review */}
+           
             <div>
               <h3 className="text-lg font-semibold mb-4">My Reviews</h3>
 
@@ -139,7 +138,7 @@ const ReviewRating = () => {
 
             </div>
 
- {/* Left Review */}
+
             <div>
 
               <div className="bg-white border border-gray-200 rounded-xl p-7 shadow-lg">
@@ -180,7 +179,7 @@ const ReviewRating = () => {
               </div>
             </div>
 
-            {/* Right Review */}
+           
             <div>
 
 <div className="bg-white border border-gray-200 rounded-xl p-7 shadow-lg">
@@ -198,7 +197,7 @@ const ReviewRating = () => {
           House Renovation
         </p>
 
-        {/* Stars */}
+       
         <div className="flex gap-1 mt-2 mb-4">
           {[1, 2, 3, 4, 5].map((_, i) => (
             <img key={i} src={star} alt="star" className="w-8 h-8" />
@@ -227,17 +226,17 @@ const ReviewRating = () => {
         </div>
       </section>
 
-      {/* Blur backdrop */}
+    
 {showReviewModal && (
   <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"></div>
 )}
 
-{/* Leave Review Modal */}
+
 {showReviewModal && (
   <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
     <div className="bg-white w-full max-w-md rounded-xl p-6 shadow-xl relative">
 
-      {/* Close button */}
+
       <button
         onClick={() => setShowReviewModal(false)}
         className="absolute top-4 right-4 text-gray-500 hover:text-black"
@@ -245,7 +244,7 @@ const ReviewRating = () => {
         ✕
       </button>
 
-      {/* Header */}
+
       <h2 className="text-lg font-semibold text-black mb-1">
         Leave a Review
       </h2>
@@ -253,7 +252,7 @@ const ReviewRating = () => {
         Share your experience with the artisan's service
       </p>
 
-      {/* Rating */}
+    
       <div className="mb-6">
         <p className="text-sm font-medium text-black mb-2">Rating</p>
 
@@ -270,7 +269,7 @@ const ReviewRating = () => {
         </div>
       </div>
 
-      {/* Review textarea */}
+      
       <div className="mb-6">
         <p className="text-sm font-medium text-black mb-2">Your Review</p>
         <textarea
@@ -279,7 +278,7 @@ const ReviewRating = () => {
         />
       </div>
 
-      {/* Upload */}
+
       <div className="mb-6">
         <p className="text-sm font-medium text-black mb-2">
           Photos (Optional)

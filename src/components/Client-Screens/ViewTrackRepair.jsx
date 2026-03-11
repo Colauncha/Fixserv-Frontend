@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { CheckCircle2, Circle, ArrowLeft, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { CheckCircle2, Circle, ArrowLeft } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import caution from "../../assets/client images/caution.png";
-import failure from "../../assets/client images/client-home/cancel.png";
 import success from "../../assets/client images/client-home/success.png";
 
 const stepsData = [
@@ -13,9 +12,84 @@ const stepsData = [
   "Completed",
 ];
 
-const RateServiceRepair = () => {
-  const [completedStep, setCompletedStep] = useState(1);
-  const [timestamps, setTimestamps] = useState(stepsData.map(() => null));
+const stepDescriptions = [
+  "Your repair request has been received",
+  "Device has been dropped off with the technician",
+  "Technician is currently working on the device",
+  "Repair is complete and awaiting pick-up",
+  "Service has been completed",
+];
+
+const formatDateTimeParts = (value) => {
+  if (!value) return null;
+
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+
+  return {
+    date: d.toLocaleDateString(undefined, {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }),
+    time: d.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+};
+
+const formatLastUpdated = (value) => {
+  if (!value) return "—";
+
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+
+  return d.toLocaleString(undefined, {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getStepIndexFromStatus = (status) => {
+  const value = String(status || "").toUpperCase().trim();
+
+  if (value === "PENDING_ARTISAN_RESPONSE") return 0;
+  if (value === "ACCEPTED") return 1;
+  if (value === "IN_PROGRESS") return 2;
+  if (value === "READY_FOR_PICKUP" || value === "READY_FOR_PICK_UP") return 3;
+  if (value === "COMPLETED") return 4;
+  if (value === "CANCELLED") return 0;
+
+  return 0;
+};
+
+const getStatusBadge = (progress) => {
+  const value = String(progress || "").toLowerCase();
+
+  if (value.includes("completed")) {
+    return "bg-green-100 text-green-600";
+  }
+
+  if (value.includes("cancel")) {
+    return "bg-red-100 text-red-600";
+  }
+
+  if (value.includes("progress") || value.includes("pending") || value.includes("accepted")) {
+    return "bg-[#F6E4C7] text-[#F99F10]";
+  }
+
+  return "bg-gray-100 text-gray-600";
+};
+
+const ViewTrackRepair = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const repair = location.state?.repair || null;
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showCancelSuccess, setShowCancelSuccess] = useState(false);
@@ -24,42 +98,92 @@ const RateServiceRepair = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
 
-  const formatDateTime = () => {
-    const now = new Date();
-    const date = now.toLocaleDateString(undefined, {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
+  const completedStep = useMemo(() => {
+    return getStepIndexFromStatus(repair?.orderStatus || repair?.raw?.status || repair?.progress);
+  }, [repair]);
+
+  const timestamps = useMemo(() => {
+    const createdAt = repair?.createdAt || repair?.raw?.createdAt || null;
+    const deadline = repair?.artisanResponseDeadline || repair?.raw?.artisanResponseDeadline || null;
+
+    return stepsData.map((_, index) => {
+      if (index === 0) return formatDateTimeParts(createdAt);
+      if (index === 1 && completedStep >= 1) return formatDateTimeParts(deadline || createdAt);
+      if (index === 2 && completedStep >= 2) return formatDateTimeParts(deadline || createdAt);
+      if (index === 3 && completedStep >= 3) return formatDateTimeParts(deadline || createdAt);
+      if (index === 4 && completedStep >= 4) return formatDateTimeParts(deadline || createdAt);
+      return null;
     });
-    const time = now.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    return { date, time };
-  };
-
-  const updateProgress = (stepIndex) => {
-    setCompletedStep(stepIndex);
-    setTimestamps((prev) =>
-      prev.map((ts, i) => (i <= stepIndex ? ts || formatDateTime() : null))
-    );
-  };
-
-  const handleCancelReasonSelect = (reason) => {
-    setCancelReason(reason);
-  };
-
-  const navigate = useNavigate();
+  }, [repair, completedStep]);
 
   useEffect(() => {
     if (showCancelSuccess) {
       const timer = setTimeout(() => {
         setShowCancelSuccess(false);
+        navigate(-1);
       }, 1000);
 
       return () => clearTimeout(timer);
     }
-  }, [showCancelSuccess]);
+  }, [showCancelSuccess, navigate]);
+
+  const handleCancelReasonSelect = (reason) => {
+    setCancelReason(reason);
+  };
+
+  const handleSubmitCancel = () => {
+    if (!cancelReason) {
+      alert("Please select a reason for cancellation");
+      return;
+    }
+
+    if (cancelReason === "Other (please specify)" && !otherReason.trim()) {
+      alert("Please specify your reason");
+      return;
+    }
+
+    setShowCancelModal(false);
+    setShowCancelSuccess(true);
+  };
+
+  if (!repair) {
+    return (
+      <section className="w-full py-14 overflow-hidden bg-white">
+        <div className="max-w-7xl mx-auto px-6 md:px-10">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1 text-[#3E83C4] hover:underline cursor-pointer mb-8"
+          >
+            <ArrowLeft size={18} />
+            <span className="text-sm">Back</span>
+          </button>
+
+          <div className="text-center py-20">
+            <h2 className="text-xl font-semibold text-black mb-3">
+              No repair tracking details found
+            </h2>
+            <p className="text-sm text-[#6B6B6B] mb-6">
+              Please go back and open a repair from your history or summary page.
+            </p>
+            <button
+              onClick={() => navigate("/client/repair")}
+              className="bg-[#3E83C4] text-white px-6 py-3 rounded-lg hover:bg-[#2d75b8] transition cursor-pointer"
+            >
+              Go to Repair History
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const repairTitle = [repair.deviceBrand, repair.deviceModel]
+    .filter(Boolean)
+    .join(" - ") || repair.deviceType || repair.serviceRequired || "Device Repair";
+
+  const currentStatus = repair.progress || "Pending";
+  const rawStatus = repair.orderStatus || repair.raw?.status || "—";
+  const lastUpdated = repair.artisanResponseDeadline || repair.createdAt || repair.raw?.updatedAt || repair.raw?.createdAt;
 
   return (
     <section className="w-full py-14 overflow-hidden bg-white relative">
@@ -91,14 +215,14 @@ const RateServiceRepair = () => {
                   setShowCancelConfirm(false);
                   setShowCancelModal(true);
                 }}
-                className="w-full bg-red-200 text-red-600 py-3 rounded-lg font-medium hover:bg-red-300 transition mb-3"
+                className="w-full bg-red-200 text-red-600 py-3 rounded-lg font-medium hover:bg-red-300 transition mb-3 cursor-pointer"
               >
                 Yes, Cancel Repair
               </button>
 
               <button
                 onClick={() => setShowCancelConfirm(false)}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-blue-600 hover:underline cursor-pointer"
               >
                 Go Back
               </button>
@@ -151,9 +275,7 @@ const RateServiceRepair = () => {
                       name="cancelReason"
                       value={reason}
                       checked={cancelReason === reason}
-                      onChange={(e) =>
-                        handleCancelReasonSelect(e.target.value)
-                      }
+                      onChange={(e) => handleCancelReasonSelect(e.target.value)}
                       className="accent-[#3E83C4]"
                     />
                     {reason}
@@ -167,15 +289,12 @@ const RateServiceRepair = () => {
                   onChange={(e) => setOtherReason(e.target.value)}
                   placeholder="Please specify your reason..."
                   className="w-full border border-gray-300 rounded-md p-3 text-sm mb-5 outline-none"
-                  rows="3"
+                  rows={3}
                 />
               )}
 
               <button
-                onClick={() => {
-                  setShowCancelModal(false);
-                  setShowCancelSuccess(true);
-                }}
+                onClick={handleSubmitCancel}
                 className="w-full bg-red-600 hover:bg-red-700 text-white text-sm py-2.5 rounded-md transition cursor-pointer mb-3"
               >
                 Cancel Repair
@@ -194,10 +313,7 @@ const RateServiceRepair = () => {
         {showCancelSuccess && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
             <div className="bg-white w-full max-w-[420px] rounded-xl shadow-xl p-10 text-center">
-              <div className="w-14 h-14 mx-auto rounded-full bg-green-500 flex items-center justify-center mb-5">
-                <span className="text-white text-2xl">✓</span>
-                <img src={success} alt="" />
-              </div>
+              <img src={success} alt="success" className="w-14 h-14 mx-auto mb-5" />
 
               <p className="text-base font-medium text-black">
                 Your repair request has been cancelled successfully
@@ -208,14 +324,16 @@ const RateServiceRepair = () => {
 
         <div
           className={`transition-all duration-300 ${
-            showCancelModal || showCancelSuccess ? "blur-sm" : ""
+            showCancelModal || showCancelSuccess || showCancelConfirm
+              ? "blur-sm"
+              : ""
           }`}
         >
           <div className="relative mb-12">
             <div className="absolute left-0 top-0">
               <button
                 onClick={() => navigate(-1)}
-                className="flex items-center gap-1 text-[#3E83C4] hover:underline"
+                className="flex items-center gap-1 text-[#3E83C4] hover:underline cursor-pointer"
               >
                 <ArrowLeft size={18} />
                 <span className="text-sm">Back</span>
@@ -235,25 +353,33 @@ const RateServiceRepair = () => {
 
           <div className="mt-8 text-center space-y-2">
             <h3 className="font-semibold text-2xl">
-              Repair ID: <span className="font-semibold">#FX2341</span>
+              Repair ID: <span className="font-semibold">{repair.id}</span>
             </h3>
 
             <p className="text-lg font-normal text-black">
-              iPhone 12 Pro - Black
+              {repairTitle}
             </p>
           </div>
 
           <div className="flex justify-center items-center gap-2 mt-3">
             <p className="text-sm text-[#535353]">Status:</p>
 
-            <span className="bg-[#F6E4C7] text-[#F99F10] text-xs px-3 py-[2px] rounded-full">
-              In progress
+            <span
+              className={`text-xs px-3 py-[2px] rounded-full ${getStatusBadge(currentStatus)}`}
+            >
+              {currentStatus}
             </span>
           </div>
 
           <p className="text-sm text-center text-[#7A7A7A] mt-2">
-            Last Updated: Today, 2:42 PM
+            Last Updated: {formatLastUpdated(lastUpdated)}
           </p>
+
+          <div className="mt-3 text-center">
+            <p className="text-xs text-[#7A7A7A]">
+              Backend Status: {rawStatus}
+            </p>
+          </div>
 
           <div className="mt-10">
             {stepsData.map((step, index) => {
@@ -262,9 +388,8 @@ const RateServiceRepair = () => {
 
               return (
                 <div
-                  key={index}
-                  onClick={() => updateProgress(index)}
-                  className="flex items-start gap-8 mb-8 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+                  key={step}
+                  className="flex items-start gap-8 mb-8 p-3 rounded-lg"
                 >
                   <div className="relative flex flex-col items-center">
                     <span className="z-10 bg-white p-0.5 rounded-full">
@@ -276,29 +401,25 @@ const RateServiceRepair = () => {
                     </span>
 
                     {index !== stepsData.length - 1 && (
-                      <span className="w-px h-[72px] bg-blue-300 absolute top-7" />
+                      <span
+                        className={`w-px h-[72px] absolute top-7 ${
+                          index < completedStep ? "bg-blue-300" : "bg-gray-300"
+                        }`}
+                      />
                     )}
                   </div>
 
                   <div className="flex-1">
                     <p
                       className={`font-medium ${
-                        isCompleted
-                          ? "text-[#3E83C4]"
-                          : "text-gray-600"
+                        isCompleted ? "text-[#3E83C4]" : "text-gray-600"
                       }`}
                     >
                       {step}
                     </p>
 
                     <p className="text-xs text-[#656565] mt-1">
-                      {[
-                        "Repair request accepted",
-                        "Dropped off with technician",
-                        "Technician working…",
-                        "Repair done, awaiting pick-up",
-                        "Service completed",
-                      ][index]}
+                      {stepDescriptions[index]}
                     </p>
                   </div>
 
@@ -317,8 +438,8 @@ const RateServiceRepair = () => {
 
           <div className="flex flex-col gap-4 items-center mt-14">
             <button
-              onClick={() => setShowRateModal(true)}
-              className="bg-[#3E83C4] text-white px-6 py-2 rounded-lg w-40 hover:bg-[#3e83c4] transition-colors cursor-pointer"
+              onClick={() => navigate("/client/rate-service", { state: { repair } })}
+              className="bg-[#3E83C4] text-white px-6 py-2 rounded-lg w-40 hover:bg-[#2d75b8] transition-colors cursor-pointer"
             >
               Rate Service
             </button>
@@ -336,4 +457,4 @@ const RateServiceRepair = () => {
   );
 };
 
-export default RateServiceRepair;
+export default ViewTrackRepair;

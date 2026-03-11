@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import profileImage from "../../assets/client images/client-home/profile.png";
@@ -9,16 +9,11 @@ import paypal from "../../assets/client images/client-home/paypal.png";
 import visa from "../../assets/client images/client-home/visa.png";
 import wallet from "../../assets/client images/client-home/wallet.png";
 import creditImg from "../../assets/client images/client-home/creditcard.png";
+
 import walletPay from "../../assets/client images/client-home/walletpay.png";
 import loading from "../../assets/client images/client-home/loading.png";
 import success from "../../assets/client images/client-home/success.png";
 import failure from "../../assets/client images/client-home/cancel.png";
-import { createDraftOrder } from "../../api/order.api";
-import { getArtisanServices } from "../../api/artisan.api";
-import settingImage from "../../assets/client images/client-home/setting.png";
-import battery from "../../assets/client images/client-home/battery.png";
-import flashImage from "../../assets/client images/client-home/flash.png";
-import cameraImage from "../../assets/client images/client-home/camera.png";
 
 const MODAL = {
   WALLET: "wallet",
@@ -27,7 +22,7 @@ const MODAL = {
   CANCEL: "cancel",
 };
 
-const BookingSummary = () => {
+const BookingSummaryA = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -35,9 +30,6 @@ const BookingSummary = () => {
   const [finalBooking, setFinalBooking] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-
-  const [artisanServiceList, setArtisanServiceList] = useState([]);
-  const [loadingServices, setLoadingServices] = useState(true);
 
   const paymentMethods = [
     { img: master, label: "Mastercard" },
@@ -48,15 +40,47 @@ const BookingSummary = () => {
 
   const [selected, setSelected] = useState("Mastercard");
 
-  const artisan = location.state?.artisan;
-  const booking = location.state?.booking;
+  const state = location.state || {};
+  const artisan = state?.artisan || null;
+
+  const extractConfirmedOrderId = (rawConfirm, fallbackId = "") => {
+  return (
+    rawConfirm?.data?.orderId ||
+    rawConfirm?.data?.id ||
+    rawConfirm?.data?.order?.id ||
+    rawConfirm?.data?.order?._id ||
+    rawConfirm?.orderId ||
+    rawConfirm?.id ||
+    rawConfirm?.order?.id ||
+    rawConfirm?.order?._id ||
+    fallbackId
+  );
+};
+
+const confirmedOrderId = extractConfirmedOrderId(
+  state?.rawConfirm,
+  state?.draftOrderId || ""
+);
+
+const booking = {
+  draftOrderId: state?.draftOrderId || "",
+  orderId: confirmedOrderId,
+  uploadedProductId: state?.uploadedProductId || "",
+  deviceType: state?.deviceType || "",
+  brand: state?.deviceBrand || "",
+  model: state?.deviceModel || "",
+  serviceRequired: state?.serviceRequired || "",
+  issueDescription: state?.description || "",
+  objectName: state?.objectName || "",
+  rawConfirm: state?.rawConfirm || null,
+};
 
   const cleanText = (v, fallback = "") =>
     typeof v === "string" && v.trim() === "" ? fallback : v ?? fallback;
 
   const formatNaira = (value) => {
     const num = Number(value);
-    if (value == null || Number.isNaN(num)) return value;
+    if (Number.isNaN(num)) return value;
     return `₦${num.toLocaleString("en-NG")}`;
   };
 
@@ -65,12 +89,7 @@ const BookingSummary = () => {
       ? booking.serviceRequired
       : "Selected Service";
 
-  const bookingIdToShow =
-    finalBooking?.id ||
-    booking?.id ||
-    booking?.orderId ||
-    booking?.draftOrderId ||
-    "Pending payment";
+const bookingIdToShow = finalBooking?.id || booking?.orderId || booking?.draftOrderId || "—";
 
   const professionLabel =
     artisan?.profession ||
@@ -79,12 +98,7 @@ const BookingSummary = () => {
     artisan?.specialty ||
     "Technician";
 
-  const reviewsCount = Number(
-    artisan?.reviewsCount ||
-      (Array.isArray(artisan?.reviewsList) ? artisan.reviewsList.length : 0) ||
-      artisan?.reviews ||
-      0
-  );
+  const reviewsCount = Number(artisan?.reviewsCount || artisan?.reviews || 0);
 
   const yearsFromCreatedAt = artisan?.createdAt
     ? Math.max(
@@ -101,175 +115,39 @@ const BookingSummary = () => {
       ? artisan.categories.slice(0, 3)
       : ["Phone", "Tablet", "Laptop"];
 
-  const fallbackServices = [
-    { id: 1, title: "Screen Replacement", price: 12000, icon: settingImage },
-    { id: 2, title: "Battery Replacement", price: 7000, icon: battery },
-    { id: 3, title: "Charging port Fix", price: 5000, icon: flashImage },
-    { id: 4, title: "Camera Repair", price: 8000, icon: cameraImage },
-    { id: 5, title: "General Diagnostics", price: 3500, icon: settingImage },
-  ];
-
-  useEffect(() => {
-    const fetchServices = async () => {
-      if (!artisan?.id && !artisan?._id) {
-        setArtisanServiceList([]);
-        setLoadingServices(false);
-        return;
-      }
-
-      try {
-        setLoadingServices(true);
-        const artisanId = artisan?.id || artisan?._id;
-        const res = await getArtisanServices(artisanId);
-        setArtisanServiceList(Array.isArray(res) ? res : []);
-      } catch (err) {
-        console.error("BOOKING SUMMARY SERVICES ERROR:", err);
-        setArtisanServiceList([]);
-      } finally {
-        setLoadingServices(false);
-      }
-    };
-
-    fetchServices();
-  }, [artisan]);
-
-  const mapServiceCard = (service, idx, prefix) => {
-    const title =
-      typeof service === "string"
-        ? service
-        : service?.title ||
-          service?.name ||
-          service?.serviceName ||
-          `Service ${idx + 1}`;
-
-    return {
-      id: service?.id || service?._id || `${prefix}-${idx}`,
-      title,
-      description: service?.description || "",
-      price: service?.price ?? service?.amount ?? null,
-      estimatedDuration: service?.estimatedDuration || service?.duration || "",
-      icon: String(title).toLowerCase().includes("battery")
-        ? battery
-        : String(title).toLowerCase().includes("camera")
-        ? cameraImage
-        : String(title).toLowerCase().includes("charg")
-        ? flashImage
-        : settingImage,
-    };
-  };
-
-  const serviceApiMapped = useMemo(() => {
-    return (Array.isArray(artisanServiceList) ? artisanServiceList : [])
-      .filter((s) => s?.isActive !== false)
-      .map((s, idx) => mapServiceCard(s, idx, "api"));
-  }, [artisanServiceList]);
-
-  const profileServicesMapped = useMemo(() => {
+  const selectedServiceFromArtisan = useMemo(() => {
     const services = Array.isArray(artisan?.services) ? artisan.services : [];
-    return services
-      .filter((s) => s?.isActive !== false)
-      .map((s, idx) => mapServiceCard(s, idx, "profile"));
-  }, [artisan]);
 
-  const skillServicesMapped = useMemo(() => {
-    const skills = Array.isArray(artisan?.skills) ? artisan.skills : [];
-    return skills.map((s, idx) => mapServiceCard(s, idx, "skill"));
-  }, [artisan]);
-
-  const allServiceOptions =
-    serviceApiMapped.length > 0
-      ? serviceApiMapped
-      : profileServicesMapped.length > 0
-      ? profileServicesMapped
-      : skillServicesMapped.length > 0
-      ? skillServicesMapped
-      : fallbackServices;
-
-  const selectedService = useMemo(() => {
     const normalizedRequired = String(booking?.serviceRequired || "")
       .toLowerCase()
       .trim();
 
-    if (!normalizedRequired) return null;
+    if (!normalizedRequired || services.length === 0) return null;
 
     return (
-      allServiceOptions.find((s) => {
-        const title = String(s?.title || "").toLowerCase().trim();
-        return (
-          title === normalizedRequired ||
-          title.includes(normalizedRequired) ||
-          normalizedRequired.includes(title)
-        );
+      services.find((s) => {
+        const title = String(
+          s?.title || s?.name || s?.serviceName || ""
+        ).toLowerCase().trim();
+
+        return title === normalizedRequired || title.includes(normalizedRequired);
       }) || null
     );
-  }, [allServiceOptions, booking?.serviceRequired]);
+  }, [artisan, booking?.serviceRequired]);
 
-  const serviceCost =
-    selectedService?.price ??
-    booking?.serviceCost ??
-    artisan?.startingPrice ??
-    null;
+const serviceCost =
+  selectedServiceFromArtisan?.price ??
+  booking?.serviceCost ??
+  artisan?.startingPrice ??
+  null;
 
-  const platformFee = booking?.platformFee ?? null;
-  const taxFee = booking?.taxFee ?? null;
+const platformFee = booking?.platformFee ?? null;
+const taxFee = booking?.taxFee ?? null;
 
-  const totalFee =
-    serviceCost != null && platformFee != null && taxFee != null
-      ? Number(serviceCost) + Number(platformFee) + Number(taxFee)
-      : serviceCost != null
-      ? Number(serviceCost)
-      : null;
-
-  const uploadDeviceImage = async (token, userId) => {
-    const fd = new FormData();
-
-    fd.append("productImage", booking.imageFile);
-    fd.append(
-      "objectName",
-      cleanText(
-        booking.objectName,
-        `Damaged Device - ${cleanText(booking.deviceType)} ${cleanText(
-          booking.brand
-        )} ${cleanText(booking.model)}`.trim()
-      )
-    );
-    fd.append(
-      "description",
-      booking.issueDescription || booking.description || "Damaged device image"
-    );
-
-    const res = await fetch(
-      `https://dev-user-api.fixserv.co/api/upload/${userId}/upload-products`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      }
-    );
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data?.message || "Image upload failed");
-    }
-
-    const uploadedProductId =
-      data?.product?.uploadedProductId ||
-      data?.product?.id ||
-      data?.product?._id ||
-      data?.product?.uuid ||
-      data?.data?.product?.id ||
-      data?.data?.product?._id;
-
-    const imageUrl =
-      data?.product?.imageUrl || data?.data?.product?.imageUrl || "";
-
-    if (!uploadedProductId) {
-      throw new Error("Upload succeeded but uploadedProductId missing.");
-    }
-
-    return { uploadedProductId, imageUrl };
-  };
+const totalFee =
+  serviceCost != null && platformFee != null && taxFee != null
+    ? Number(serviceCost) + Number(platformFee) + Number(taxFee)
+    : null;
 
   const handleWalletPayment = async () => {
     try {
@@ -277,69 +155,34 @@ const BookingSummary = () => {
       setIsSubmitting(true);
       setActiveModal(MODAL.PROCESSING);
 
-      const token = localStorage.getItem("fixserv_token");
-      const storedUser = localStorage.getItem("fixserv_user");
+      if (!artisan) throw new Error("Selected artisan not found.");
+if (!booking?.orderId && !booking?.draftOrderId) {
+  throw new Error("Booking id not found. Please start again.");
+}
 
-      let user = null;
+      await new Promise((resolve) => setTimeout(resolve, 1200));
 
-      try {
-        user = storedUser ? JSON.parse(storedUser) : null;
-      } catch {
-        user = null;
-      }
+const finalOrderId = booking.orderId || booking.draftOrderId;
 
-      const userId = user?.id || user?._id;
+const finalData = {
+  id: finalOrderId,
+  uploadedProductId: booking.uploadedProductId,
+  deviceType: booking.deviceType,
+  brand: booking.brand,
+  model: booking.model,
+  serviceRequired: booking.serviceRequired,
+  issueDescription: booking.issueDescription,
+  objectName: booking.objectName,
+  serviceCost,
+  platformFee,
+  taxFee,
+  totalFee,
+  artisan,
+};
 
-      if (!token) throw new Error("Token not found. Please login again.");
-      if (!userId) throw new Error("User ID not found. Please login again.");
-      if (!booking?.imageFile) throw new Error("No image selected.");
+localStorage.setItem("fixserv_last_order_id", finalOrderId);
 
-      const uploaded = await uploadDeviceImage(token, userId);
-
-      const draftPayload = {
-        uploadedProductId: uploaded.uploadedProductId,
-        deviceType: booking.deviceType,
-        deviceBrand: booking.brand,
-        deviceModel: booking.model,
-        serviceRequired: booking.serviceRequired,
-      };
-
-      const createdOrder = await createDraftOrder(draftPayload);
-
-      console.log("CREATED ORDER RESPONSE =>", createdOrder);
-
-      const orderId =
-        createdOrder?.id ||
-        createdOrder?._id ||
-        createdOrder?.orderId ||
-        createdOrder?.draftOrderId ||
-        createdOrder?.data?.id ||
-        createdOrder?.data?._id ||
-        createdOrder?.data?.orderId ||
-        createdOrder?.data?.draftOrderId;
-
-      if (!orderId) {
-        throw new Error(
-          "Order created but no id/orderId/draftOrderId was returned."
-        );
-      }
-
-      localStorage.setItem("fixserv_last_order_id", orderId);
-      localStorage.setItem(
-        "fixserv_last_uploaded_image_url",
-        uploaded.imageUrl
-      );
-
-      setFinalBooking({
-        ...booking,
-        id: orderId,
-        damagedDeviceImageUrl: uploaded.imageUrl,
-        serviceCost,
-        platformFee,
-        taxFee,
-        totalFee,
-      });
-
+      setFinalBooking(finalData);
       setActiveModal(MODAL.SUCCESS);
     } catch (err) {
       console.error(err);
@@ -362,7 +205,7 @@ const BookingSummary = () => {
     };
   }, [activeModal]);
 
-  if (!artisan || !booking) {
+  if (!artisan || !booking?.draftOrderId) {
     return (
       <div className="py-20 text-center text-gray-500">
         Booking details not found. Please start again.
@@ -441,9 +284,7 @@ const BookingSummary = () => {
                   <p>
                     Experience:{" "}
                     <span className="font-medium text-black">
-                      {yearsFromCreatedAt != null
-                        ? `${yearsFromCreatedAt}+ years`
-                        : "—"}
+                      {yearsFromCreatedAt != null ? `${yearsFromCreatedAt}+ years` : "—"}
                     </span>
                   </p>
                   <p>
@@ -457,14 +298,11 @@ const BookingSummary = () => {
             </div>
 
             <div className="pt-2">
-              <h2 className="text-lg font-semibold text-black mb-6">
-                {serviceTitle}
-              </h2>
+              <h2 className="text-lg font-semibold text-black mb-6">{serviceTitle}</h2>
 
               <div className="space-y-3 text-lg text-black">
                 <p>
-                  <span className="text-[#656565]">Booking ID:</span>{" "}
-                  {bookingIdToShow}
+                  <span className="text-[#656565]">Booking ID:</span> {bookingIdToShow}
                 </p>
 
                 <p>
@@ -484,22 +322,18 @@ const BookingSummary = () => {
 
                 <p>
                   <span className="text-[#656565]">Issue description:</span>{" "}
-                  {cleanText(booking.issueDescription || booking.description, "—")}
+                  {cleanText(booking.issueDescription, "—")}
                 </p>
 
                 <p>
-                  <span className="text-[#656565]">Location:</span>{" "}
-                  {cleanText(booking.location, "—")}
+                  <span className="text-[#656565]">Object Name:</span>{" "}
+                  {cleanText(booking.objectName, "—")}
                 </p>
 
                 <div className="pt-6 space-y-2">
                   <p>
                     <span className="text-[#656565]">Service Cost:</span>{" "}
-                    {loadingServices
-                      ? "Loading..."
-                      : serviceCost == null
-                      ? "To be confirmed"
-                      : formatNaira(serviceCost)}
+                    {serviceCost == null ? "To be confirmed" : formatNaira(serviceCost)}
                   </p>
                   <p>
                     <span className="text-[#656565]">Platform Fee:</span>{" "}
@@ -510,12 +344,7 @@ const BookingSummary = () => {
                     {taxFee == null ? "To be confirmed" : formatNaira(taxFee)}
                   </p>
                   <p className="text-base font-semibold text-blue-600 pt-2">
-                    Total Fee:{" "}
-                    {loadingServices
-                      ? "Loading..."
-                      : totalFee == null
-                      ? "To be confirmed"
-                      : formatNaira(totalFee)}
+                    Total Fee: {totalFee == null ? "To be confirmed" : formatNaira(totalFee)}
                   </p>
                 </div>
               </div>
@@ -574,7 +403,8 @@ const BookingSummary = () => {
                     value = value.match(/.{1,4}/g)?.join(" ") || value;
                     e.target.value = value;
                   }}
-                  className="flex-1 border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
+                  className="flex-1 border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none
+                 focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
                 />
               </div>
 
@@ -584,7 +414,8 @@ const BookingSummary = () => {
                 <input
                   type="text"
                   placeholder="Name"
-                  className="flex-1 border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
+                  className="flex-1 border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none
+                 focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
                 />
               </div>
             </div>
@@ -607,7 +438,8 @@ const BookingSummary = () => {
 
                     e.target.value = value;
                   }}
-                  className="w-36 border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
+                  className="w-36 border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none
+               focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
                 />
               </div>
 
@@ -624,7 +456,8 @@ const BookingSummary = () => {
                     onInput={(e) => {
                       e.target.value = e.target.value.replace(/[^0-9]/g, "");
                     }}
-                    className="w-full border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
+                    className="w-full border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none
+                 focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
                   />
 
                   <img
@@ -666,28 +499,19 @@ const BookingSummary = () => {
                         </p>
 
                         <div className="text-sm space-y-1 text-left mt-4">
-                          <p>
-                            Total:{" "}
-                            {loadingServices
-                              ? "Loading..."
-                              : totalFee == null
-                              ? "To be confirmed"
-                              : formatNaira(totalFee)}
-                          </p>
+                          <p>Total: {formatNaira(totalFee)}</p>
                           <p>Balance: ₦—</p>
                           <p>Balance After Payment: ₦—</p>
                         </div>
 
                         <button
-                          disabled={isSubmitting || loadingServices}
+                          disabled={isSubmitting}
                           onClick={handleWalletPayment}
                           className={`w-full bg-blue-600 text-white py-2 rounded-md ${
-                            isSubmitting || loadingServices
-                              ? "opacity-60 cursor-not-allowed"
-                              : ""
+                            isSubmitting ? "opacity-60 cursor-not-allowed" : ""
                           }`}
                         >
-                          {isSubmitting ? "Uploading..." : "Make Payment"}
+                          {isSubmitting ? "Processing..." : "Make Payment"}
                         </button>
 
                         {submitError && (
@@ -729,13 +553,13 @@ const BookingSummary = () => {
 
                         <button
                           onClick={() =>
-                            navigate(`/client/track-repair/${finalBooking?.id}`, {
-                              state: {
-                                orderId: finalBooking?.id,
-                                artisan,
-                                booking: finalBooking,
-                              },
-                            })
+                            navigate(`/client/track-repair-a/${finalBooking?.id}`, {
+  state: {
+    orderId: finalBooking?.id,
+    artisan,
+    booking: finalBooking,
+  },
+})
                           }
                           disabled={!finalBooking?.id}
                           className={`w-full bg-blue-600 text-white py-2 rounded-md ${
@@ -757,7 +581,7 @@ const BookingSummary = () => {
                         </p>
 
                         <button
-                          onClick={() => setActiveModal(null)}
+                          onClick={() => navigate(-1)}
                           className="w-full bg-red-500 text-white py-2 rounded-md"
                         >
                           Yes, Cancel Booking
@@ -782,4 +606,4 @@ const BookingSummary = () => {
   );
 };
 
-export default BookingSummary;
+export default BookingSummaryA;

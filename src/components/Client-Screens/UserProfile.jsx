@@ -13,7 +13,6 @@ import logOut from "../../assets/client images/client-home/logout.png";
 import fund from "../../assets/client images/client-home/fund.png";
 import secure from "../../assets/client images/client-home/secure.png";
 import shieldBlue from "../../assets/client images/client-home/shield blue.png";
-import shieldGreen from "../../assets/client images/client-home/shield green.png";
 import success from "../../assets/client images/client-home/success.png";
 
 import icon from "../../assets/client images/client-home/icon.png";
@@ -24,7 +23,8 @@ import card from "../../assets/client images/client-home/card.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useLocation } from "react-router-dom";
-import { getReferralInfo } from "../../api/wallet.api";
+import { getReferralInfo, getFixpointsBalance } from "../../api/wallet.api";
+import { ArrowLeft } from "lucide-react";
 
 import {
   initiateWithdrawal,
@@ -40,16 +40,16 @@ const UserProfile = () => {
 
   const { user, token, logout, login } = useAuth();
 
-  const userId = user?.id || user?._id;  
+  const userId = user?.id || user?._id;
 
-const walletIdentifier =
-  user?.walletId ||
-  user?.wallet?._id ||
-  user?.wallet?.id ||
-  user?.id ||
-  user?._id ||
-  userId || 
-  null;
+  const walletIdentifier =
+    user?.walletId ||
+    user?.wallet?._id ||
+    user?.wallet?.id ||
+    user?.id ||
+    user?._id ||
+    userId ||
+    null;
 
   const address = user?.deliveryAddress;
 
@@ -93,9 +93,9 @@ const walletIdentifier =
   const [fixpoints, setFixpoints] = useState(0);
 
   const [referral, setReferral] = useState({
-  totalReferrals: 0,
-  totalRewards: 0,
-});
+    totalReferrals: 0,
+    totalRewards: 0,
+  });
 
   const sortedUploads = [...uploadedProducts].sort((a, b) => {
     const ta = new Date(a.uploadedAt || a.createdAt || 0).getTime();
@@ -113,22 +113,26 @@ const walletIdentifier =
   };
 
   const fetchReferral = async () => {
-  try {
-    if (!userId) return;
+    try {
+      if (!userId || !token) return;
 
-    const res = await getReferralInfo(userId);
-    const data = res?.data;
+      const res = await getReferralInfo(userId);
+      const payload = res?.data;
 
-    if (data) {
-      setReferral({
-        totalReferrals: data?.totalReferrals || 0,
-        totalRewards: data?.totalRewards || 0,
-      });
+      console.log("GET REFERRAL PAYLOAD =>", payload);
+
+      if (payload?.success) {
+        setReferral({
+          totalReferrals: Number(payload?.data?.totalReferrals ?? 0),
+          totalRewards: Number(payload?.data?.totalRewards ?? 0),
+        });
+      } else {
+        console.log("GET REFERRAL NOT SUCCESS =>", payload);
+      }
+    } catch (err) {
+      console.error("Referral fetch error:", err?.response?.data || err?.message);
     }
-  } catch (err) {
-    console.error("Referral fetch error:", err);
-  }
-};
+  };
 
   useEffect(() => {
     if (userId && token) fetchUploadedProducts();
@@ -144,7 +148,7 @@ const walletIdentifier =
     if (location.state?.refresh) {
       fetchUploadedProducts();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [location.state]);
 
   const handleDeleteUpload = async (product) => {
@@ -156,7 +160,6 @@ const walletIdentifier =
 
     setDeletingId(pid);
 
-    // optimistic
     setUploadedProducts((prev) => prev.filter((x) => (x._id || x.id) !== pid));
 
     try {
@@ -181,56 +184,54 @@ const walletIdentifier =
     }
   };
 
-const fetchWallet = async () => {
-  try {
-    if (!walletIdentifier) return;
+  const fetchWallet = async () => {
+    try {
+      if (!walletIdentifier || !token) return;
 
-    const res = await getWalletBalance(walletIdentifier);
-    const payload = res?.data;
+      const res = await getWalletBalance(walletIdentifier);
+      const payload = res?.data;
 
-    if (payload?.success) {
-      setWallet({
-        balance: payload?.data?.balance ?? 0,
-        lockedBalance: payload?.data?.lockedBalance ?? 0,
-      });
-    } else {
-      console.log("GET BALANCE NOT SUCCESS =>", payload);
-    }
-  } catch (err) {
-    console.error("Wallet fetch error:", err?.response?.data || err?.message);
-  }
-};
+      console.log("GET WALLET BALANCE PAYLOAD =>", payload);
 
-const fetchFixpoints = async () => {
-  try {
-    if (!userId || !token) return;
-
-    const res = await fetch(
-      `https://dev-wallet-api.fixserv.co/api/wallet/fixpoints/balance/${userId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      if (payload?.success) {
+        setWallet({
+          balance: Number(payload?.data?.balance ?? 0),
+          lockedBalance: Number(payload?.data?.lockedBalance ?? 0),
+        });
+      } else {
+        console.log("GET BALANCE NOT SUCCESS =>", payload);
       }
-    );
-
-    const data = await res.json();
-
-    if (data?.success) {
-      setFixpoints(data?.data?.points || 0);
+    } catch (err) {
+      console.error("Wallet fetch error:", err?.response?.data || err?.message);
     }
-  } catch (err) {
-    console.error("Fixpoints fetch error:", err);
-  }
-};
+  };
 
-useEffect(() => {
-  if (!token) return;
-  fetchWallet();
-  fetchFixpoints();
-  fetchReferral();
-}, [walletIdentifier, userId, token]);
+  const fetchFixpoints = async () => {
+    try {
+      if (!userId || !token) return;
 
+      const res = await getFixpointsBalance(userId);
+      const payload = res?.data;
+
+      console.log("GET FIXPOINTS PAYLOAD =>", payload);
+
+      if (payload?.success) {
+        setFixpoints(Number(payload?.data?.points ?? 0));
+      } else {
+        console.log("GET FIXPOINTS NOT SUCCESS =>", payload);
+      }
+    } catch (err) {
+      console.error("Fixpoints fetch error:", err?.response?.data || err?.message);
+    }
+  };
+
+  useEffect(() => {
+    if (!token || !userId || !walletIdentifier) return;
+
+    fetchWallet();
+    fetchFixpoints();
+    fetchReferral();
+  }, [walletIdentifier, userId, token]);
 
   useEffect(() => {
     if (!showWithdrawModal) return;
@@ -241,9 +242,18 @@ useEffect(() => {
         const res = await getWithdrawalBanks();
         const data = res?.data;
 
-        // Some APIs return {data: [...]}, some return [...]
-        const list = data?.data || data || [];
-        setBanks(Array.isArray(list) ? list : []);
+        const rawList = data?.data || data || [];
+        const list = Array.isArray(rawList) ? rawList : [];
+
+        const uniqueBanks = Array.from(
+          new Map(
+            list
+              .filter((b) => b?.code && b?.name)
+              .map((b) => [String(b.code), b])
+          ).values()
+        );
+
+        setBanks(uniqueBanks);
       } catch (err) {
         console.error("Failed to fetch banks", err?.response?.data || err?.message);
         setBanks([]);
@@ -253,85 +263,156 @@ useEffect(() => {
     fetchBanks();
   }, [showWithdrawModal, token]);
 
-  const handleWithdraw = async () => {
-    try {
-      if (!userId) return;
-
-      if (!withdrawData.bankCode) return alert("Please select a bank");
-      if (!withdrawData.accountNumber) return alert("Please enter account number");
-      if (!withdrawData.amount || Number(withdrawData.amount) <= 0)
-        return alert("Enter a valid withdrawal amount");
-      if (Number(withdrawData.amount) > wallet.balance) return alert("Insufficient balance");
-      if (!withdrawData.pin) return alert("Enter your transaction PIN");
-
-      setLoading(true);
-
-      const res = await initiateWithdrawal({
-        userId,
-        amount: Number(withdrawData.amount),
-        accountNumber: withdrawData.accountNumber,
-        bankCode: withdrawData.bankCode,
-        pin: withdrawData.pin,
-      });
-
-      const data = res?.data;
-      if (!data?.success) throw new Error(data?.message || "Withdrawal failed");
-
-      setWithdrawStep("success");
-      fetchWallet();
-    } catch (err) {
-      alert(err?.response?.data?.message || err?.message || "Withdrawal failed");
-    } finally {
-      setLoading(false);
+const handleWithdraw = async () => {
+  try {
+    if (!userId) {
+      alert("User not found");
+      return;
     }
-  };
+
+    const cleanAmount = Number(String(withdrawData.amount).replace(/[^\d.]/g, ""));
+    const cleanAccountNumber = String(withdrawData.accountNumber || "").replace(/\D/g, "");
+    const cleanPin = String(withdrawData.pin || "").trim();
+
+    if (!withdrawData.bankCode) {
+      alert("Please select a bank");
+      return;
+    }
+
+    if (!cleanAccountNumber) {
+      alert("Please enter account number");
+      return;
+    }
+
+    if (cleanAccountNumber.length < 10) {
+      alert("Enter a valid account number");
+      return;
+    }
+
+    if (!cleanAmount || cleanAmount <= 0) {
+      alert("Enter a valid withdrawal amount");
+      return;
+    }
+
+    if (cleanAmount > Number(wallet?.balance || 0)) {
+      alert("Insufficient balance");
+      return;
+    }
+
+    if (!cleanPin) {
+      alert("Enter your transaction PIN");
+      return;
+    }
+
+    setLoading(true);
+
+    const res = await initiateWithdrawal({
+      userId,
+      amount: cleanAmount,
+      accountNumber: cleanAccountNumber,
+      bankCode: withdrawData.bankCode,
+      pin: cleanPin,
+    });
+
+    const payload = res?.data;
+
+    if (!payload?.success) {
+      throw new Error(payload?.message || "Withdrawal failed");
+    }
+
+    setWithdrawData({
+      amount: "",
+      accountNumber: "",
+      bankCode: "",
+      pin: "",
+    });
+    setSelectedBank("");
+    setWithdrawStep("success");
+    await fetchWallet();
+  } catch (err) {
+    alert(err?.response?.data?.message || err?.message || "Withdrawal failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleFundWallet = async () => {
     try {
-      if (!user?.email) return alert("No email found for this account");
-      if (!fundAmount || Number(fundAmount) <= 0) return alert("Enter a valid amount");
+      if (!user?.email) {
+        alert("No email found for this account");
+        return;
+      }
+
+      const cleanAmount = Number(String(fundAmount).replace(/[^\d.]/g, ""));
+      if (!cleanAmount || cleanAmount <= 0) {
+        alert("Enter a valid amount");
+        return;
+      }
 
       setLoading(true);
 
       const res = await topUpWallet({
         email: user.email,
-        amount: Number(fundAmount),
+        amount: cleanAmount,
       });
 
-      const data = res?.data;
-      if (!data?.success) throw new Error(data?.message || "Funding failed");
+      const payload = res?.data;
 
-      const paymentUrlObj = data?.data?.paymentUrl || {};
-      const reference = paymentUrlObj?.reference || data?.data?.reference || null;
-      const authorizationUrl = paymentUrlObj?.authorization_url || paymentUrlObj?.authorizationUrl || null;
+      if (!payload?.success) {
+        throw new Error(payload?.message || "Funding failed");
+      }
+
+      const paymentUrl = payload?.data?.paymentUrl || {};
+      const authorizationUrl =
+        paymentUrl?.authorization_url ||
+        paymentUrl?.authorizationUrl ||
+        "";
+      const reference =
+        paymentUrl?.reference ||
+        payload?.data?.reference ||
+        payload?.reference ||
+        "";
+
+      if (!reference) {
+        throw new Error("No transaction reference returned");
+      }
 
       setFundReference(reference);
+      setFundAmount(String(cleanAmount));
       setFundStep("processing");
 
-      // ✅ If Paystack URL is provided, open it
-      if (authorizationUrl) {
-        window.open(authorizationUrl, "_blank", "noopener,noreferrer");
+      if (!authorizationUrl) {
+        throw new Error("No payment link returned");
       }
+
+
+      window.location.href = authorizationUrl;
     } catch (err) {
       alert(err?.response?.data?.message || err?.message || "Funding failed");
+      setFundStep("form");
     } finally {
       setLoading(false);
     }
   };
 
-  // Optional verification (you can keep it as a fallback)
   const verifyFundWallet = async () => {
     try {
-      if (!fundReference) return alert("No transaction reference to verify");
+      if (!fundReference) {
+        alert("No transaction reference to verify");
+        return;
+      }
 
       setLoading(true);
 
       const res = await verifyTopUp(fundReference);
-      const data = res?.data;
+      const payload = res?.data;
 
-      if (!data) throw new Error("Verification failed");
+      if (!payload?.success) {
+        throw new Error(payload?.message || "Verification failed");
+      }
+
       setFundStep("success");
-      fetchWallet();
+      await fetchWallet();
     } catch (err) {
       alert(err?.response?.data?.message || err?.message || "Verification failed");
     } finally {
@@ -349,11 +430,14 @@ useEffect(() => {
     try {
       setProfileUploading(true);
 
-      const res = await fetch(`https://dev-user-api.fixserv.co/api/upload/${userId}/profile-picture`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+      const res = await fetch(
+        `https://dev-user-api.fixserv.co/api/upload/${userId}/profile-picture`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        }
+      );
 
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Profile upload failed");
@@ -431,9 +515,6 @@ useEffect(() => {
     return `Uploaded ${new Date(t).toLocaleDateString()}`;
   };
 
-    // =========================
-  // Booking History (API)
-  // =========================
   const [bookingHistory, setBookingHistory] = useState([]);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState("");
@@ -489,8 +570,8 @@ useEffect(() => {
       String(statusRaw).toLowerCase().includes("paid")
         ? "Paid"
         : String(statusRaw).toLowerCase().includes("cancel")
-        ? "Cancelled"
-        : "Pending";
+          ? "Cancelled"
+          : "Pending";
 
     const costRaw =
       item?.cost ||
@@ -516,12 +597,12 @@ useEffect(() => {
       tech,
       status,
       cost: formatNaira(costRaw),
-      progress: typeof progressRaw === "string" ? progressRaw : String(progressRaw ?? "—"),
+      progress:
+        typeof progressRaw === "string" ? progressRaw : String(progressRaw ?? "—"),
     };
   };
 
-
-    useEffect(() => {
+  useEffect(() => {
     let alive = true;
 
     const fetchBookingHistory = async () => {
@@ -546,16 +627,17 @@ useEffect(() => {
           throw new Error(msg);
         }
 
-        const list =
-          Array.isArray(payload) ? payload :
-          Array.isArray(payload?.data) ? payload.data :
-          Array.isArray(payload?.orders) ? payload.orders :
-          Array.isArray(payload?.history) ? payload.history :
-          [];
+        const list = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : Array.isArray(payload?.orders)
+              ? payload.orders
+              : Array.isArray(payload?.history)
+                ? payload.history
+                : [];
 
         const normalized = list.map(normalizeBookingRow);
-
-        // show latest first if backend isn’t sorted
         const sorted = [...normalized].reverse();
 
         if (!alive) return;
@@ -575,14 +657,30 @@ useEffect(() => {
     };
   }, []);
 
+  useEffect(() => {
+    console.log("USER PROFILE DEBUG =>", {
+      user,
+      userId,
+      walletIdentifier,
+      hasToken: !!token,
+    });
+  }, [user, userId, walletIdentifier, token]);
+
   return (
     <div className="w-full">
-      <section className="w-full py-14 mt-4 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-2 md:px-6">
-          <div className="flex justify-between items-start">
+      <section className="w-full py-8 sm:py-10 lg:py-14 mt-4 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <button
+            onClick={() => navigate(-1)}
+            className="text-sm text-[#3e83c4] mb-6 flex items-center gap-1 cursor-pointer"
+          >
+            <ArrowLeft size={18} />
+            Back
+          </button>
+          <div className="flex flex-col xl:flex-row justify-between items-start gap-8">
             {/* LEFT — Profile */}
-            <div className="flex gap-4 items-center">
-              <div className="relative w-[270px] h-[270px]">
+            <div className="flex flex-col sm:flex-row gap-5 items-start w-full xl:flex-1">
+              <div className="relative w-full sm:w-[270px] h-[260px] sm:h-[270px] shrink-0">
                 <img
                   src={profilePreview || user?.profilePicture || PraiseImg}
                   alt="profile"
@@ -611,22 +709,24 @@ useEffect(() => {
                 )}
               </div>
 
-              <div className="space-y-3">
-                <h2 className="text-xl font-semibold text-black">{user?.fullName || "—"}</h2>
+              <div className="space-y-3 w-full min-w-0">
+                <h2 className="text-xl sm:text-2xl font-semibold text-black break-words">
+                  {user?.fullName || "—"}
+                </h2>
 
-                <div className="flex items-center gap-2 text-sm max-w-95 text-[#535353] mb-4">
-                  <img src={locationBlack} alt="" className="w-4 h-4" />
-                  <span>
+                <div className="flex items-start gap-2 text-sm max-w-full text-[#535353] mb-4">
+                  <img src={locationBlack} alt="" className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span className="break-words">
                     {[user?.deliveryAddress?.street, user?.deliveryAddress?.city, user?.deliveryAddress?.state]
                       .filter(Boolean)
                       .join(", ") || "—"}
                   </span>
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex flex-col sm:flex-row gap-3 pt-2 w-full">
                   <button
                     onClick={() => navigate("/client/settings")}
-                    className="flex items-center gap-2 bg-[#3E83C4] text-white px-5 py-2.5 rounded-md text-sm font-medium cursor-pointer"
+                    className="flex items-center justify-center gap-2 bg-[#3E83C4] text-white px-5 py-2.5 rounded-md text-sm font-medium cursor-pointer w-full sm:w-auto"
                   >
                     Edit Profile
                     <img src={edit} alt="" className="w-4 h-4" />
@@ -634,7 +734,7 @@ useEffect(() => {
 
                   <button
                     onClick={() => navigate("/client/referral")}
-                    className="border border-[#3E83C4] text-[#3E83C4] px-5 py-2.5 rounded-md text-sm font-medium  hover:bg-[#3E83C4] hover:text-[#fff] transition  cursor-pointer"
+                    className="border border-[#3E83C4] text-[#3E83C4] px-5 py-2.5 rounded-md text-sm font-medium hover:bg-[#3E83C4] hover:text-[#fff] transition cursor-pointer w-full sm:w-auto"
                   >
                     Refer & Earn
                   </button>
@@ -643,79 +743,97 @@ useEffect(() => {
             </div>
 
             {/* RIGHT — Wallet Container */}
-            <div className="bg-[#F6FBFF] border border-[#3e83c4] rounded-xl p-5 w-[320px]">
-  <div className="flex items-center gap-2 mb-4">
-    <img src={walletIcon} alt="" className="w-5 h-5" />
-    <h3 className="font-semibold text-sm text-black">Wallet</h3>
-  </div>
+            <div className="bg-[#F6FBFF] border border-[#3e83c4] rounded-xl p-5 w-full xl:w-[320px] shrink-0">
+              <div className="flex items-center gap-2 mb-4">
+                <img src={walletIcon} alt="" className="w-5 h-5" />
+                <h3 className="font-semibold text-sm text-black">Wallet</h3>
+              </div>
 
-  <div className="bg-white rounded-lg shadow-sm p-4 space-y-3 text-sm">
-    <div className="space-y-2">
-      <div className="flex justify-between">
-        <span className="text-[#535353]">Balance</span>
-        <span className="font-medium text-black">
-          ₦{Number(wallet.balance).toLocaleString()}
-        </span>
-      </div>
+              <div className="bg-white rounded-lg shadow-sm p-4 space-y-3 text-sm">
+                <div className="space-y-2">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#535353]">Balance</span>
+                    <span className="font-medium text-black text-right break-words">
+                      ₦{Number(wallet?.balance ?? 0).toLocaleString()}
+                    </span>
+                  </div>
 
-      <div className="flex justify-between">
-        <span className="text-[#535353]">Locked Balance</span>
-        <span className="font-medium text-black">
-          ₦{Number(wallet.lockedBalance).toLocaleString()}
-        </span>
-      </div>
-    </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#535353]">Locked Balance</span>
+                    <span className="font-medium text-black text-right break-words">
+                      ₦{Number(wallet?.lockedBalance ?? 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
 
-    <div className="flex justify-between items-start">
-      <span className="text-[#535353] flex items-center gap-1">
-        <img src={coin} alt="" className="w-4 h-4" />
-        Fixpoints
-      </span>
+                <div className="flex justify-between items-start gap-4">
+                  <span className="text-[#535353] flex items-center gap-1">
+                    <img src={coin} alt="" className="w-4 h-4" />
+                    Fixpoints
+                  </span>
 
-      <div className="text-right">
-        <p className="font-medium text-black">{fixpoints} pts</p>
-        <p className="text-xs text-[#535353]">
-          ₦{(fixpoints * 2).toLocaleString()}
-        </p>
-      </div>
-    </div>
-    <div className="flex justify-between">
-  <span className="text-[#535353]">Referrals</span>
-  <span className="font-medium text-black">
-    {referral.totalReferrals}
-  </span>
-</div>
+                  <div className="text-right">
+                    <p className="font-medium text-black">{Number(fixpoints ?? 0).toLocaleString()} pts</p>
+                    <p className="text-xs text-[#535353]">
+                      ₦{(fixpoints * 2).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
 
-<div className="flex justify-between">
-  <span className="text-[#535353]">Referral Rewards</span>
-  <span className="font-medium text-black">
-    ₦{Number(referral.totalRewards).toLocaleString()}
-  </span>
-</div>
-  </div>
-</div>
+                <div className="pt-3 flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => {
+  setWithdrawData({
+    amount: "",
+    accountNumber: "",
+    bankCode: "",
+    pin: "",
+  });
+  setSelectedBank("");
+  setWithdrawStep("form");
+  setShowWithdrawModal(true);
+}}
+                    className="flex-1 border border-[#43A047] text-[#43A047] py-2.5 rounded-md text-sm font-medium hover:bg-[#43A047] hover:text-white transition cursor-pointer"
+                  >
+                    Withdraw
+                  </button>
 
+                  <button
+                    onClick={() => {
+                      setFundAmount("");
+                      setFundReference(null);
+                      setFundStep("form");
+                      setShowFundModal(true);
+                    }}
+                    className="flex-1 bg-[#43A047] text-white py-2.5 rounded-md text-sm font-medium hover:bg-[#418f45] transition cursor-pointer"
+                  >
+                    Fund
+                  </button>
+                </div>
+              </div>
+            </div>
 
             {showFundModal && <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"></div>}
 
             {showFundModal && (
               <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
-                <div className="bg-white w-full max-w-[380px] rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
-                  {/* Fund Form */}
+                <div className="bg-white w-full max-w-[380px] rounded-xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] overflow-y-auto">
                   {fundStep === "form" && (
                     <div className="p-6 space-y-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <img src={fund} alt="fund" className="w-8 h-8" />
-                          <div>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <img src={fund} alt="fund" className="w-8 h-8 shrink-0" />
+                          <div className="min-w-0">
                             <h3 className="font-semibold text-sm text-black">Fund Wallet</h3>
-                            <p className="text-xs text-[#535353] mt-0.5">Add money to your wallet securely</p>
+                            <p className="text-xs text-[#535353] mt-0.5">
+                              Add money to your wallet securely
+                            </p>
                           </div>
                         </div>
 
                         <button
                           onClick={() => setShowFundModal(false)}
-                          className="text-[#535353] hover:text-gray-600 transition cursor-pointer"
+                          className="text-[#535353] hover:text-gray-600 transition cursor-pointer shrink-0"
                         >
                           ✕
                         </button>
@@ -732,6 +850,8 @@ useEffect(() => {
                       <div className="space-y-1">
                         <label className="text-sm text-[#535353]">Enter Amount</label>
                         <input
+                          type="number"
+                          min="1"
                           value={fundAmount}
                           onChange={(e) => setFundAmount(e.target.value)}
                           placeholder="₦ 0"
@@ -739,7 +859,7 @@ useEffect(() => {
                         />
                       </div>
 
-                      <div className="grid grid-cols-4 gap-2 text-xs">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                         {["₦1,000", "₦2,500", "₦5,000", "₦10,000"].map((amt) => (
                           <button
                             key={amt}
@@ -752,7 +872,7 @@ useEffect(() => {
                       </div>
 
                       <div className="flex gap-3 bg-[#EEF7FF] border border-[#CFE3F8] p-3 rounded-md text-xs text-gray-600">
-                        <img src={secure} alt="secure" className="w-8 h-8" />
+                        <img src={secure} alt="secure" className="w-8 h-8 shrink-0" />
                         <p>
                           <span className="font-medium text-black">Secure Payment</span>
                           <br />
@@ -762,10 +882,11 @@ useEffect(() => {
 
                       <button
                         onClick={handleFundWallet}
-                        disabled={loading}
-                        className={`w-full py-2.5 rounded-md text-sm font-medium transition
-                          ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white"}
-                        `}
+                        disabled={loading || !fundAmount}
+                        className={`w-full py-2.5 rounded-md text-sm font-medium transition ${loading || !fundAmount
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white cursor-pointer"
+                          }`}
                       >
                         {loading ? "Processing..." : "Continue"}
                       </button>
@@ -775,47 +896,58 @@ useEffect(() => {
                           setShowFundModal(false);
                           setFundStep("form");
                           setFundAmount("");
+                          setFundReference(null);
                         }}
+                        className="w-full text-sm text-[#3E83C4] hover:underline cursor-pointer"
                       >
                         Cancel
                       </button>
                     </div>
                   )}
 
-                  {/* Fund Processing */}
                   {fundStep === "processing" && (
                     <div className="p-6 space-y-6">
-                      <div className="flex items-start justify-between">
-                        <button onClick={() => setFundStep("form")} className="text-sm text-[#3E83C4] flex items-center gap-1">
+                      <div className="flex items-start justify-between gap-4">
+                        <button
+                          onClick={() => setFundStep("form")}
+                          className="text-sm text-[#3E83C4] flex items-center gap-1"
+                        >
                           ← Back
                         </button>
 
-                        <button onClick={() => setShowFundModal(false)} className="text-[#535353] hover:text-gray-600">
+                        <button
+                          onClick={() => setShowFundModal(false)}
+                          className="text-[#535353] hover:text-gray-600"
+                        >
                           ✕
                         </button>
                       </div>
 
                       <div className="flex items-start gap-3">
-                        <img src={shieldBlue} className="w-10 h-10" alt="" />
+                        <img src={shieldBlue} className="w-10 h-10 shrink-0" alt="" />
                         <div>
                           <h3 className="font-semibold text-base text-black">Payment Verification</h3>
                           <p className="text-xs text-[#535353] leading-relaxed mt-0.5">
-                            If you completed payment in the Paystack page, you can verify here (fallback).
+                            If you completed payment in the Paystack page, you can verify here
+                            (fallback).
                           </p>
                         </div>
                       </div>
 
-                      <div className="bg-[#EEF7FF] rounded-md p-4 text-sm flex justify-between">
+                      <div className="bg-[#EEF7FF] rounded-md p-4 text-sm flex justify-between gap-4">
                         <span className="text-[#535353]">Transaction Amount</span>
-                        <span className="font-semibold text-black">₦{Number(fundAmount || 0).toLocaleString()}</span>
+                        <span className="font-semibold text-black text-right">
+                          ₦{Number(fundAmount || 0).toLocaleString()}
+                        </span>
                       </div>
 
                       <button
                         onClick={verifyFundWallet}
                         disabled={loading}
-                        className={`w-full py-2.5 rounded-md text-sm font-medium transition
-                          ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white"}
-                        `}
+                        className={`w-full py-2.5 rounded-md text-sm font-medium transition ${loading
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white"
+                          }`}
                       >
                         {loading ? "Verifying..." : "Complete Payment"}
                       </button>
@@ -829,12 +961,13 @@ useEffect(() => {
                     </div>
                   )}
 
-                  {/* Fund Success */}
                   {fundStep === "success" && (
                     <div className="p-8 text-center space-y-4">
                       <img src={success} className="w-14 mx-auto" alt="" />
                       <h3 className="font-semibold text-black">Payment Successful</h3>
-                      <p className="text-sm text-[#535353]">Your wallet has been successfully funded.</p>
+                      <p className="text-sm text-[#535353]">
+                        Your wallet has been successfully funded.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -845,22 +978,23 @@ useEffect(() => {
 
             {showWithdrawModal && (
               <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
-                <div className="bg-white w-full max-w-[380px] rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
-                  {/* Withdraw Form */}
+                <div className="bg-white w-full max-w-[380px] rounded-xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] overflow-y-auto">
                   {withdrawStep === "form" && (
                     <div className="p-6 space-y-8">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <img src={icon} className="w-8" alt="" />
-                          <div>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <img src={icon} className="w-8 shrink-0" alt="" />
+                          <div className="min-w-0">
                             <h3 className="text-sm font-semibold text-black">Withdraw Funds</h3>
-                            <p className="text-xs text-[#535353] leading-tight">Withdraw money securely</p>
+                            <p className="text-xs text-[#535353] leading-tight">
+                              Withdraw money securely
+                            </p>
                           </div>
                         </div>
 
                         <button
                           onClick={() => setShowWithdrawModal(false)}
-                          className="text-[#535353] hover:text-black transition cursor-pointer"
+                          className="text-[#535353] hover:text-black transition cursor-pointer shrink-0"
                         >
                           ✕
                         </button>
@@ -874,12 +1008,14 @@ useEffect(() => {
                         <span>Withdraw</span>
                       </div>
 
-                      <div className="flex items-center justify-between bg-[#EEF7FF] border border-[#CFE3F8] rounded-lg px-4 py-3 text-sm">
-                        <div className="flex items-center gap-2">
-                          <img src={current} className="w-8" alt="" />
+                      <div className="flex items-center justify-between bg-[#EEF7FF] border border-[#CFE3F8] rounded-lg px-4 py-3 text-sm gap-4">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <img src={current} className="w-8 shrink-0" alt="" />
                           <span className="text-[#535353]">Current Balance</span>
                         </div>
-                        <span className="font-semibold text-black">₦{Number(wallet.balance || 0).toLocaleString()}</span>
+                        <span className="font-semibold text-black text-right">
+                          ₦{Number(wallet.balance || 0).toLocaleString()}
+                        </span>
                       </div>
 
                       <div className="space-y-4">
@@ -899,7 +1035,7 @@ useEffect(() => {
                           >
                             <option value="">Select Bank</option>
                             {banks.map((b) => (
-                              <option key={b.code} value={b.code}>
+                              <option key={`${b.code}-${b.name}`} value={b.code}>
                                 {b.name}
                               </option>
                             ))}
@@ -913,21 +1049,30 @@ useEffect(() => {
                           </label>
 
                           <input
-                            value={withdrawData.accountNumber}
-                            onChange={(e) => setWithdrawData({ ...withdrawData, accountNumber: e.target.value })}
-                            placeholder="Enter Account Number"
-                            className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none"
-                          />
+  type="text"
+  inputMode="numeric"
+  maxLength={10}
+  value={withdrawData.accountNumber}
+  onChange={(e) =>
+    setWithdrawData({
+      ...withdrawData,
+      accountNumber: e.target.value.replace(/\D/g, ""),
+    })
+  }
+  placeholder="Enter Account Number"
+  className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none"
+/>
                         </div>
                       </div>
 
                       <button
                         onClick={() => {
                           if (!withdrawData.bankCode) return alert("Please select a bank");
-                          if (!withdrawData.accountNumber) return alert("Please enter account number");
+                          if (!withdrawData.accountNumber)
+                            return alert("Please enter account number");
                           setWithdrawStep("amount");
                         }}
-                        className="w-full bg-[#3E83C4] hover:bg-[#2D75B8] text-white py-1.5 rounded-md text-sm font-medium transition cursor-pointer"
+                        className="w-full bg-[#3E83C4] hover:bg-[#2D75B8] text-white py-2.5 rounded-md text-sm font-medium transition cursor-pointer"
                       >
                         Verify & Continue
                       </button>
@@ -941,10 +1086,9 @@ useEffect(() => {
                     </div>
                   )}
 
-                  {/* Withdraw Amount */}
                   {withdrawStep === "amount" && (
                     <div className="px-6 pt-5 pb-7">
-                      <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center justify-between mb-6 gap-4">
                         <button
                           onClick={() => setWithdrawStep("form")}
                           className="flex items-center gap-1 text-sm text-[#3E83C4] hover:underline cursor-pointer"
@@ -961,37 +1105,59 @@ useEffect(() => {
                       </div>
 
                       <div className="flex items-center gap-3 mb-4">
-                        <img src={icon} className="w-8 h-8" alt="" />
+                        <img src={icon} className="w-8 h-8 shrink-0" alt="" />
                         <div>
-                          <h3 className="text-sm font-semibold text-black leading-tight">Enter Amount</h3>
-                          <p className="text-xs text-[#535353] leading-tight">Withdraw money securely</p>
+                          <h3 className="text-sm font-semibold text-black leading-tight">
+                            Enter Amount
+                          </h3>
+                          <p className="text-xs text-[#535353] leading-tight">
+                            Withdraw money securely
+                          </p>
                         </div>
                       </div>
 
                       <div className="mb-4">
-                        <label className="block text-sm text-[#535353] mb-1">Enter Amount</label>
+                        <label className="block text-sm text-[#535353] mb-1">
+                          Enter Amount
+                        </label>
 
                         <input
-                          value={withdrawData.amount}
-                          onChange={(e) => setWithdrawData({ ...withdrawData, amount: e.target.value })}
-                          placeholder="₦ 0"
-                          className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none"
-                        />
+  type="number"
+  min="1"
+  value={withdrawData.amount}
+  onChange={(e) =>
+    setWithdrawData({ ...withdrawData, amount: e.target.value })
+  }
+  placeholder="₦ 0"
+  className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none"
+/>
 
                         <input
-                          type="password"
-                          value={withdrawData.pin}
-                          onChange={(e) => setWithdrawData({ ...withdrawData, pin: e.target.value })}
-                          placeholder="Enter Transaction PIN"
-                          className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none mt-3"
-                        />
+  type="password"
+  inputMode="numeric"
+  maxLength={4}
+  value={withdrawData.pin}
+  onChange={(e) =>
+    setWithdrawData({
+      ...withdrawData,
+      pin: e.target.value.replace(/\D/g, ""),
+    })
+  }
+  placeholder="Enter Transaction PIN"
+  className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none mt-3"
+/>
                       </div>
 
-                      <div className="grid grid-cols-4 gap-2 mb-10 text-xs">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-10 text-xs">
                         {["₦1,000", "₦2,500", "₦5,000", "₦10,000"].map((amt) => (
                           <button
                             key={amt}
-                            onClick={() => setWithdrawData({ ...withdrawData, amount: amt.replace(/[₦,]/g, "") })}
+                            onClick={() =>
+                              setWithdrawData({
+                                ...withdrawData,
+                                amount: amt.replace(/[₦,]/g, ""),
+                              })
+                            }
                             className="bg-[#EEF6FF] text-[#3E83C4] py-2 rounded-md hover:bg-[#E2EFFF] transition cursor-pointer"
                           >
                             {amt}
@@ -1003,9 +1169,10 @@ useEffect(() => {
                         <button
                           onClick={handleWithdraw}
                           disabled={loading}
-                          className={`w-56 py-2.5 rounded-md text-sm font-medium transition
-                            ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white"}
-                          `}
+                          className={`w-full sm:w-56 py-2.5 rounded-md text-sm font-medium transition ${loading
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white"
+                            }`}
                         >
                           {loading ? "Processing..." : "Withdraw"}
                         </button>
@@ -1022,13 +1189,13 @@ useEffect(() => {
                     </div>
                   )}
 
-                  {/* Withdraw success */}
                   {withdrawStep === "success" && (
                     <div className="p-8 text-center space-y-4">
                       <img src={success} className="w-14 mx-auto" alt="" />
                       <h3 className="font-semibold text-black">Withdraw Successful</h3>
                       <p className="text-sm text-[#535353]">
-                        Your funds have been successfully transferred to your bank account.
+                        Your funds have been successfully transferred to your bank
+                        account.
                       </p>
                     </div>
                   )}
@@ -1040,34 +1207,34 @@ useEffect(() => {
       </section>
 
       <section className="w-full overflow-hidden">
-        <div className="max-w-7xl mx-auto px-2 md:px-6">
-          <div className="grid grid-cols-[1fr_2fr] gap-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_2fr] gap-8">
             {/* LEFT — Contact Info */}
-            <div className="border border-[#3E83C4] rounded-xl p-6 bg-[#F6FBFF]">
-              <h3 className="font-semibold text-black text-xl mb-4">Contact Info</h3>
+            <div className="border border-[#3E83C4] rounded-xl p-5 sm:p-6 bg-[#F6FBFF]">
+              <h3 className="font-semibold text-black text-lg sm:text-xl mb-4">Contact Info</h3>
 
-              <div className="bg-white rounded-lg shadow-lg p-4 space-y-4 text-lg text-gray-600">
-                <div className="flex items-center gap-2">
-                  <img src={email} alt="" className="w-4 h-4" />
-                  <span className="text-sm">{user?.email || "—"}</span>
+              <div className="bg-white rounded-lg shadow-lg p-4 space-y-4 text-gray-600">
+                <div className="flex items-start gap-2">
+                  <img src={email} alt="" className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span className="text-sm break-words">{user?.email || "—"}</span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <img src={locationBlue} alt="" className="w-4 h-4" />
-                  <span className="text-sm">{addressText}</span>
+                <div className="flex items-start gap-2">
+                  <img src={locationBlue} alt="" className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span className="text-sm break-words">{addressText}</span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <img src={phone} alt="" className="w-5 h-5" />
-                  <span className="text-sm">{user?.phoneNumber || "—"}</span>
+                <div className="flex items-start gap-2">
+                  <img src={phone} alt="" className="w-5 h-5 mt-0.5 shrink-0" />
+                  <span className="text-sm break-words">{user?.phoneNumber || "—"}</span>
                 </div>
               </div>
             </div>
 
             {/* RIGHT — Items Uploaded */}
-            <div className="border border-[#3E83C4] rounded-xl bg-[#F6FBFF] p-6">
+            <div className="border border-[#3E83C4] rounded-xl bg-[#F6FBFF] p-5 sm:p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-black text-xl flex items-center gap-2">
+                <h3 className="font-semibold text-black text-lg sm:text-xl flex items-center gap-2">
                   <img src={item} alt="" className="w-9 h-8" />
                   Items Uploaded
                 </h3>
@@ -1080,7 +1247,7 @@ useEffect(() => {
                 </button>
               </div>
 
-              <div className="bg-white rounded-lg shadow-sm p-4 space-y-4 max-h-[230px] overflow-y-auto">
+              <div className="bg-white rounded-lg shadow-sm p-4 space-y-4 max-h-[400px] sm:max-h-[230px] overflow-y-auto">
                 {uploadedProducts.length === 0 && (
                   <p className="text-sm text-gray-500">No items uploaded yet.</p>
                 )}
@@ -1092,27 +1259,28 @@ useEffect(() => {
                   return (
                     <div
                       key={id || index}
-                      className={`flex gap-4 border-b border-[#C1DAF3] pb-4 ${index === 0 ? "pt-1" : ""}`}
+                      className={`flex flex-col sm:flex-row gap-4 border-b border-[#C1DAF3] pb-4 ${index === 0 ? "pt-1" : ""
+                        }`}
                     >
                       <img
                         src={product.imageUrl || product.image}
                         alt={product.objectName}
-                        className="w-28 h-28 rounded-md object-cover"
+                        className="w-full sm:w-28 h-40 sm:h-28 rounded-md object-cover shrink-0"
                       />
 
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h4 className="font-medium text-black">
+                          <div className="min-w-0">
+                            <h4 className="font-medium text-black break-words">
                               {product.objectName || "—"}
                               {index === 0 && (
-                                <span className="ml-2 text-xs bg-[#EEF6FF] text-[#3E83C4] px-2 py-1 rounded-full">
+                                <span className="ml-2 inline-block text-xs bg-[#EEF6FF] text-[#3E83C4] px-2 py-1 rounded-full">
                                   Latest
                                 </span>
                               )}
                             </h4>
 
-                            <p className="text-[#535353] text-sm mt-1 leading-relaxed">
+                            <p className="text-[#535353] text-sm mt-1 leading-relaxed break-words">
                               {product.description || "—"}
                             </p>
 
@@ -1124,13 +1292,10 @@ useEffect(() => {
                           <button
                             onClick={() => handleDeleteUpload(product)}
                             disabled={isDeleting}
-                            className={`text-xs px-3 py-1 rounded-md border transition cursor-pointer
-                              ${
-                                isDeleting
-                                  ? "opacity-60 cursor-not-allowed border-gray-300 text-gray-500"
-                                  : "border-red-500 text-red-600 hover:bg-red-50"
-                              }
-                            `}
+                            className={`text-xs px-3 py-1 rounded-md border transition cursor-pointer shrink-0 ${isDeleting
+                                ? "opacity-60 cursor-not-allowed border-gray-300 text-gray-500"
+                                : "border-red-500 text-red-600 hover:bg-red-50"
+                              }`}
                           >
                             {isDeleting ? "Deleting..." : "Delete"}
                           </button>
@@ -1146,24 +1311,27 @@ useEffect(() => {
       </section>
 
       <section className="w-full py-8 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-2 md:px-6">
-          <div className="border border-[#5F8EBA] rounded-xl p-6 bg-white">
-            <div className="flex justify-between items-center mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="border border-[#5F8EBA] rounded-xl p-4 sm:p-6 bg-white">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
               <div className="flex items-center gap-2">
                 <img src={item} alt="item" className="w-9 h-8" />
-                <h3 className="font-semibold text-lg text-black">Booking History</h3>
+                <h3 className="font-semibold text-base sm:text-lg text-black">
+                  Booking History
+                </h3>
               </div>
 
               <button
                 onClick={() => navigate("/client/repair")}
-                className="text-[#3E83C4] text-lg hover:underline cursor-pointer"
+                className="text-[#3E83C4] text-sm sm:text-base lg:text-lg hover:underline cursor-pointer text-left sm:text-right"
               >
                 View All History
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-lg">
+            {/* Desktop table */}
+            <div className="overflow-x-auto hidden md:block">
+              <table className="w-full text-sm lg:text-base">
                 <thead>
                   <tr className="bg-[#ECF0F5] text-[#656565] text-left rounded-lg">
                     <th className="py-3 px-4 font-medium">Booking ID</th>
@@ -1175,61 +1343,126 @@ useEffect(() => {
                   </tr>
                 </thead>
 
-<tbody className="text-[#535353] text-lg">
-  {bookingLoading ? (
-    <tr>
-      <td className="py-5 px-4 text-sm text-gray-500" colSpan={6}>
-        Loading booking history...
-      </td>
-    </tr>
-  ) : bookingError ? (
-    <tr>
-      <td className="py-5 px-4 text-sm text-red-600" colSpan={6}>
-        {bookingError}
-      </td>
-    </tr>
-  ) : bookingHistory.length === 0 ? (
-    <tr>
-      <td className="py-5 px-4 text-sm text-gray-500" colSpan={6}>
-        No booking history found.
-      </td>
-    </tr>
-  ) : (
-    bookingHistory.slice(0, 5).map((row, i) => {
-      const color =
-        row.status === "Paid"
-          ? "bg-[#C9E8CA] text-[#43A047]"
-          : row.status === "Pending"
-          ? "bg-[#FFF0D9] text-[#F99F10]"
-          : "bg-red-100 text-red-600";
+                <tbody className="text-[#535353] text-sm lg:text-base">
+                  {bookingLoading ? (
+                    <tr>
+                      <td className="py-5 px-4 text-sm text-gray-500" colSpan={6}>
+                        Loading booking history...
+                      </td>
+                    </tr>
+                  ) : bookingError ? (
+                    <tr>
+                      <td className="py-5 px-4 text-sm text-red-600" colSpan={6}>
+                        {bookingError}
+                      </td>
+                    </tr>
+                  ) : bookingHistory.length === 0 ? (
+                    <tr>
+                      <td className="py-5 px-4 text-sm text-gray-500" colSpan={6}>
+                        No booking history found.
+                      </td>
+                    </tr>
+                  ) : (
+                    bookingHistory.slice(0, 5).map((row, i) => {
+                      const color =
+                        row.status === "Paid"
+                          ? "bg-[#C9E8CA] text-[#43A047]"
+                          : row.status === "Pending"
+                            ? "bg-[#FFF0D9] text-[#F99F10]"
+                            : "bg-red-100 text-red-600";
 
-      return (
-        <tr key={`${row.id}-${i}`}>
-          <td className="py-4 px-4">{row.id}</td>
-          <td className="py-4 px-4">{row.device}</td>
-          <td className="py-4 px-4">{row.tech}</td>
+                      return (
+                        <tr key={`${row.id}-${i}`}>
+                          <td className="py-4 px-4 break-words">{row.id}</td>
+                          <td className="py-4 px-4 break-words">{row.device}</td>
+                          <td className="py-4 px-4 break-words">{row.tech}</td>
 
-          <td className="py-4 px-4">
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 w-fit ${color}`}
-            >
-              <span className="w-2 h-2 rounded-full bg-current" />
-              {row.status}
-            </span>
-          </td>
+                          <td className="py-4 px-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 w-fit ${color}`}
+                            >
+                              <span className="w-2 h-2 rounded-full bg-current" />
+                              {row.status}
+                            </span>
+                          </td>
 
-          <td className="py-4 px-4 font-semibold">{row.cost}</td>
-          <td className="py-4 px-4">{row.progress}</td>
-        </tr>
-      );
-    })
-  )}
-</tbody>
+                          <td className="py-4 px-4 font-semibold break-words">{row.cost}</td>
+                          <td className="py-4 px-4 break-words">{row.progress}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
               </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-4">
+              {bookingLoading ? (
+                <div className="py-5 text-sm text-gray-500">Loading booking history...</div>
+              ) : bookingError ? (
+                <div className="py-5 text-sm text-red-600">{bookingError}</div>
+              ) : bookingHistory.length === 0 ? (
+                <div className="py-5 text-sm text-gray-500">No booking history found.</div>
+              ) : (
+                bookingHistory.slice(0, 5).map((row, i) => {
+                  const color =
+                    row.status === "Paid"
+                      ? "bg-[#C9E8CA] text-[#43A047]"
+                      : row.status === "Pending"
+                        ? "bg-[#FFF0D9] text-[#F99F10]"
+                        : "bg-red-100 text-red-600";
+
+                  return (
+                    <div
+                      key={`${row.id}-${i}`}
+                      className="border border-[#E5EEF8] rounded-xl p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="min-w-0">
+                          <p className="text-xs text-[#656565] mb-1">Booking ID</p>
+                          <p className="text-sm font-medium text-black break-words">
+                            {row.id}
+                          </p>
+                        </div>
+
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 w-fit shrink-0 ${color}`}
+                        >
+                          <span className="w-2 h-2 rounded-full bg-current" />
+                          {row.status}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-[#656565] mb-1">Device</p>
+                          <p className="break-words">{row.device}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-[#656565] mb-1">Technician</p>
+                          <p className="break-words">{row.tech}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-[#656565] mb-1">Cost</p>
+                          <p className="font-semibold break-words">{row.cost}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-[#656565] mb-1">Progress</p>
+                          <p className="break-words">{row.progress}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
-          <div className="mt-10">
+          <div className="mt-10 flex">
             <button
               onClick={logout}
               className="flex items-center gap-2 bg-[#ED3528] text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition cursor-pointer"

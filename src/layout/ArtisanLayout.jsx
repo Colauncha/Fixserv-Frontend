@@ -4,11 +4,14 @@ import ScrollToTop from "../components/ScrollToTop";
 
 const ArtisanLayout = () => {
   return (
-    <div className="flex min-h-screen">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <ScrollToTop />
       <ArtisanSidebar />
-      <main className="flex-1">
-        <Outlet />
+
+      <main className="lg:ml-56 pt-16 lg:pt-0 min-h-screen overflow-x-hidden">
+        <div className="min-h-screen">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

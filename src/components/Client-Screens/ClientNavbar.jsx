@@ -85,54 +85,55 @@ const ClientNavbar = () => {
                 {/* Desktop Icons */}
         <div className="hidden md:flex items-center gap-6 relative h-6">
 
-          {/* Notification Bell */}
-          <button
+{/* Notification Bell */}
+<button
   type="button"
   onMouseDown={(e) => e.stopPropagation()}
   onClick={toggleNotifications}
-  className="relative flex items-center justify-center h-6 w-6 cursor-pointer"
+  className="relative flex items-center justify-center cursor-pointer"
   aria-expanded={showNotifications}
   aria-label="Notifications"
 >
-            <img
-              src={profile}
-              alt="Notifications"
-              className="h-6 w-6 block object-contain"
-            />
+  <img
+    src={profile}
+    alt="Notifications"
+    className="h-8 w-8 object-contain"
+  />
 
-            {notificationCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                {notificationCount}
-              </span>
-            )}
-          </button>
+  {notificationCount > 0 && (
+    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+      {notificationCount}
+    </span>
+  )}
+</button>
 
-          {/* Profile */}
-          <button
-            onClick={() => navigate("/client/profile")}
-            className="flex items-center justify-center h-6 w-6 cursor-pointer"
-            aria-label="Profile"
-            type="button"
-          >
-            <img
-              src={not}
-              alt="Profile"
-              className="h-6 w-6 block object-contain"
-            />
-          </button>
+
+{/* Profile */}
+<button
+  onClick={() => navigate("/client/profile")}
+  className="flex items-center justify-center cursor-pointer"
+  aria-label="Profile"
+  type="button"
+>
+  <img
+    src={not}
+    alt="Profile"
+    className="h-8 w-8 object-contain"
+  />
+</button>
 
         </div>
         
 
         {/* Mobile Hamburger */}
         <button
-          className="md:hidden text-[#3E83C4]"
+          className="md:hidden cursor-pointer text-[#3E83C4]"
           onClick={() => setOpen(!open)}
         >
           {open ? <X size={28} /> : <Menu size={28} />}
         </button>
       </nav>
-      {/* Notifications Dropdown (shared for Desktop + Mobile) */}
+
       <div ref={notificationRef} className="absolute top-[72px] right-6 md:right-14 z-50">
         <ClientNotificationDropdown
           isOpen={showNotifications}
@@ -168,22 +169,11 @@ const ClientNavbar = () => {
       </NavLink>
     </li>
 
-    {/* 🔥 ADD THIS RIGHT HERE */}
-    {/* Icons Row */}
+
     <div className="flex items-center justify-center gap-8 mt-4 w-full">
 
-      {/* Notification */}
            <div className="relative flex items-center">
-        {/* <button
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            toggleNotifications(e);
-            setOpen(false);
-          }}
-          className="relative cursor-pointer flex items-center justify-center"
-          aria-label="Notifications"
-          type="button"
-        > */}
+       
         <button
   type="button"
   onMouseDown={(e) => e.stopPropagation()}
@@ -194,7 +184,7 @@ const ClientNavbar = () => {
   className="relative cursor-pointer flex items-center justify-center"
   aria-label="Notifications"
 >
-          <img src={profile} alt="Notifications" className="h-6 w-6" />
+          <img src={profile} alt="Notifications" className="h-8 w-8" />
 
           {notificationCount > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
@@ -204,7 +194,7 @@ const ClientNavbar = () => {
         </button>
       </div>
 
-      {/* Profile */}
+    
       <button
         onClick={() => {
           navigate("/client/profile");
@@ -213,7 +203,7 @@ const ClientNavbar = () => {
         className="cursor-pointer flex items-center justify-center"
         aria-label="Profile"
       >
-        <img src={not} alt="Profile" className="h-6 w-6" />
+        <img src={not} alt="Profile" className="h-8 w-8" />
       </button>
 
     </div>

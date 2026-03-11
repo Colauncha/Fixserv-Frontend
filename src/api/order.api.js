@@ -1,13 +1,80 @@
-const ORDER_API_BASE = ""; // ✅ we will use relative routes with proxy
-const getToken = () => localStorage.getItem("fixserv_token");
+import axios from "axios";
 
-async function safeJson(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
+const ORDER_API = axios.create({
+  baseURL: "/api/orders",
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+  timeout: 30000,
+});
+
+const ORDER_SERVICE_API = axios.create({
+  baseURL: "/api/order-service",
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+  timeout: 30000,
+});
+
+const attachAuth = (config) => {
+  const token = localStorage.getItem("fixserv_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-}
+
+  return config;
+};
+
+ORDER_API.interceptors.request.use((config) => {
+  const next = attachAuth(config);
+
+  console.log(
+    "ORDER AXIOS REQUEST =>",
+    next.method?.toUpperCase(),
+    `${next.baseURL || ""}${next.url || ""}`,
+    next.params || next.data || ""
+  );
+
+  return next;
+});
+
+ORDER_SERVICE_API.interceptors.request.use((config) => {
+  const next = attachAuth(config);
+
+  console.log(
+    "ORDER SERVICE AXIOS REQUEST =>",
+    next.method?.toUpperCase(),
+    `${next.baseURL || ""}${next.url || ""}`,
+    next.params || next.data || ""
+  );
+
+  return next;
+});
+
+const handleResponse = (response) => {
+  console.log(
+    "ORDER AXIOS RESPONSE =>",
+    response.status,
+    response.config.url,
+    response.data
+  );
+  return response;
+};
+
+const handleError = (error) => {
+  console.log(
+    "ORDER AXIOS ERROR =>",
+    error?.response?.status,
+    error?.config?.url,
+    error?.response?.data || error?.message
+  );
+  return Promise.reject(error);
+};
+
+ORDER_API.interceptors.response.use(handleResponse, handleError);
+ORDER_SERVICE_API.interceptors.response.use(handleResponse, handleError);
 
 function normalizeOrderResponse(data) {
   const payload = data?.data || data?.order || data;
@@ -15,97 +82,84 @@ function normalizeOrderResponse(data) {
   return id ? { ...payload, id } : payload;
 }
 
-/**
- * Create draft order
- * POST /api/orders/draft
- */
-export async function createDraftOrder(payload) {
-  const token = getToken();
-  if (!token) throw new Error("Token not found. Please login again.");
-
-  const res = await fetch(`/api/orders/api/orders/draft`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await safeJson(res);
-
-  if (!res.ok) {
-    const msg =
-      data?.message ||
-      data?.error ||
-      (Array.isArray(data?.errors) ? data.errors?.[0]?.message : null) ||
-      "Failed to create booking (draft order)";
-    throw new Error(msg);
+function extractArray(payload, keys = []) {
+  for (const key of keys) {
+    if (Array.isArray(payload?.[key])) return payload[key];
   }
-
-  return normalizeOrderResponse(data);
+  return null;
 }
 
-/**
- * Client order history
- * GET /api/orders/client-history
- */
-export async function getClientHistory() {
-  const token = getToken();
-  if (!token) throw new Error("Token not found. Please login again.");
+/* =========================
+   ORDER API
+========================= */
 
-  const res = await fetch(`/api/orders/api/orders/client-history`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export const createDraftOrder = async (payload) => {
+  const res = await ORDER_API.post("/draft", payload);
+  return normalizeOrderResponse(res?.data);
+};
 
-  const data = await safeJson(res);
+export const getClientHistory = async () => {
+  const res = await ORDER_API.get("/client-history");
+  const data = res?.data;
 
-  if (!res.ok) {
-    const msg =
-      data?.message ||
-      data?.error ||
-      (Array.isArray(data?.errors) ? data.errors?.[0]?.message : null) ||
-      "Failed to fetch client history";
-    throw new Error(msg);
-  }
+  const orders =
+    extractArray(data?.data, ["orders", "history"]) ||
+    extractArray(data, ["orders", "history"]) ||
+    (Array.isArray(data?.data) ? data.data : []) ||
+    (Array.isArray(data) ? data : []);
 
-  // common shapes
-  const orders = data?.data?.orders || data?.orders || data?.data || [];
   return Array.isArray(orders) ? orders : [];
-}
+};
 
-/**
- * Fetch a specific order (ORDER SERVICE)
- * GET /api/orders/:orderId/getOrder
- */
-export async function getOrderById(orderId) {
+// export const getArtisanHistory = async () => {
+//   const res = await ORDER_API.get("/artisan-history");
+//   const data = res?.data;
+
+//   const orders =
+//     extractArray(data?.data, ["orders", "history"]) ||
+//     extractArray(data, ["orders", "history"]) ||
+//     (Array.isArray(data?.data) ? data.data : []) ||
+//     (Array.isArray(data) ? data : []);
+
+//   return Array.isArray(orders) ? orders : [];
+// };
+
+export const getArtisanHistory = async () => {
+  const res = await ORDER_API.get("/artisan-history");
+  const data = res?.data;
+
+  if (Array.isArray(data?.orders)) return data.orders;
+  if (Array.isArray(data?.data?.orders)) return data.data.orders;
+  if (Array.isArray(data?.history)) return data.history;
+  if (Array.isArray(data?.data?.history)) return data.data.history;
+  if (Array.isArray(data)) return data;
+
+  return [];
+};
+
+export const getOrderById = async (orderId) => {
   if (!orderId) throw new Error("orderId is required");
 
-  const token = getToken();
-  if (!token) throw new Error("Token not found. Please login again.");
+  const res = await ORDER_API.get(`/${orderId}/getOrder`);
+  return normalizeOrderResponse(res?.data);
+};
 
-  const res = await fetch(`/api/order-service/api/orders/${orderId}/getOrder`, {
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export const startWorkOnOrder = async (orderId) => {
+  if (!orderId) throw new Error("orderId is required");
 
-  const data = await safeJson(res);
+  await ORDER_API.patch(`/${orderId}/start-work`);
+};
 
-  if (!res.ok) {
-    const msg =
-      data?.message ||
-      data?.error ||
-      (Array.isArray(data?.errors) ? data.errors?.[0]?.message : null) ||
-      "Failed to fetch booking";
-    throw new Error(msg);
-  }
+export const completeWorkOnOrder = async (orderId) => {
+  if (!orderId) throw new Error("orderId is required");
 
-  return normalizeOrderResponse(data);
-}
+  await ORDER_API.patch(`/${orderId}/complete-work`);
+};
+
+export const acceptOrder = (orderId) => {
+  return axios.post(`/api/orders/${orderId}/accept`);
+};
+
+export const rejectOrder = (orderId) => {
+  return axios.post(`/api/orders/${orderId}/reject`);
+};

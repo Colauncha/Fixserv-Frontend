@@ -1,11 +1,6 @@
-
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap');
 
 @import "tailwindcss";
-
-
-
 
 body {
   font-family: "Inter", sans-serif;
@@ -37,23 +32,6 @@ body {
   background: #2563eb;
 }
 
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.marquee {
-  animation: marquee 25s linear infinite;
-}
-
-.marquee:hover {
-  animation-play-state: paused;
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -77,3 +55,41 @@ html {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+
+@keyframes marqueeLeftOne {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-one {
+  animation: marqueeLeftOne 28s linear infinite;
+  will-change: transform;
+}
+
+.marquee-one:hover {
+  animation-play-state: paused;
+}
+
+
+
+@keyframes marqueeLeftTwo {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-two {
+  animation: marqueeLeftTwo 42s linear infinite;
+  will-change: transform;
+}
+
+.marquee-two:hover {
+  animation-play-state: paused;
+}

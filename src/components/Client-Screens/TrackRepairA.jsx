@@ -41,13 +41,15 @@ const formatDate = (value) => {
   };
 };
 
-const TrackRepair = () => {
+const TrackRepairA = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { orderId: orderIdFromParams } = useParams();
 
   const artisan = location.state?.artisan || null;
   const bookingFromState = location.state?.booking || null;
+
+  const shouldFetchLiveOrder = true;
 
   const orderIdFromState = location.state?.orderId;
   const orderIdFromStorage = localStorage.getItem("fixserv_last_order_id");
@@ -57,13 +59,11 @@ const TrackRepair = () => {
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [completedStep, setCompletedStep] = useState(0);
-
-  // keep false for now because backend is rejecting the id with 400
-  const shouldFetchLiveOrder = false;
+  const [enableLiveTracking, setEnableLiveTracking] = useState(true);
 
   useEffect(() => {
     const run = async () => {
-      if (!orderId || !shouldFetchLiveOrder) return;
+      if (!orderId || !enableLiveTracking) return;
 
       try {
         setOrderError("");
@@ -78,13 +78,40 @@ const TrackRepair = () => {
         setOrder(null);
         setOrderError(e?.message || "Failed to load booking");
         setCompletedStep(statusToStep("PENDING_ARTISAN_RESPONSE"));
+
+        const status = e?.response?.status;
+        if (status === 400 || status === 404) {
+          setEnableLiveTracking(false);
+        }
       } finally {
         setLoadingOrder(false);
       }
     };
 
     run();
-  }, [orderId, shouldFetchLiveOrder]);
+  }, [orderId, enableLiveTracking]);
+
+  useEffect(() => {
+    if (!orderId || !enableLiveTracking) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const data = await getOrderById(orderId);
+        setOrder(data);
+        setCompletedStep(statusToStep(data?.status));
+        setOrderError("");
+      } catch (e) {
+        console.error("TRACK ORDER POLLING ERROR:", e);
+
+        const status = e?.response?.status;
+        if (status === 400 || status === 404) {
+          setEnableLiveTracking(false);
+        }
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [orderId, enableLiveTracking]);
 
   const booking = useMemo(() => {
     if (order) {
@@ -188,11 +215,13 @@ const TrackRepair = () => {
           </span>
         </div>
 
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500">
-            Live tracking is temporarily unavailable. Showing your latest booking details.
-          </p>
-        </div>
+        {!enableLiveTracking && (
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500">
+              Live tracking is temporarily unavailable. Showing your latest booking details.
+            </p>
+          </div>
+        )}
 
         <div className="mt-10">
           {booking.damagedDeviceImageUrl && (
@@ -256,4 +285,4 @@ const TrackRepair = () => {
   );
 };
 
-export default TrackRepair;
+export default TrackRepairA;

@@ -14,18 +14,12 @@ const Footer = () => {
       <footer className="w-full bg-[#3E83C4] text-white pt-12 sm:pt-14 lg:pt-16 pb-8 mt-16">
 
 
-
-      {/* Main Content */}
-
-
 <div className="max-w-8xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20
 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
 gap-x-8 sm:gap-x-10 lg:gap-x-14 xl:gap-x-20
 gap-y-10">
 
 
-
-        {/* Brand Column */}
         <div className="min-w-0">
           <img src={logo} alt="Fixserv" className="h-12 mb-4" />
           <p className="text-sm leading-relaxed mb-6">
@@ -41,7 +35,6 @@ gap-y-10">
           </div>
         </div>
 
-        {/* Quick Links */}
         <div className="min-w-0 lg:pl-10 xl:pl-16">
 
           <h4 className="font-semibold mb-6 whitespace-nowrap">Quick Links</h4>
@@ -62,7 +55,6 @@ gap-y-10">
           </ul>
         </div>
 
-        {/* Newsletter */}
         <div>
           <h4 className="font-semibold mb-3">Newsletter Sign-Up</h4>
           <p className="text-sm mb-4">
@@ -85,8 +77,7 @@ gap-y-10">
         </div>
       </div>
 
-      {/* Divider */}
-{/* <div className="max-w-8xl mx-auto px-16 md:px-24 mt-14"> */}
+      
   <div className="max-w-8xl mx-auto px-6 sm:px-10 md:px-24 mt-10 sm:mt-12 lg:mt-14">
 
   <div className="w-full border-t border-[#7CB2E4]"></div>

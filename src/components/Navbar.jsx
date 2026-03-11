@@ -43,16 +43,16 @@ const Navbar = () => {
           Get Started
         </button>
 
-        {/* Mobile Hamburger */}
+ 
         <button
-          className="md:hidden text-[#3E83C4]"
+          className="md:hidden cursor-pointer text-[#3E83C4]"
           onClick={() => setOpen(!open)}
         >
           {open ? <X size={28} /> : <Menu size={28} />}
         </button>
       </nav>
 
-      {/* Mobile Menu */}
+   
       <div
         className={`md:hidden bg-white border-t transition-all duration-300 overflow-hidden ${
           open ? "max-h-[400px]" : "max-h-0"
