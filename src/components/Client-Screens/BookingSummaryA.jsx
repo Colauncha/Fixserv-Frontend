@@ -151,8 +151,8 @@ const BookingSummaryA = () => {
     return (
       artisanServices.find((s) => {
         const title = String(
-          s?.title || s?.name || s?.serviceName || ""
-        ).toLowerCase().trim();
+  s?.title || s?.name || s?.serviceName || s?.details?.title || ""
+).toLowerCase().trim();
 
         return (
           title === normalizedRequired ||
@@ -163,12 +163,14 @@ const BookingSummaryA = () => {
     );
   }, [artisanServices, booking?.serviceRequired]);
 
-  const serviceCost =
-    selectedServiceFromArtisan?.price ??
-    booking?.serviceCost ??
-    artisan?.service?.price ??
-    artisan?.startingPrice ??
-    null;
+const serviceCost =
+  selectedServiceFromArtisan?.price ??
+  selectedServiceFromArtisan?.details?.price ??
+  booking?.serviceCost ??
+  artisan?.service?.price ??
+  artisan?.service?.details?.price ??
+  artisan?.startingPrice ??
+  null;
 
   const platformFee = 1000;
 
@@ -245,7 +247,7 @@ const BookingSummaryA = () => {
     <div className="w-full min-h-screen bg-white">
       <section className="w-full py-14 overflow-hidden">
         <div className="max-w-7xl mx-auto px-2 md:px-6">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8 md:mb-12">
             <button
               onClick={() => navigate(-1)}
               className="text-sm text-[#3e83c4] mb-6 flex items-center gap-1"
@@ -262,8 +264,9 @@ const BookingSummaryA = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-[260px_1fr] gap-30 max-w-7xl mx-auto">
-            <div className="bg-[#EEF6FF] rounded-xl p-4 w-[290px]">
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-10 lg:gap-20 max-w-7xl mx-auto">
+
+           <div className="bg-[#EEF6FF] rounded-xl p-5 w-full max-w-[320px] mx-auto lg:mx-0 lg:w-[290px] flex flex-col items-center lg:items-start">
               <div className="flex flex-col">
                 <img
                   src={
@@ -273,11 +276,11 @@ const BookingSummaryA = () => {
                     profileImage
                   }
                   alt="artisan"
-                  className="w-[250px] h-[220px] rounded-xl object-cover mb-4"
+                  className="w-full max-w-[260px] h-[220px] sm:h-[240px] rounded-xl object-cover mb-4"
                 />
 
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold text-black text-2xl">
+                <div className="flex items-center justify-between w-full max-w-[260px]">
+                  <h2 className="font-semibold text-black text-xl text-left">
                     {cleanText(
                       artisan?.fullName,
                       cleanText(artisan?.businessName, "Unnamed Artisan")
@@ -286,9 +289,10 @@ const BookingSummaryA = () => {
                   <img src={mark} alt="verified" className="w-5 h-5" />
                 </div>
 
-                <p className="text-lg text-[#656565] mt-1">{professionLabel}</p>
+                <p className="text-base text-[#656565] mt-1 text-center lg:text-left">
+{professionLabel}</p>
 
-                <div className="flex items-center gap-1 mt-2 text-lg">
+                <div className="flex items-center justify-center lg:justify-start gap-1 mt-2 text-base">
                   <img src={star} alt="star" className="w-6 h-6" />
                   <span className="font-medium text-black">
                     {Number(artisan?.rating || 0).toFixed(1)}
@@ -296,7 +300,7 @@ const BookingSummaryA = () => {
                   <span className="text-black">({reviewsCount} reviews)</span>
                 </div>
 
-                <div className="flex gap-2 mt-3 flex-wrap">
+                <div className="flex gap-2 mt-3 flex-wrap justify-center lg:justify-start">
                   {categoriesToShow.map((c, idx) => {
                     const label =
                       typeof c === "string"
@@ -313,7 +317,7 @@ const BookingSummaryA = () => {
                   })}
                 </div>
 
-                <div className="mt-4 text-lg text-[#656565] space-y-1">
+                <div className="mt-4 text-sm text-[#656565] space-y-1 text-center lg:text-left">
                   <p>
                     Experience:{" "}
                     <span className="font-medium text-black">
@@ -387,7 +391,7 @@ const BookingSummaryA = () => {
         <div className="max-w-7xl mx-auto px-2 md:px-6">
           <h3 className="text-base font-semibold mb-4">Payment Method</h3>
 
-          <div className="grid grid-cols-4 gap-6 mb-5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-6">
             {paymentMethods.map((item) => {
               const isActive = selected === item.label;
 
@@ -411,7 +415,7 @@ const BookingSummaryA = () => {
                   <img
                     src={item.img}
                     alt={item.label}
-                    className="h-42 w-42 object-contain"
+                    className="h-14 w-14 sm:h-16 sm:w-16 object-contain"
                   />
                 </button>
               );
@@ -419,7 +423,7 @@ const BookingSummaryA = () => {
           </div>
 
           <div className="space-y-8">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-center gap-2">
                 <label className="text-sm text-[#8B8B8B] w-24">Card Number*</label>
 
@@ -450,7 +454,7 @@ const BookingSummaryA = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               <div className="flex items-center gap-2">
                 <label className="text-sm text-[#8B8B8B] w-10">Expiry</label>
 
@@ -503,7 +507,7 @@ const BookingSummaryA = () => {
           <div className="mt-14 text-center space-y-4">
             <button
               onClick={() => setActiveModal(MODAL.WALLET)}
-              className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-16 py-3 rounded-md text-sm font-medium transition cursor-pointer"
+              className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white w-full sm:w-auto px-8 sm:px-16 py-3 rounded-md text-sm font-medium transition cursor-pointer"
             >
               Make Payment
             </button>
@@ -518,7 +522,8 @@ const BookingSummaryA = () => {
 
               {activeModal && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-xl w-[400px] p-6 relative">
+                  <div className="bg-white rounded-xl w-[90%] max-w-[400px] p-6 relative">
+                  
                     {activeModal === MODAL.WALLET && (
                       <div className="text-center space-y-4">
                         <img src={walletPay} alt="wallet" className="mx-auto w-12" />

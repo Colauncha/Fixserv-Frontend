@@ -14,6 +14,7 @@ import {
   getAllArtisans,
   getArtisanServices,
 } from "../../api/artisan.api";
+import { getAuthUser } from "../../utils/auth";
 
 const ArtisanProfile = () => {
   const navigate = useNavigate();
@@ -70,6 +71,66 @@ const ArtisanProfile = () => {
     return out;
   };
 
+      const getSavedBio = (artisanId) => {
+    if (!artisanId) return "";
+    return localStorage.getItem(`fixserv_artisan_bio_${artisanId}`) || "";
+  };
+
+  const getCachedUserBio = (artisanId) => {
+    if (!artisanId) return "";
+
+    try {
+      const authUser = getAuthUser();
+      if (
+        authUser &&
+        String(authUser.id || authUser._id || authUser.artisanId) === String(artisanId) &&
+        typeof authUser.bio === "string" &&
+        authUser.bio.trim() !== ""
+      ) {
+        return authUser.bio;
+      }
+
+      const storedUser = JSON.parse(localStorage.getItem("fixserv_user") || "null");
+      if (
+        storedUser &&
+        String(storedUser.id || storedUser._id || storedUser.artisanId) === String(artisanId) &&
+        typeof storedUser.bio === "string" &&
+        storedUser.bio.trim() !== ""
+      ) {
+        return storedUser.bio;
+      }
+    } catch (error) {
+      console.error("FAILED TO READ CACHED BIO =>", error);
+    }
+
+    return "";
+  };
+
+  const extractBio = (raw, artisanIdForFallback = null) => {
+  const resolvedId =
+    artisanIdForFallback || raw?.id || raw?._id || raw?.artisanId || null;
+
+  return firstNonEmptyText(
+    raw?.bio,
+    raw?.user?.bio,
+    raw?.artisan?.bio,
+    raw?.data?.bio,
+    raw?.profile?.bio,
+    raw?.artisanProfile?.bio,
+    getSavedBio(resolvedId),
+    getCachedUserBio(resolvedId)
+  );
+};
+
+  const firstNonEmptyText = (...values) => {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim() !== "") {
+      return value.trim();
+    }
+  }
+  return "";
+};
+
 const normalizeArtisan = (raw, servicesFromApi = []) => {
   const rawReviews = raw?.reviews;
 
@@ -93,20 +154,48 @@ const normalizeArtisan = (raw, servicesFromApi = []) => {
     ? raw.skills
     : [];
 
-  const mergedServices = Array.isArray(servicesFromApi)
+const mergedServices =
+  Array.isArray(servicesFromApi) && servicesFromApi.length > 0
     ? servicesFromApi
     : Array.isArray(raw?.services)
     ? raw.services
     : [];
 
-  const primaryServiceDescription =
-    Array.isArray(mergedServices) && mergedServices.length > 0
-      ? mergedServices[0]?.description || ""
-      : "";
+  const resolvedId = raw?.id || raw?._id || raw?.artisanId;
+
+const serviceBios = mergedServices
+  .flatMap((service) => [service?.bio, service?.details?.bio])
+  .filter((value) => typeof value === "string" && value.trim() !== "");
+
+const serviceLevelBio =
+  serviceBios.length > 0 ? serviceBios[serviceBios.length - 1].trim() : "";
+
+const latestSavedBio = getSavedBio(resolvedId);
+const latestCachedBio = getCachedUserBio(resolvedId);
+
+const resolvedBio = firstNonEmptyText(
+  raw?.bio,
+  raw?.user?.bio,
+  raw?.artisan?.bio,
+  raw?.data?.bio,
+  raw?.profile?.bio,
+  raw?.artisanProfile?.bio,
+  latestSavedBio,
+  latestCachedBio,
+  serviceLevelBio
+);
+
+console.log("NORMALIZE RAW =>", raw);
+console.log("MERGED SERVICES =>", mergedServices);
+console.log("SERVICE LEVEL BIO =>", serviceLevelBio);
+console.log("LATEST SAVED BIO =>", latestSavedBio);
+console.log("LATEST CACHED BIO =>", latestCachedBio);
+console.log("RESOLVED ID =>", resolvedId);
+console.log("RESOLVED BIO =>", resolvedBio);
 
   return {
     ...raw,
-    id: raw?.id || raw?._id || raw?.artisanId,
+    id: resolvedId,
     fullName: cleanText(
       raw?.fullName,
       cleanText(raw?.businessName, "Unnamed Artisan")
@@ -120,10 +209,7 @@ const normalizeArtisan = (raw, servicesFromApi = []) => {
     skills,
     skillSet: skills,
     rating: Number(raw?.rating || 0),
-    bio: cleanText(
-      raw?.bio || raw?.about || raw?.description || primaryServiceDescription,
-      ""
-    ),
+    bio: resolvedBio,
     services: mergedServices,
     reviewsList,
     reviewsCount,
@@ -177,17 +263,18 @@ useEffect(() => {
       setLoadingServices(true);
       setServicesError("");
 
-      const fallbackArtisan = passedArtisan ? normalizeArtisan(passedArtisan) : null;
-      if (fallbackArtisan) {
-        setArtisan(fallbackArtisan);
-      }
-
       const targetArtisanId =
         artisanId ||
         passedArtisan?.id ||
         passedArtisan?._id ||
         passedArtisan?.artisanId ||
         null;
+
+      const fallbackArtisan = passedArtisan ? normalizeArtisan(passedArtisan) : null;
+
+      if (fallbackArtisan) {
+        setArtisan(fallbackArtisan);
+      }
 
       if (!targetArtisanId) {
         if (!fallbackArtisan) {
@@ -197,19 +284,58 @@ useEffect(() => {
         return;
       }
 
-      const [rawProfile, rawServices] = await Promise.all([
-        getArtisanById(targetArtisanId),
+      const [rawProfile, rawServices, allArtisansResponse] = await Promise.all([
+        getArtisanById(targetArtisanId).catch((err) => {
+          console.error("ARTISAN PROFILE ERROR:", err);
+          return null;
+        }),
         getArtisanServices(targetArtisanId).catch((err) => {
           console.error("ARTISAN SERVICES ERROR:", err);
           setServicesError("Unable to load artisan services.");
           return [];
         }),
+        getAllArtisans().catch((err) => {
+          console.error("GET ALL ARTISANS ERROR:", err);
+          return [];
+        }),
       ]);
+
+      const allArtisans = Array.isArray(allArtisansResponse)
+        ? allArtisansResponse
+        : Array.isArray(allArtisansResponse?.users)
+        ? allArtisansResponse.users
+        : [];
+
+      const matchedFromAllArtisans =
+        allArtisans.find(
+          (a) =>
+            String(a?.id || a?._id || a?.artisanId) === String(targetArtisanId)
+        ) || null;
 
       console.log("ARTISAN PROFILE RAW =>", rawProfile);
       console.log("ARTISAN SERVICES RAW =>", rawServices);
+      console.log("MATCHED FROM ALL ARTISANS =>", matchedFromAllArtisans);
 
-      const artisanData = normalizeArtisan(rawProfile, rawServices);
+      const resolvedBio = firstNonEmptyText(
+        extractBio(rawProfile, targetArtisanId),
+        extractBio(matchedFromAllArtisans, targetArtisanId),
+        extractBio(passedArtisan, targetArtisanId),
+        extractBio(fallbackArtisan, targetArtisanId),
+        getSavedBio(targetArtisanId),
+        getCachedUserBio(targetArtisanId)
+      );
+
+      const mergedRaw = {
+        ...(matchedFromAllArtisans || {}),
+        ...(fallbackArtisan || {}),
+        ...(rawProfile || {}),
+        bio: resolvedBio,
+      };
+
+      const artisanData = normalizeArtisan(mergedRaw, rawServices);
+
+      console.log("FINAL ARTISAN DATA =>", artisanData);
+
       setArtisan(artisanData);
     } catch (err) {
       console.error("ARTISAN ERROR:", err);
@@ -255,61 +381,72 @@ const apiServices = useMemo(() => {
   const rawProfileServices = Array.isArray(artisan?.services)
     ? artisan.services
     : [];
-  const rawSkillServices = Array.isArray(artisan?.skills) ? artisan.skills : [];
 
   console.log("ARTISAN FULL DATA =>", artisan);
   console.log("ARTISAN SERVICES RAW =>", artisan?.services);
 
-  return rawProfileServices.length > 0
-    ? rawProfileServices
-        .filter((s) => s?.isActive !== false)
-        .map((s, idx) => {
-          const title =
-            s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
+  return rawProfileServices
+    .filter((s) => s?.isActive !== false)
+    .map((s, idx) => {
+      const details =
+        s?.details && typeof s.details === "object" ? s.details : null;
 
-          return {
-            id: s?.id || s?._id || s?.serviceId || `${idx}`,
-            title,
-            description: s?.description || "",
-            price: s?.price ?? s?.amount ?? null,
-            estimatedDuration: s?.estimatedDuration || s?.duration || "",
-            rating: Number(s?.rating || 0),
-            isActive: s?.isActive,
-            icon: String(title).toLowerCase().includes("battery")
-              ? battery
-              : String(title).toLowerCase().includes("camera")
-              ? cameraImage
-              : String(title).toLowerCase().includes("charg")
-              ? flashImage
-              : settingImage,
-          };
-        })
-    : rawSkillServices.map((s, idx) => {
-        const title =
-          typeof s === "string"
-            ? s
-            : s?.name || s?.title || s?.serviceName || `Service ${idx + 1}`;
+      const title =
+        cleanText(s?.title) ||
+        cleanText(details?.title) ||
+        cleanText(s?.name) ||
+        cleanText(s?.serviceName) ||
+        `Service ${idx + 1}`;
 
-        return {
-          id: s?.id || s?._id || `skill-${idx}`,
-          title,
-          description: "",
-          price: null,
-          estimatedDuration: "",
-          rating: 0,
-          isActive: true,
-          icon: String(title).toLowerCase().includes("battery")
-            ? battery
-            : String(title).toLowerCase().includes("camera")
-            ? cameraImage
-            : String(title).toLowerCase().includes("charg")
-            ? flashImage
-            : settingImage,
-        };
-      });
+      const description =
+        cleanText(s?.description) ||
+        cleanText(details?.description) ||
+        cleanText(s?.details?.description, "");
+
+      const estimatedDuration =
+        cleanText(s?.estimatedDuration) ||
+        cleanText(details?.estimatedDuration) ||
+        cleanText(s?.duration) ||
+        cleanText(details?.duration, "");
+
+      const price =
+        s?.price ??
+        details?.price ??
+        s?.amount ??
+        details?.amount ??
+        null;
+
+      const bio =
+        cleanText(s?.bio) ||
+        cleanText(details?.bio) ||
+        "";
+
+      return {
+        id: s?.id || s?._id || s?.serviceId || `${idx}`,
+        title,
+        price,
+        estimatedDuration,
+        description,
+        bio,
+        rating: Number(s?.rating || details?.rating || 0),
+        isActive:
+          typeof s?.isActive === "boolean"
+            ? s.isActive
+            : typeof details?.isActive === "boolean"
+            ? details.isActive
+            : true,
+        icon: String(title).toLowerCase().includes("battery")
+          ? battery
+          : String(title).toLowerCase().includes("camera")
+          ? cameraImage
+          : String(title).toLowerCase().includes("charg")
+          ? flashImage
+          : settingImage,
+      };
+    });
 }, [artisan]);
 
-  const servicesToShow = apiServices.length > 0 ? apiServices : fallbackServices;
+const servicesToShow = apiServices;
 
   const mappedRecommendations = useMemo(() => {
     return (recommendedArtisans || [])
@@ -530,8 +667,8 @@ const handleBookRepair = () => {
   <h2 className="text-3xl font-bold text-black mb-8">About Me</h2>
   <div className="bg-white">
     <p className="text-[#535353] leading-relaxed text-lg">
-      {artisan.bio || "No bio added yet."}
-    </p>
+  {artisan?.bio?.trim() ? artisan.bio : "No bio added yet."}
+</p>
   </div>
 
   <div className="mt-8">
@@ -631,11 +768,11 @@ const handleBookRepair = () => {
 
                 {loadingServices ? (
                   <div className="text-sm text-gray-500">Loading services...</div>
-                ) : servicesToShow.length === 0 ? (
-                  <div className="text-sm text-gray-500">
-                    No services available for this artisan right now.
-                  </div>
-                ) : (
+                ) : apiServices.length === 0 ? (
+  <div className="text-sm text-gray-500">
+    No services available for this artisan right now.
+  </div>
+) : (
                   <div className="grid md:grid-cols-4 gap-6">
                     {servicesToShow.map((service) => (
                       <div
@@ -657,17 +794,19 @@ const handleBookRepair = () => {
                           </span>
                         </p>
 
-                        {service.estimatedDuration ? (
-                          <p className="text-xs text-gray-500 mt-2">
-                            {service.estimatedDuration}
-                          </p>
-                        ) : null}
+                                                <p className="text-xs text-gray-500 mt-2">
+                          Duration:{" "}
+                          <span className="text-black">
+                            {service.estimatedDuration || "—"}
+                          </span>
+                        </p>
 
-                        {service.description ? (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            {service.description}
-                          </p>
-                        ) : null}
+                        <p className="text-xs text-gray-500 mt-2">
+                          Description:{" "}
+                          <span className="text-black">
+                            {service.description || "No service description added yet."}
+                          </span>
+                        </p>
                       </div>
                     ))}
                   </div>

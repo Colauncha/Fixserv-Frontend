@@ -40,18 +40,30 @@ const UserProfile = () => {
 
   const { user, token, logout, login } = useAuth();
 
-  const userId = user?.id || user?._id;
+const profileUser =
+  user?.data?.user ||
+  user?.user ||
+  user?.client ||
+  user?.data?.client ||
+  user ||
+  {};
 
-  const walletIdentifier =
-    user?.walletId ||
-    user?.wallet?._id ||
-    user?.wallet?.id ||
-    user?.id ||
-    user?._id ||
-    userId ||
-    null;
+const userId = profileUser?.id || profileUser?._id;
 
-  const address = user?.deliveryAddress;
+const walletIdentifier =
+  profileUser?.walletId ||
+  profileUser?.wallet?._id ||
+  profileUser?.wallet?.id ||
+  profileUser?.id ||
+  profileUser?._id ||
+  userId ||
+  null;
+
+const address = profileUser?.deliveryAddress || {};
+
+const servicePreferences = Array.isArray(profileUser?.servicePreferences)
+  ? profileUser.servicePreferences
+  : [];
 
   const addressText =
     address?.street || address?.city || address?.state
@@ -657,14 +669,16 @@ const handleWithdraw = async () => {
     };
   }, []);
 
-  useEffect(() => {
-    console.log("USER PROFILE DEBUG =>", {
-      user,
-      userId,
-      walletIdentifier,
-      hasToken: !!token,
-    });
-  }, [user, userId, walletIdentifier, token]);
+useEffect(() => {
+  console.log("USER PROFILE DEBUG =>", {
+    rawUser: user,
+    profileUser,
+    servicePreferences: profileUser?.servicePreferences,
+    userId,
+    walletIdentifier,
+    hasToken: !!token,
+  });
+}, [user, profileUser, userId, walletIdentifier, token]);
 
   return (
     <div className="w-full">
@@ -682,7 +696,7 @@ const handleWithdraw = async () => {
             <div className="flex flex-col sm:flex-row gap-5 items-start w-full xl:flex-1">
               <div className="relative w-full sm:w-[270px] h-[260px] sm:h-[270px] shrink-0">
                 <img
-                  src={profilePreview || user?.profilePicture || PraiseImg}
+                 src={profilePreview || profileUser?.profilePicture || PraiseImg}
                   alt="profile"
                   className="w-full h-full rounded-xl object-cover"
                 />
@@ -710,14 +724,33 @@ const handleWithdraw = async () => {
               </div>
 
               <div className="space-y-3 w-full min-w-0">
-                <h2 className="text-xl sm:text-2xl font-semibold text-black break-words">
-                  {user?.fullName || "—"}
-                </h2>
+  <h2 className="text-xl sm:text-2xl font-semibold text-black break-words">
+    {profileUser?.fullName || "—"}
+  </h2>
 
-                <div className="flex items-start gap-2 text-sm max-w-full text-[#535353] mb-4">
+  <div className="mt-2 mb-2">
+    <p className="text-sm text-[#535353] mb-2">Service Preference</p>
+
+    {Array.isArray(servicePreferences) && servicePreferences.length > 0 ? (
+      <div className="flex flex-wrap gap-2">
+        {servicePreferences.map((service, index) => (
+          <span
+            key={`${service}-${index}`}
+            className="bg-[#E8F2FC] text-[#3E83C4] text-xs px-3 py-1 rounded-full"
+          >
+            {service}
+          </span>
+        ))}
+      </div>
+    ) : (
+      <p className="text-sm text-[#8A8A8A]">No service preference added yet.</p>
+    )}
+  </div>
+
+  <div className="flex items-start gap-2 text-sm max-w-full text-[#535353] mb-4">
                   <img src={locationBlack} alt="" className="w-4 h-4 mt-0.5 shrink-0" />
                   <span className="break-words">
-                    {[user?.deliveryAddress?.street, user?.deliveryAddress?.city, user?.deliveryAddress?.state]
+                    {[profileUser?.deliveryAddress?.street, profileUser?.deliveryAddress?.city, profileUser?.deliveryAddress?.state]
                       .filter(Boolean)
                       .join(", ") || "—"}
                   </span>
@@ -1216,7 +1249,7 @@ const handleWithdraw = async () => {
               <div className="bg-white rounded-lg shadow-lg p-4 space-y-4 text-gray-600">
                 <div className="flex items-start gap-2">
                   <img src={email} alt="" className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span className="text-sm break-words">{user?.email || "—"}</span>
+                  <span className="text-sm break-words">{profileUser?.email || "—"}</span>
                 </div>
 
                 <div className="flex items-start gap-2">
@@ -1226,7 +1259,7 @@ const handleWithdraw = async () => {
 
                 <div className="flex items-start gap-2">
                   <img src={phone} alt="" className="w-5 h-5 mt-0.5 shrink-0" />
-                  <span className="text-sm break-words">{user?.phoneNumber || "—"}</span>
+                  <span className="text-sm break-words">{profileUser?.phoneNumber || "—"}</span>
                 </div>
               </div>
             </div>

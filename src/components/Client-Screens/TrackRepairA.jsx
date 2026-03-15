@@ -79,10 +79,10 @@ const TrackRepairA = () => {
         setOrderError(e?.message || "Failed to load booking");
         setCompletedStep(statusToStep("PENDING_ARTISAN_RESPONSE"));
 
-        const status = e?.response?.status;
-        if (status === 400 || status === 404) {
-          setEnableLiveTracking(false);
-        }
+        const status = e?.response?.status || e?.status || e?.statusCode;
+if (status === 400 || status === 404) {
+  setEnableLiveTracking(false);
+}
       } finally {
         setLoadingOrder(false);
       }
@@ -103,10 +103,10 @@ const TrackRepairA = () => {
       } catch (e) {
         console.error("TRACK ORDER POLLING ERROR:", e);
 
-        const status = e?.response?.status;
-        if (status === 400 || status === 404) {
-          setEnableLiveTracking(false);
-        }
+        const status = e?.response?.status || e?.status || e?.statusCode;
+if (status === 400 || status === 404) {
+  setEnableLiveTracking(false);
+}
       }
     }, 10000);
 

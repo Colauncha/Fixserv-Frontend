@@ -403,8 +403,9 @@ totalFee,
             </p>
           </div>
 
-          <div className="grid grid-cols-[260px_1fr] gap-30 max-w-7xl mx-auto">
-            <div className="bg-[#EEF6FF] rounded-xl p-4 w-[290px]">
+<div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 lg:gap-20 max-w-7xl mx-auto">
+
+            <div className="bg-[#EEF6FF] rounded-xl p-4 w-full max-w-[290px] mx-auto lg:mx-0">
               <div className="flex flex-col">
                 <img
                   src={
@@ -414,18 +415,19 @@ totalFee,
                     profileImage
                   }
                   alt="artisan"
-                  className="w-[250px] h-[220px] rounded-xl object-cover mb-4"
+                  className="w-full h-[220px] sm:h-[240px] rounded-xl object-cover mb-4"
                 />
 
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold text-black text-2xl">
-                    {cleanText(
-                      artisan?.fullName,
-                      cleanText(artisan?.businessName, "Unnamed Artisan")
-                    )}
-                  </h2>
-                  <img src={mark} alt="verified" className="w-5 h-5" />
-                </div>
+                <div className="flex items-center justify-between">
+  <h2 className="font-semibold text-black text-xl sm:text-2xl">
+    {cleanText(
+      artisan?.fullName,
+      cleanText(artisan?.businessName, "Unnamed Artisan")
+    )}
+  </h2>
+
+  <img src={mark} alt="verified" className="w-5 h-5" />
+</div>
 
                 <p className="text-lg text-[#656565] mt-1">{professionLabel}</p>
 
@@ -547,7 +549,7 @@ totalFee,
         <div className="max-w-7xl mx-auto px-2 md:px-6">
           <h3 className="text-base font-semibold mb-4">Payment Method</h3>
 
-          <div className="grid grid-cols-4 gap-6 mb-5">
+<div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             {paymentMethods.map((item) => {
               const isActive = selected === item.label;
 
@@ -556,7 +558,7 @@ totalFee,
                   key={item.label}
                   type="button"
                   onClick={() => setSelected(item.label)}
-                  className="flex items-center gap-3 p-3"
+                  className="flex items-center gap-3 p-3 border rounded-lg hover:border-[#3e83c4] transition w-full"
                 >
                   <div
                     className={`w-4 h-4 rounded-full border flex items-center justify-center ${
@@ -571,7 +573,7 @@ totalFee,
                   <img
                     src={item.img}
                     alt={item.label}
-                    className="h-42 w-42 object-contain"
+                    className="h-10 sm:h-12 w-auto object-contain"
                   />
                 </button>
               );
@@ -579,7 +581,7 @@ totalFee,
           </div>
 
           <div className="space-y-8">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-center gap-2">
                 <label className="text-sm text-[#8B8B8B] w-24">Card Number*</label>
 
@@ -608,8 +610,8 @@ totalFee,
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
-              <div className="flex items-center gap-2">
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <label className="text-sm text-[#8B8B8B] w-10">Expiry</label>
 
                 <input
@@ -659,7 +661,7 @@ totalFee,
           <div className="mt-14 text-center space-y-4">
             <button
               onClick={() => setActiveModal(MODAL.WALLET)}
-              className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-16 py-3 rounded-md text-sm font-medium transition cursor-pointer"
+              className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white w-full sm:w-auto px-10 py-3 rounded-md text-sm font-medium transition"
             >
               Make Payment
             </button>
@@ -674,7 +676,7 @@ totalFee,
 
               {activeModal && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-xl w-[400px] p-6 relative">
+                 <div className="bg-white rounded-xl w-[90%] max-w-[400px] p-6 relative">
                     {activeModal === MODAL.WALLET && (
                       <div className="text-center space-y-4">
                         <img src={walletPay} alt="wallet" className="mx-auto w-12" />

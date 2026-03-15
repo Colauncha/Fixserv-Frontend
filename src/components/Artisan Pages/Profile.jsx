@@ -39,6 +39,16 @@ const isValidTime = (value) => {
   return /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
 };
 
+const getSavedBio = (artisanId) => {
+  if (!artisanId) return "";
+  return localStorage.getItem(`fixserv_artisan_bio_${artisanId}`) || "";
+};
+
+const setSavedBio = (artisanId, bio) => {
+  if (!artisanId) return;
+  localStorage.setItem(`fixserv_artisan_bio_${artisanId}`, bio || "");
+};
+
 const normalizeHours = (hours) => {
   const src = hours && typeof hours === "object" ? hours : {};
   const out = {};
@@ -83,18 +93,25 @@ const normalizeProfileImage = (user) => {
   return user?.profileImage || user?.profilePicture || user?.imageUrl || "";
 };
 
-const normalizeService = (service = {}) => ({
-  id: service?.id || service?._id || service?.serviceId || "",
-  title: service?.title || "",
-  price:
-    service?.price !== undefined && service?.price !== null ? String(service.price) : "",
-  estimatedDuration: service?.estimatedDuration || "",
-  description: service?.description || "",
-  isActive: typeof service?.isActive === "boolean" ? service.isActive : true,
-  rating: service?.rating ?? 0,
-});
+const normalizeService = (service = {}) => {
+  const src = service?.details && typeof service.details === "object"
+    ? { ...service, ...service.details }
+    : service;
 
-const buildServiceForms = (services = [], fallbackBio = "") => {
+  return {
+    id: src?.id || src?._id || src?.serviceId || service?.id || service?._id || "",
+    title: src?.title || "",
+    price:
+      src?.price !== undefined && src?.price !== null ? String(src.price) : "",
+    estimatedDuration: src?.estimatedDuration || "",
+    description: src?.description || "",
+    bio: src?.bio || "",
+    isActive: typeof src?.isActive === "boolean" ? src.isActive : true,
+    rating: src?.rating ?? 0,
+  };
+};
+
+const buildServiceForms = (services = []) => {
   if (Array.isArray(services) && services.length > 0) {
     return services.map((service) => normalizeService(service));
   }
@@ -105,7 +122,7 @@ const buildServiceForms = (services = [], fallbackBio = "") => {
       title: "",
       price: "",
       estimatedDuration: "",
-      description: fallbackBio || "",
+      description: "",
       isActive: true,
       rating: 0,
     },
@@ -130,6 +147,7 @@ const Profile = () => {
     businessName: "",
     location: "",
     skillsText: "",
+    bio: "",
     businessHours: normalizeHours(defaultBusinessHours),
     closedDays: toClosedMap(normalizeHours(defaultBusinessHours)),
     serviceDetails: buildServiceForms([]),
@@ -162,8 +180,9 @@ const Profile = () => {
         let freshUser = cachedUser;
         let services = [];
 
-        try {
+               try {
           freshUser = await getArtisanById(artisanId);
+          console.log("FRESH ARTISAN PROFILE =>", freshUser);
         } catch (err) {
           console.error("Failed to fetch latest artisan profile", err);
         }
@@ -175,10 +194,18 @@ const Profile = () => {
           console.error("Failed to fetch artisan services", err);
         }
 
+        const resolvedArtisanId =
+          freshUser?.id || cachedUser?.id || cachedUser?._id || cachedUser?.artisanId;
+
+        const fallbackBio =
+          getSavedBio(resolvedArtisanId) ||
+          cachedUser?.bio ||
+          "";
+
         const normalizedUser = {
           ...cachedUser,
           ...freshUser,
-          id: freshUser?.id || cachedUser?.id || cachedUser?._id || cachedUser?.artisanId,
+          id: resolvedArtisanId,
           profileImage:
             normalizeProfileImage(freshUser) || normalizeProfileImage(cachedUser),
           skills: normalizeSkills(freshUser).length
@@ -187,6 +214,10 @@ const Profile = () => {
           skillSet: normalizeSkills(freshUser).length
             ? normalizeSkills(freshUser)
             : normalizeSkills(cachedUser),
+                    bio:
+            typeof freshUser?.bio === "string" && freshUser.bio.trim() !== ""
+              ? freshUser.bio
+              : fallbackBio,
           businessHours: normalizeHours(
             freshUser?.businessHours ||
               cachedUser?.businessHours ||
@@ -195,20 +226,19 @@ const Profile = () => {
           services: Array.isArray(services) ? services : [],
         };
 
-        setArtisan(normalizedUser);
+                setArtisan(normalizedUser);
+        setSavedBio(normalizedUser.id, normalizedUser.bio || "");
 
         const hours = normalizeHours(normalizedUser.businessHours);
         const closed = toClosedMap(hours);
-        const serviceForms = buildServiceForms(
-          normalizedUser.services,
-          normalizedUser?.bio || ""
-        );
+                const serviceForms = buildServiceForms(normalizedUser.services);
 
         setFormData({
           fullName: normalizedUser.fullName || "",
           businessName: normalizedUser.businessName || "",
           location: normalizedUser.location || "",
           skillsText: (normalizedUser.skillSet || normalizedUser.skills || []).join(", "),
+          bio: normalizedUser?.bio || "",
           businessHours: hours,
           closedDays: closed,
           serviceDetails: serviceForms,
@@ -404,12 +434,13 @@ const Profile = () => {
         .map((skill) => skill.trim())
         .filter(Boolean);
 
-      const strictHours = {};
+     const strictHours = {};
 
 for (const day of DAYS) {
   const isClosed = !!formData.closedDays?.[day];
 
   if (isClosed) {
+    strictHours[day] = { open: "", close: "" };
     continue;
   }
 
@@ -430,16 +461,15 @@ const artisanPayload = {
   businessName: formData.businessName.trim(),
   location: formData.location.trim(),
   skillSet: cleanedSkills,
+  bio: formData.bio.trim(),
   businessHours: strictHours,
 };
 
-if (Object.keys(strictHours).length === 0) {
-  delete artisanPayload.businessHours;
-}
-
       console.log("ARTISAN PATCH PAYLOAD =>", artisanPayload);
 
-      const artisanResponse = await updateArtisanData(artisanId, artisanPayload);
+            const artisanResponse = await updateArtisanData(artisanId, artisanPayload);
+      console.log("UPDATE ARTISAN RESPONSE =>", artisanResponse);
+      setSavedBio(artisanId, formData.bio.trim());
 
       const submittedServices = formData.serviceDetails
         .map((service) => ({
@@ -457,6 +487,8 @@ if (Object.keys(strictHours).length === 0) {
             service.price
         );
 
+        const nextHours = normalizeHours(strictHours);
+
       const updatedServices = [];
 
       for (const service of submittedServices) {
@@ -466,63 +498,66 @@ if (Object.keys(strictHours).length === 0) {
           throw new Error(`Service price for "${service.title || "Untitled service"}" must be a valid number.`);
         }
 
-        const createPayload = {
-          title: service.title,
-          description: service.description,
-          price: numericPrice,
-          estimatedDuration: service.estimatedDuration,
-          rating: service.rating ?? 0,
-        };
+        const sharedBio = formData.bio.trim();
 
-        const updatePayload = {
-          title: service.title,
-          description: service.description,
-          price: numericPrice,
-          estimatedDuration: service.estimatedDuration,
-          isActive: typeof service.isActive === "boolean" ? service.isActive : true,
-        };
+const createPayload = {
+  title: service.title,
+  description: service.description,
+  bio: sharedBio,
+  price: numericPrice,
+  estimatedDuration: service.estimatedDuration,
+  rating: service.rating ?? 0,
+};
+
+const updatePayload = {
+  title: service.title,
+  description: service.description,
+  bio: sharedBio,
+  price: numericPrice,
+  estimatedDuration: service.estimatedDuration,
+  isActive: typeof service.isActive === "boolean" ? service.isActive : true,
+};
 
         if (service.id) {
-          const updated = await updateArtisanService(service.id, updatePayload);
+                    const updated = await updateArtisanService(service.id, updatePayload);
+          console.log("UPDATE SERVICE RESPONSE =>", updated);
 
           updatedServices.push({
-            ...service,
-            ...updated,
-            id: updated?.id || updated?._id || updated?.serviceId || service.id,
-            price: numericPrice,
-            description: updated?.description ?? service.description,
-            estimatedDuration:
-              updated?.estimatedDuration ?? service.estimatedDuration,
-            title: updated?.title ?? service.title,
-            isActive:
-              typeof updated?.isActive === "boolean"
-                ? updated.isActive
-                : service.isActive,
-            rating: updated?.rating ?? service.rating ?? 0,
-          });
+  ...service,
+  ...updated,
+  id: updated?.id || updated?._id || updated?.serviceId || service.id,
+  price: numericPrice,
+  description: updated?.description ?? service.description,
+  bio: updated?.bio ?? sharedBio,
+  estimatedDuration:
+    updated?.estimatedDuration ?? service.estimatedDuration,
+  title: updated?.title ?? service.title,
+  isActive:
+    typeof updated?.isActive === "boolean"
+      ? updated.isActive
+      : service.isActive,
+  rating: updated?.rating ?? service.rating ?? 0,
+});
         } else {
-          const created = await createArtisanService(createPayload);
+                    const created = await createArtisanService(createPayload);
+          console.log("CREATE SERVICE RESPONSE =>", created);
 
           updatedServices.push({
-            ...service,
-            ...created,
-            id: created?.id || created?._id || created?.serviceId || "",
-            price: created?.price ?? numericPrice,
-            description: created?.description ?? service.description,
-            estimatedDuration:
-              created?.estimatedDuration ?? service.estimatedDuration,
-            title: created?.title ?? service.title,
-            isActive:
-              typeof created?.isActive === "boolean" ? created.isActive : true,
-            rating: created?.rating ?? service.rating ?? 0,
-          });
+  ...service,
+  ...created,
+  id: created?.id || created?._id || created?.serviceId || "",
+  price: created?.price ?? numericPrice,
+  description: created?.description ?? service.description,
+  bio: created?.bio ?? sharedBio,
+  estimatedDuration:
+    created?.estimatedDuration ?? service.estimatedDuration,
+  title: created?.title ?? service.title,
+  isActive:
+    typeof created?.isActive === "boolean" ? created.isActive : true,
+  rating: created?.rating ?? service.rating ?? 0,
+});
         }
       }
-
-const nextHours = normalizeHours({
-  ...defaultBusinessHours,
-  ...(artisanResponse?.businessHours || strictHours || {}),
-});
 
       const updatedUser = {
         ...artisan,
@@ -540,6 +575,11 @@ const nextHours = normalizeHours({
           : Array.isArray(artisanResponse?.skills)
           ? artisanResponse.skills
           : cleanedSkills,
+                                bio:
+          typeof artisanResponse?.bio === "string" &&
+          artisanResponse.bio.trim() !== ""
+            ? artisanResponse.bio
+            : formData.bio.trim() || getSavedBio(artisanId),
         businessHours: nextHours,
         services: updatedServices,
       };
@@ -548,11 +588,12 @@ const nextHours = normalizeHours({
       setUser(updatedUser);
       localStorage.setItem("fixserv_user", JSON.stringify(updatedUser));
 
-      setFormData({
+            setFormData({
         fullName: updatedUser.fullName || "",
         businessName: updatedUser.businessName || "",
         location: updatedUser.location || "",
         skillsText: (updatedUser.skillSet || updatedUser.skills || []).join(", "),
+        bio: updatedUser?.bio || "",
         businessHours: nextHours,
         closedDays: toClosedMap(nextHours),
         serviceDetails: buildServiceForms(updatedServices),
@@ -619,16 +660,31 @@ const nextHours = normalizeHours({
         body: fd,
       });
 
-      let data = null;
-      try {
-        data = await res.json();
-      } catch {
-        data = null;
-      }
+let data = null;
+let rawText = "";
 
-      if (!res.ok) {
-        throw new Error(data?.message || `Upload failed (${res.status})`);
-      }
+try {
+  data = await res.json();
+} catch {
+  try {
+    rawText = await res.text();
+  } catch {
+    rawText = "";
+  }
+}
+
+if (!res.ok) {
+  const apiError =
+    data?.message ||
+    data?.error ||
+    data?.detail ||
+    (Array.isArray(data?.errors) ? data.errors.join(", ") : null) ||
+    rawText ||
+    `Upload failed (HTTP ${res.status})`;
+
+  throw new Error(apiError);
+}
+
 
       const imageUrl =
         data?.imageUrl ||
@@ -652,7 +708,12 @@ const nextHours = normalizeHours({
       if (fileRef.current) fileRef.current.value = "";
     } catch (err) {
       console.error("Upload profile picture failed", err);
-      setError(err?.message || "Upload failed");
+      setError(
+  typeof err?.message === "string" && err.message.trim() !== ""
+    ? err.message
+    : "Image upload failed. Please try again."
+);
+
     } finally {
       setUploadingImg(false);
     }
@@ -820,6 +881,29 @@ const nextHours = normalizeHours({
               {(artisan.skillSet || artisan.skills || []).length > 0
                 ? (artisan.skillSet || artisan.skills).join(", ")
                 : "—"}
+            </p>
+          )}
+        </div>
+
+                <div
+          className={`mt-8 ${
+            isEditing ? "bg-blue-50 p-4 sm:p-6 rounded-xl border border-blue-100" : ""
+          }`}
+        >
+          <h3 className="font-semibold mb-2">Bio</h3>
+
+          {isEditing ? (
+            <textarea
+              name="bio"
+              value={formData.bio}
+              onChange={handleChange}
+              placeholder="Enter artisan bio"
+              rows={5}
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3E83C4] focus:border-[#3E83C4] outline-none transition resize-none"
+            />
+          ) : (
+            <p className="text-sm text-gray-600 break-words">
+              {artisan?.bio || "—"}
             </p>
           )}
         </div>
