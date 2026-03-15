@@ -84,57 +84,63 @@ const ReferalPage = () => {
   };
 
   const referralRewards = Array.isArray(referralInfo?.referralRewards)
-    ? referralInfo.referralRewards
-    : [];
+  ? referralInfo.referralRewards
+  : [];
 
-  const allUsers = referralRewards.map((item) => {
-    const name =
-      item?.fullName ||
-      item?.name ||
-      item?.referredUser?.fullName ||
-      item?.referredUser?.name ||
-      item?.user?.fullName ||
-      item?.user?.name ||
-      "—";
 
-    const email =
-      item?.email ||
-      item?.referredUser?.email ||
-      item?.user?.email ||
-      "—";
 
-    const rawDate =
-      item?.joinedAt ||
-      item?.createdAt ||
-      item?.referredAt ||
-      item?.date ||
-      item?.rewardedAt ||
-      null;
+const allUsers = referralRewards.map((item) => {
+  const name =
+    item?.fullName ||
+    item?.name ||
+    item?.referredUser?.fullName ||
+    item?.referredUser?.name ||
+    item?.user?.fullName ||
+    item?.user?.name ||
+    item?.userId ||
+    "—";
 
-    const date = rawDate
-      ? new Date(rawDate).toLocaleDateString("en-GB")
-      : "—";
+  const email =
+    item?.email ||
+    item?.referredUser?.email ||
+    item?.user?.email ||
+    "—";
 
-    const statusRaw =
-      item?.status ||
-      item?.rewardStatus ||
-      item?.paymentStatus ||
-      item?.state ||
-      "";
+  const rawDate =
+    item?.joinedAt ||
+    item?.createdAt ||
+    item?.referredAt ||
+    item?.date ||
+    item?.rewardedAt ||
+    null;
 
-    const s = String(statusRaw).toLowerCase();
+  const date = rawDate
+    ? new Date(rawDate).toLocaleDateString("en-GB")
+    : "—";
 
-    const status =
-      s.includes("success") ||
-      s.includes("approved") ||
-      s.includes("paid") ||
-      s.includes("credit") ||
-      s.includes("completed")
-        ? "Successful"
-        : "Pending";
+  const statusRaw =
+    item?.status ||
+    item?.rewardStatus ||
+    item?.paymentStatus ||
+    item?.state ||
+    "";
 
-    return [name, email, date, status];
-  });
+  const s = String(statusRaw).toLowerCase();
+
+const status =
+  s.includes("awarded") ||
+  s.includes("success") ||
+  s.includes("approved") ||
+  s.includes("paid") ||
+  s.includes("credit") ||
+  s.includes("completed") ||
+  s.includes("active")
+    ? "Successful"
+    : "Pending";
+
+  return [name, email, date, status];
+});
+
 
   const parseRowDate = (val) => {
     if (!val || val === "—") return 0;

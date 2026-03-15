@@ -48,8 +48,9 @@ const BookingSummary = () => {
 
   const [selected, setSelected] = useState("Mastercard");
 
-  const artisan = location.state?.artisan;
-  const booking = location.state?.booking;
+  const state = location.state || {};
+  const artisan = state?.artisan || null;
+  const booking = state?.booking || null;
 
   const cleanText = (v, fallback = "") =>
     typeof v === "string" && v.trim() === "" ? fallback : v ?? fallback;
@@ -77,6 +78,16 @@ const BookingSummary = () => {
     artisan?.roleTitle ||
     artisan?.categoryTitle ||
     artisan?.specialty ||
+    (Array.isArray(artisan?.skills) && artisan.skills.length > 0
+      ? typeof artisan.skills[0] === "string"
+        ? artisan.skills[0]
+        : artisan.skills[0]?.name || artisan.skills[0]?.title || ""
+      : "") ||
+    (Array.isArray(artisan?.categories) && artisan.categories.length > 0
+      ? typeof artisan.categories[0] === "string"
+        ? artisan.categories[0]
+        : artisan.categories[0]?.name || artisan.categories[0]?.title || ""
+      : "") ||
     "Technician";
 
   const reviewsCount = Number(
@@ -111,7 +122,7 @@ const BookingSummary = () => {
 
   useEffect(() => {
     const fetchServices = async () => {
-      if (!artisan?.id && !artisan?._id) {
+      if (!artisan?.id && !artisan?._id && !artisan?.artisanId) {
         setArtisanServiceList([]);
         setLoadingServices(false);
         return;
@@ -119,7 +130,7 @@ const BookingSummary = () => {
 
       try {
         setLoadingServices(true);
-        const artisanId = artisan?.id || artisan?._id;
+        const artisanId = artisan?.id || artisan?._id || artisan?.artisanId;
         const res = await getArtisanServices(artisanId);
         setArtisanServiceList(Array.isArray(res) ? res : []);
       } catch (err) {
@@ -143,7 +154,7 @@ const BookingSummary = () => {
           `Service ${idx + 1}`;
 
     return {
-      id: service?.id || service?._id || `${prefix}-${idx}`,
+      id: service?.id || service?._id || service?.serviceId || `${prefix}-${idx}`,
       title,
       description: service?.description || "",
       price: service?.price ?? service?.amount ?? null,
@@ -210,15 +221,13 @@ const BookingSummary = () => {
     artisan?.startingPrice ??
     null;
 
-  const platformFee = booking?.platformFee ?? null;
-  const taxFee = booking?.taxFee ?? null;
+const platformFee = 1000;
+// const taxFee = booking?.taxFee ?? null;
 
-  const totalFee =
-    serviceCost != null && platformFee != null && taxFee != null
-      ? Number(serviceCost) + Number(platformFee) + Number(taxFee)
-      : serviceCost != null
-      ? Number(serviceCost)
-      : null;
+const totalFee =
+  serviceCost != null
+    ? Number(serviceCost) + Number(platformFee)
+    : null;
 
   const uploadDeviceImage = async (token, userId) => {
     const fd = new FormData();
@@ -333,11 +342,14 @@ const BookingSummary = () => {
       setFinalBooking({
         ...booking,
         id: orderId,
+        orderId,
+        uploadedProductId: uploaded.uploadedProductId,
         damagedDeviceImageUrl: uploaded.imageUrl,
         serviceCost,
-        platformFee,
-        taxFee,
-        totalFee,
+platformFee,
+// taxFee,
+totalFee,
+        artisan,
       });
 
       setActiveModal(MODAL.SUCCESS);
@@ -391,24 +403,31 @@ const BookingSummary = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-[260px_1fr] gap-30 max-w-7xl mx-auto">
-            <div className="bg-[#EEF6FF] rounded-xl p-4 w-[290px]">
+<div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 lg:gap-20 max-w-7xl mx-auto">
+
+            <div className="bg-[#EEF6FF] rounded-xl p-4 w-full max-w-[290px] mx-auto lg:mx-0">
               <div className="flex flex-col">
                 <img
-                  src={artisan?.profilePicture || artisan?.avatar || profileImage}
+                  src={
+                    artisan?.profilePicture ||
+                    artisan?.profileImage ||
+                    artisan?.avatar ||
+                    profileImage
+                  }
                   alt="artisan"
-                  className="w-[250px] h-[220px] rounded-xl object-cover mb-4"
+                  className="w-full h-[220px] sm:h-[240px] rounded-xl object-cover mb-4"
                 />
 
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold text-black text-2xl">
-                    {cleanText(
-                      artisan?.fullName,
-                      cleanText(artisan?.businessName, "Unnamed Artisan")
-                    )}
-                  </h2>
-                  <img src={mark} alt="verified" className="w-5 h-5" />
-                </div>
+                <div className="flex items-center justify-between">
+  <h2 className="font-semibold text-black text-xl sm:text-2xl">
+    {cleanText(
+      artisan?.fullName,
+      cleanText(artisan?.businessName, "Unnamed Artisan")
+    )}
+  </h2>
+
+  <img src={mark} alt="verified" className="w-5 h-5" />
+</div>
 
                 <p className="text-lg text-[#656565] mt-1">{professionLabel}</p>
 
@@ -502,21 +521,23 @@ const BookingSummary = () => {
                       : formatNaira(serviceCost)}
                   </p>
                   <p>
-                    <span className="text-[#656565]">Platform Fee:</span>{" "}
-                    {platformFee == null ? "To be confirmed" : formatNaira(platformFee)}
-                  </p>
-                  <p>
-                    <span className="text-[#656565]">Tax Fee:</span>{" "}
-                    {taxFee == null ? "To be confirmed" : formatNaira(taxFee)}
-                  </p>
-                  <p className="text-base font-semibold text-blue-600 pt-2">
-                    Total Fee:{" "}
-                    {loadingServices
-                      ? "Loading..."
-                      : totalFee == null
-                      ? "To be confirmed"
-                      : formatNaira(totalFee)}
-                  </p>
+  <span className="text-[#656565]">Platform Fee:</span>{" "}
+  {formatNaira(platformFee)}
+</p>
+
+{/* <p>
+  <span className="text-[#656565]">Tax Fee:</span>{" "}
+  {taxFee == null ? "To be confirmed" : formatNaira(taxFee)}
+</p> */}
+
+<p className="text-base font-semibold text-blue-600 pt-2">
+  Total Fee:{" "}
+  {loadingServices
+    ? "Loading..."
+    : totalFee == null
+    ? "To be confirmed"
+    : formatNaira(totalFee)}
+</p>
                 </div>
               </div>
             </div>
@@ -528,7 +549,7 @@ const BookingSummary = () => {
         <div className="max-w-7xl mx-auto px-2 md:px-6">
           <h3 className="text-base font-semibold mb-4">Payment Method</h3>
 
-          <div className="grid grid-cols-4 gap-6 mb-5">
+<div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             {paymentMethods.map((item) => {
               const isActive = selected === item.label;
 
@@ -537,7 +558,7 @@ const BookingSummary = () => {
                   key={item.label}
                   type="button"
                   onClick={() => setSelected(item.label)}
-                  className="flex items-center gap-3 p-3"
+                  className="flex items-center gap-3 p-3 border rounded-lg hover:border-[#3e83c4] transition w-full"
                 >
                   <div
                     className={`w-4 h-4 rounded-full border flex items-center justify-center ${
@@ -552,7 +573,7 @@ const BookingSummary = () => {
                   <img
                     src={item.img}
                     alt={item.label}
-                    className="h-42 w-42 object-contain"
+                    className="h-10 sm:h-12 w-auto object-contain"
                   />
                 </button>
               );
@@ -560,7 +581,7 @@ const BookingSummary = () => {
           </div>
 
           <div className="space-y-8">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-center gap-2">
                 <label className="text-sm text-[#8B8B8B] w-24">Card Number*</label>
 
@@ -589,8 +610,8 @@ const BookingSummary = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
-              <div className="flex items-center gap-2">
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <label className="text-sm text-[#8B8B8B] w-10">Expiry</label>
 
                 <input
@@ -640,7 +661,7 @@ const BookingSummary = () => {
           <div className="mt-14 text-center space-y-4">
             <button
               onClick={() => setActiveModal(MODAL.WALLET)}
-              className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-16 py-3 rounded-md text-sm font-medium transition cursor-pointer"
+              className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white w-full sm:w-auto px-10 py-3 rounded-md text-sm font-medium transition"
             >
               Make Payment
             </button>
@@ -655,7 +676,7 @@ const BookingSummary = () => {
 
               {activeModal && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-xl w-[400px] p-6 relative">
+                 <div className="bg-white rounded-xl w-[90%] max-w-[400px] p-6 relative">
                     {activeModal === MODAL.WALLET && (
                       <div className="text-center space-y-4">
                         <img src={walletPay} alt="wallet" className="mx-auto w-12" />

@@ -383,15 +383,19 @@ const mappedNewArtisans = newestApiArtisans.map((artisan) => ({
   available: true,
 }));
 
-  const mappedSearchResults = (searchResults || []).map((artisan) => ({
-    id: artisan.id || artisan._id,
-    name: artisan.fullName || artisan.businessName || "Unnamed Artisan",
-    location: artisan.location || artisan.city || artisan.state || "Unknown location",
-    rating: artisan.rating || 0,
-    skills: artisan.skills || artisan.skillSet || [],
-    image: johnOne,
-    available: true,
-  }));
+const mappedSearchResults = (searchResults || []).map((artisan) => ({
+  id: artisan.id || artisan._id,
+  name: artisan.fullName || artisan.businessName || "Unnamed Artisan",
+  location: artisan.location || artisan.city || artisan.state || "Unknown location",
+  rating: artisan.rating || 0,
+  skills: artisan.skills || artisan.skillSet || [],
+  image:
+    artisan.profilePicture ||
+    artisan.profileImage ||
+    johnOne,
+  available: true,
+}));
+
 
   const filteredArtisans = (categoryArtisans || []).map((artisan, index) => ({
     id: artisan.id || artisan._id || `${index}`,
@@ -641,6 +645,7 @@ onMouseLeave={() => setHoveredTopArtisan(null)}
   }}
 />
 
+
               <span className="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs px-2 py-1 rounded-full">
                 Early User
               </span>
@@ -869,17 +874,21 @@ onMouseLeave={() => setHoveredNewArtisan(null)}
   {activeCategory || "Service Provider"}
 </p>
 
-              <div className="flex items-center gap-1 mt-6 text-sm text-black">
-                <span className="text-yellow-500">★</span>
-                <span>{artisan.rating}</span>
-                <span>({artisan.reviews} reviews)</span>
+              <div className="flex items-center justify-between mt-6 text-sm text-black">
+  
+  <div className="flex items-center gap-1">
+    <span className="text-yellow-500">★</span>
+    <span>{artisan.rating}</span>
+    <span className="whitespace-nowrap">({artisan.reviews} reviews)</span>
+  </div>
 
-                {artisan.available && (
-                  <span className="ml-6 bg-[#C9E8CA] text-[#43A047] px-2 py-0.5 rounded-full text-[10px]">
-                    Available
-                  </span>
-                )}
-              </div>
+  {artisan.available && (
+    <span className="bg-[#C9E8CA] text-[#43A047] px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap">
+      Available
+    </span>
+  )}
+
+</div>
 
               <button onClick={() =>
     navigate(`/client/artisan-profile/${artisan.id}`)} className="mt-2 w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-2 rounded-md text-sm font-medium transition cursor-pointer">

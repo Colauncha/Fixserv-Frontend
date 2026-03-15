@@ -44,43 +44,44 @@ const BookingSummaryA = () => {
   const artisan = state?.artisan || null;
 
   const extractConfirmedOrderId = (rawConfirm, fallbackId = "") => {
-  return (
-    rawConfirm?.data?.orderId ||
-    rawConfirm?.data?.id ||
-    rawConfirm?.data?.order?.id ||
-    rawConfirm?.data?.order?._id ||
-    rawConfirm?.orderId ||
-    rawConfirm?.id ||
-    rawConfirm?.order?.id ||
-    rawConfirm?.order?._id ||
-    fallbackId
+    return (
+      rawConfirm?.data?.orderId ||
+      rawConfirm?.data?.id ||
+      rawConfirm?.data?.order?.id ||
+      rawConfirm?.data?.order?._id ||
+      rawConfirm?.orderId ||
+      rawConfirm?.id ||
+      rawConfirm?.order?.id ||
+      rawConfirm?.order?._id ||
+      fallbackId
+    );
+  };
+
+  const confirmedOrderId = extractConfirmedOrderId(
+    state?.rawConfirm,
+    state?.draftOrderId || ""
   );
-};
 
-const confirmedOrderId = extractConfirmedOrderId(
-  state?.rawConfirm,
-  state?.draftOrderId || ""
-);
-
-const booking = {
-  draftOrderId: state?.draftOrderId || "",
-  orderId: confirmedOrderId,
-  uploadedProductId: state?.uploadedProductId || "",
-  deviceType: state?.deviceType || "",
-  brand: state?.deviceBrand || "",
-  model: state?.deviceModel || "",
-  serviceRequired: state?.serviceRequired || "",
-  issueDescription: state?.description || "",
-  objectName: state?.objectName || "",
-  rawConfirm: state?.rawConfirm || null,
-};
+  const booking = {
+    draftOrderId: state?.draftOrderId || "",
+    orderId: confirmedOrderId,
+    uploadedProductId: state?.uploadedProductId || "",
+    deviceType: state?.deviceType || "",
+    brand: state?.deviceBrand || "",
+    model: state?.deviceModel || "",
+    serviceRequired: state?.serviceRequired || "",
+    issueDescription: state?.description || "",
+    objectName: state?.objectName || "",
+    rawConfirm: state?.rawConfirm || null,
+    serviceCost: state?.serviceCost ?? null,
+  };
 
   const cleanText = (v, fallback = "") =>
     typeof v === "string" && v.trim() === "" ? fallback : v ?? fallback;
 
   const formatNaira = (value) => {
     const num = Number(value);
-    if (Number.isNaN(num)) return value;
+    if (value == null || Number.isNaN(num)) return value;
     return `₦${num.toLocaleString("en-NG")}`;
   };
 
@@ -89,16 +90,32 @@ const booking = {
       ? booking.serviceRequired
       : "Selected Service";
 
-const bookingIdToShow = finalBooking?.id || booking?.orderId || booking?.draftOrderId || "—";
+  const bookingIdToShow =
+    finalBooking?.id || booking?.orderId || booking?.draftOrderId || "—";
 
   const professionLabel =
     artisan?.profession ||
     artisan?.roleTitle ||
     artisan?.categoryTitle ||
     artisan?.specialty ||
+    (Array.isArray(artisan?.skills) && artisan.skills.length > 0
+      ? typeof artisan.skills[0] === "string"
+        ? artisan.skills[0]
+        : artisan.skills[0]?.name || artisan.skills[0]?.title || ""
+      : "") ||
+    (Array.isArray(artisan?.categories) && artisan.categories.length > 0
+      ? typeof artisan.categories[0] === "string"
+        ? artisan.categories[0]
+        : artisan.categories[0]?.name || artisan.categories[0]?.title || ""
+      : "") ||
     "Technician";
 
-  const reviewsCount = Number(artisan?.reviewsCount || artisan?.reviews || 0);
+  const reviewsCount = Number(
+    artisan?.reviewsCount ||
+      (Array.isArray(artisan?.reviewsList) ? artisan.reviewsList.length : 0) ||
+      artisan?.reviews ||
+      0
+  );
 
   const yearsFromCreatedAt = artisan?.createdAt
     ? Math.max(
@@ -115,39 +132,52 @@ const bookingIdToShow = finalBooking?.id || booking?.orderId || booking?.draftOr
       ? artisan.categories.slice(0, 3)
       : ["Phone", "Tablet", "Laptop"];
 
-  const selectedServiceFromArtisan = useMemo(() => {
+  const artisanServices = useMemo(() => {
     const services = Array.isArray(artisan?.services) ? artisan.services : [];
+    return services.filter((s) => s?.isActive !== false);
+  }, [artisan]);
 
+  const selectedServiceFromArtisan = useMemo(() => {
     const normalizedRequired = String(booking?.serviceRequired || "")
       .toLowerCase()
       .trim();
 
-    if (!normalizedRequired || services.length === 0) return null;
+    if (artisanServices.length === 0) return null;
+
+    if (!normalizedRequired) {
+      return artisanServices[0] || null;
+    }
 
     return (
-      services.find((s) => {
+      artisanServices.find((s) => {
         const title = String(
-          s?.title || s?.name || s?.serviceName || ""
-        ).toLowerCase().trim();
+  s?.title || s?.name || s?.serviceName || s?.details?.title || ""
+).toLowerCase().trim();
 
-        return title === normalizedRequired || title.includes(normalizedRequired);
-      }) || null
+        return (
+          title === normalizedRequired ||
+          title.includes(normalizedRequired) ||
+          normalizedRequired.includes(title)
+        );
+      }) || artisanServices[0] || null
     );
-  }, [artisan, booking?.serviceRequired]);
+  }, [artisanServices, booking?.serviceRequired]);
 
 const serviceCost =
   selectedServiceFromArtisan?.price ??
+  selectedServiceFromArtisan?.details?.price ??
   booking?.serviceCost ??
+  artisan?.service?.price ??
+  artisan?.service?.details?.price ??
   artisan?.startingPrice ??
   null;
 
-const platformFee = booking?.platformFee ?? null;
-const taxFee = booking?.taxFee ?? null;
+  const platformFee = 1000;
 
-const totalFee =
-  serviceCost != null && platformFee != null && taxFee != null
-    ? Number(serviceCost) + Number(platformFee) + Number(taxFee)
-    : null;
+  const totalFee =
+    serviceCost != null
+      ? Number(serviceCost) + Number(platformFee)
+      : null;
 
   const handleWalletPayment = async () => {
     try {
@@ -156,31 +186,31 @@ const totalFee =
       setActiveModal(MODAL.PROCESSING);
 
       if (!artisan) throw new Error("Selected artisan not found.");
-if (!booking?.orderId && !booking?.draftOrderId) {
-  throw new Error("Booking id not found. Please start again.");
-}
+      if (!booking?.orderId && !booking?.draftOrderId) {
+        throw new Error("Booking id not found. Please start again.");
+      }
 
       await new Promise((resolve) => setTimeout(resolve, 1200));
 
-const finalOrderId = booking.orderId || booking.draftOrderId;
+      const finalOrderId = booking.orderId || booking.draftOrderId;
 
-const finalData = {
-  id: finalOrderId,
-  uploadedProductId: booking.uploadedProductId,
-  deviceType: booking.deviceType,
-  brand: booking.brand,
-  model: booking.model,
-  serviceRequired: booking.serviceRequired,
-  issueDescription: booking.issueDescription,
-  objectName: booking.objectName,
-  serviceCost,
-  platformFee,
-  taxFee,
-  totalFee,
-  artisan,
-};
+      const finalData = {
+        id: finalOrderId,
+        orderId: finalOrderId,
+        uploadedProductId: booking.uploadedProductId,
+        deviceType: booking.deviceType,
+        brand: booking.brand,
+        model: booking.model,
+        serviceRequired: booking.serviceRequired,
+        issueDescription: booking.issueDescription,
+        objectName: booking.objectName,
+        serviceCost,
+        platformFee,
+        totalFee,
+        artisan,
+      };
 
-localStorage.setItem("fixserv_last_order_id", finalOrderId);
+      localStorage.setItem("fixserv_last_order_id", finalOrderId);
 
       setFinalBooking(finalData);
       setActiveModal(MODAL.SUCCESS);
@@ -205,7 +235,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
     };
   }, [activeModal]);
 
-  if (!artisan || !booking?.draftOrderId) {
+  if (!artisan || (!booking?.draftOrderId && !booking?.orderId)) {
     return (
       <div className="py-20 text-center text-gray-500">
         Booking details not found. Please start again.
@@ -217,7 +247,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
     <div className="w-full min-h-screen bg-white">
       <section className="w-full py-14 overflow-hidden">
         <div className="max-w-7xl mx-auto px-2 md:px-6">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8 md:mb-12">
             <button
               onClick={() => navigate(-1)}
               className="text-sm text-[#3e83c4] mb-6 flex items-center gap-1"
@@ -234,17 +264,23 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
             </p>
           </div>
 
-          <div className="grid grid-cols-[260px_1fr] gap-30 max-w-7xl mx-auto">
-            <div className="bg-[#EEF6FF] rounded-xl p-4 w-[290px]">
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-10 lg:gap-20 max-w-7xl mx-auto">
+
+           <div className="bg-[#EEF6FF] rounded-xl p-5 w-full max-w-[320px] mx-auto lg:mx-0 lg:w-[290px] flex flex-col items-center lg:items-start">
               <div className="flex flex-col">
                 <img
-                  src={artisan?.profilePicture || artisan?.avatar || profileImage}
+                  src={
+                    artisan?.profilePicture ||
+                    artisan?.profileImage ||
+                    artisan?.avatar ||
+                    profileImage
+                  }
                   alt="artisan"
-                  className="w-[250px] h-[220px] rounded-xl object-cover mb-4"
+                  className="w-full max-w-[260px] h-[220px] sm:h-[240px] rounded-xl object-cover mb-4"
                 />
 
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold text-black text-2xl">
+                <div className="flex items-center justify-between w-full max-w-[260px]">
+                  <h2 className="font-semibold text-black text-xl text-left">
                     {cleanText(
                       artisan?.fullName,
                       cleanText(artisan?.businessName, "Unnamed Artisan")
@@ -253,9 +289,10 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
                   <img src={mark} alt="verified" className="w-5 h-5" />
                 </div>
 
-                <p className="text-lg text-[#656565] mt-1">{professionLabel}</p>
+                <p className="text-base text-[#656565] mt-1 text-center lg:text-left">
+{professionLabel}</p>
 
-                <div className="flex items-center gap-1 mt-2 text-lg">
+                <div className="flex items-center justify-center lg:justify-start gap-1 mt-2 text-base">
                   <img src={star} alt="star" className="w-6 h-6" />
                   <span className="font-medium text-black">
                     {Number(artisan?.rating || 0).toFixed(1)}
@@ -263,7 +300,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
                   <span className="text-black">({reviewsCount} reviews)</span>
                 </div>
 
-                <div className="flex gap-2 mt-3 flex-wrap">
+                <div className="flex gap-2 mt-3 flex-wrap justify-center lg:justify-start">
                   {categoriesToShow.map((c, idx) => {
                     const label =
                       typeof c === "string"
@@ -280,7 +317,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
                   })}
                 </div>
 
-                <div className="mt-4 text-lg text-[#656565] space-y-1">
+                <div className="mt-4 text-sm text-[#656565] space-y-1 text-center lg:text-left">
                   <p>
                     Experience:{" "}
                     <span className="font-medium text-black">
@@ -333,18 +370,15 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
                 <div className="pt-6 space-y-2">
                   <p>
                     <span className="text-[#656565]">Service Cost:</span>{" "}
-                    {serviceCost == null ? "To be confirmed" : formatNaira(serviceCost)}
+                    {serviceCost == null ? "—" : formatNaira(serviceCost)}
                   </p>
                   <p>
                     <span className="text-[#656565]">Platform Fee:</span>{" "}
-                    {platformFee == null ? "To be confirmed" : formatNaira(platformFee)}
+                    {formatNaira(platformFee)}
                   </p>
-                  <p>
-                    <span className="text-[#656565]">Tax Fee:</span>{" "}
-                    {taxFee == null ? "To be confirmed" : formatNaira(taxFee)}
-                  </p>
+
                   <p className="text-base font-semibold text-blue-600 pt-2">
-                    Total Fee: {totalFee == null ? "To be confirmed" : formatNaira(totalFee)}
+                    Total Fee: {totalFee == null ? "—" : formatNaira(totalFee)}
                   </p>
                 </div>
               </div>
@@ -357,7 +391,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
         <div className="max-w-7xl mx-auto px-2 md:px-6">
           <h3 className="text-base font-semibold mb-4">Payment Method</h3>
 
-          <div className="grid grid-cols-4 gap-6 mb-5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-6">
             {paymentMethods.map((item) => {
               const isActive = selected === item.label;
 
@@ -381,7 +415,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
                   <img
                     src={item.img}
                     alt={item.label}
-                    className="h-42 w-42 object-contain"
+                    className="h-14 w-14 sm:h-16 sm:w-16 object-contain"
                   />
                 </button>
               );
@@ -389,7 +423,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
           </div>
 
           <div className="space-y-8">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-center gap-2">
                 <label className="text-sm text-[#8B8B8B] w-24">Card Number*</label>
 
@@ -420,7 +454,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               <div className="flex items-center gap-2">
                 <label className="text-sm text-[#8B8B8B] w-10">Expiry</label>
 
@@ -473,7 +507,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
           <div className="mt-14 text-center space-y-4">
             <button
               onClick={() => setActiveModal(MODAL.WALLET)}
-              className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-16 py-3 rounded-md text-sm font-medium transition cursor-pointer"
+              className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white w-full sm:w-auto px-8 sm:px-16 py-3 rounded-md text-sm font-medium transition cursor-pointer"
             >
               Make Payment
             </button>
@@ -488,7 +522,8 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
 
               {activeModal && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-xl w-[400px] p-6 relative">
+                  <div className="bg-white rounded-xl w-[90%] max-w-[400px] p-6 relative">
+                  
                     {activeModal === MODAL.WALLET && (
                       <div className="text-center space-y-4">
                         <img src={walletPay} alt="wallet" className="mx-auto w-12" />
@@ -499,7 +534,7 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
                         </p>
 
                         <div className="text-sm space-y-1 text-left mt-4">
-                          <p>Total: {formatNaira(totalFee)}</p>
+                          <p>Total: {totalFee == null ? "—" : formatNaira(totalFee)}</p>
                           <p>Balance: ₦—</p>
                           <p>Balance After Payment: ₦—</p>
                         </div>
@@ -554,12 +589,12 @@ localStorage.setItem("fixserv_last_order_id", finalOrderId);
                         <button
                           onClick={() =>
                             navigate(`/client/track-repair-a/${finalBooking?.id}`, {
-  state: {
-    orderId: finalBooking?.id,
-    artisan,
-    booking: finalBooking,
-  },
-})
+                              state: {
+                                orderId: finalBooking?.id,
+                                artisan,
+                                booking: finalBooking,
+                              },
+                            })
                           }
                           disabled={!finalBooking?.id}
                           className={`w-full bg-blue-600 text-white py-2 rounded-md ${

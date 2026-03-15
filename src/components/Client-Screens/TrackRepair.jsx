@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { CheckCircle2, Circle, ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { getOrderById } from "../../api/order.api";
@@ -14,13 +14,45 @@ const stepsData = [
 const statusToStep = (status) => {
   const s = String(status || "").toUpperCase();
 
-  if (s === "PENDING_ARTISAN_RESPONSE") return 0;
-  if (s === "ACCEPTED") return 1;
-  if (s === "IN_PROGRESS") return 2;
-  if (s === "WORK_COMPLETED") return 3;
-  if (s === "COMPLETED") return 4;
+  if (["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(s)) {
+    return 0;
+  }
+  if (["ACCEPTED", "DEVICE_DROPPED_OFF"].includes(s)) {
+    return 1;
+  }
+  if (["IN_PROGRESS", "ONGOING", "AVAILABLE"].includes(s)) {
+    return 2;
+  }
+  if (["WORK_COMPLETED", "READY_FOR_PICKUP"].includes(s)) {
+    return 3;
+  }
+  if (["COMPLETED", "DONE"].includes(s)) {
+    return 4;
+  }
 
   return 0;
+};
+
+const formatStatusLabel = (status) => {
+  const s = String(status || "").toUpperCase();
+
+  if (["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(s)) {
+    return "Pending Artisan Response";
+  }
+  if (["ACCEPTED", "DEVICE_DROPPED_OFF"].includes(s)) {
+    return "Accepted";
+  }
+  if (["IN_PROGRESS", "ONGOING", "AVAILABLE"].includes(s)) {
+    return "In Progress";
+  }
+  if (["WORK_COMPLETED", "READY_FOR_PICKUP"].includes(s)) {
+    return "Work Completed";
+  }
+  if (["COMPLETED", "DONE"].includes(s)) {
+    return "Completed";
+  }
+
+  return status || "Pending Artisan Response";
 };
 
 const formatDate = (value) => {
@@ -86,42 +118,89 @@ const TrackRepair = () => {
     run();
   }, [orderId, shouldFetchLiveOrder]);
 
-  const booking = useMemo(() => {
-    if (order) {
-      const createdAt = formatDate(order.createdAt);
-      const fallbackImageUrl =
-        localStorage.getItem("fixserv_last_uploaded_image_url") || "";
+const booking = useMemo(() => {
+  const fallbackImageUrl =
+    localStorage.getItem("fixserv_last_uploaded_image_url") || "";
 
-      return {
-        id: order.id || order._id || orderId,
-        status: order.status || "PENDING_ARTISAN_RESPONSE",
-        currentStep: statusToStep(order.status),
-        timeline: [createdAt || null, null, null, null, null],
-        brand: order.deviceBrand || bookingFromState?.brand || "",
-        model: order.deviceModel || bookingFromState?.model || "",
-        damagedDeviceImageUrl:
-          order.damagedDeviceImageUrl ||
-          bookingFromState?.damagedDeviceImageUrl ||
-          fallbackImageUrl,
-      };
-    }
+  if (order) {
+    const createdAt = formatDate(order.createdAt);
 
-    if (bookingFromState) {
-      const nowStamp = formatDate(new Date().toISOString());
+    return {
+      ...bookingFromState,
+      id: order.id || order._id || order.orderId || orderId,
+      orderId: order.id || order._id || order.orderId || orderId,
+      status: order.status || "PENDING_ARTISAN_RESPONSE",
+      currentStep: statusToStep(order.status),
+      timeline: [createdAt || null, null, null, null, null],
+      brand:
+        order.deviceBrand ||
+        bookingFromState?.brand ||
+        bookingFromState?.deviceBrand ||
+        "",
+      model:
+        order.deviceModel ||
+        bookingFromState?.model ||
+        bookingFromState?.deviceModel ||
+        "",
+      deviceType:
+        order.deviceType ||
+        bookingFromState?.deviceType ||
+        "",
+      serviceRequired:
+        order.serviceRequired ||
+        bookingFromState?.serviceRequired ||
+        "",
+      issueDescription:
+        order.issueDescription ||
+        order.description ||
+        bookingFromState?.issueDescription ||
+        bookingFromState?.description ||
+        "",
+      objectName:
+        order.objectName ||
+        bookingFromState?.objectName ||
+        "",
+      damagedDeviceImageUrl:
+        order.damagedDeviceImageUrl ||
+        bookingFromState?.damagedDeviceImageUrl ||
+        fallbackImageUrl,
+    };
+  }
 
-      return {
-        id: bookingFromState.id || orderId,
-        status: "PENDING_ARTISAN_RESPONSE",
-        currentStep: 0,
-        timeline: [nowStamp, null, null, null, null],
-        brand: bookingFromState.brand || "",
-        model: bookingFromState.model || "",
-        damagedDeviceImageUrl: bookingFromState.damagedDeviceImageUrl || "",
-      };
-    }
+  if (bookingFromState) {
+    const nowStamp = formatDate(new Date().toISOString());
 
-    return null;
-  }, [order, bookingFromState, orderId]);
+    return {
+      ...bookingFromState,
+      id:
+        bookingFromState.id ||
+        bookingFromState.orderId ||
+        bookingFromState.draftOrderId ||
+        orderId,
+      orderId:
+        bookingFromState.orderId ||
+        bookingFromState.id ||
+        bookingFromState.draftOrderId ||
+        orderId,
+      status: bookingFromState.status || "PENDING_ARTISAN_RESPONSE",
+      currentStep: statusToStep(
+        bookingFromState.status || "PENDING_ARTISAN_RESPONSE"
+      ),
+      timeline: [nowStamp, null, null, null, null],
+      brand: bookingFromState.brand || bookingFromState.deviceBrand || "",
+      model: bookingFromState.model || bookingFromState.deviceModel || "",
+      deviceType: bookingFromState.deviceType || "",
+      serviceRequired: bookingFromState.serviceRequired || "",
+      issueDescription:
+        bookingFromState.issueDescription || bookingFromState.description || "",
+      objectName: bookingFromState.objectName || "",
+      damagedDeviceImageUrl:
+        bookingFromState.damagedDeviceImageUrl || fallbackImageUrl,
+    };
+  }
+
+  return null;
+}, [order, bookingFromState, orderId]);
 
   const displayStatus = booking?.status || "PENDING_ARTISAN_RESPONSE";
 
@@ -177,31 +256,39 @@ const TrackRepair = () => {
           </h3>
 
           <p className="text-lg font-normal text-black">
-            {`${booking.brand} ${booking.model}`.trim()}
+            {`${booking.brand} ${booking.model}`.trim() || "Device repair"}
           </p>
         </div>
 
         <div className="flex justify-center items-center gap-2 mt-3">
           <p className="text-sm text-[#535353]">Status:</p>
           <span className="bg-[#F6E4C7] text-[#F99F10] text-xs px-3 py-[2px] rounded-full">
-            {displayStatus}
+            {formatStatusLabel(displayStatus)}
           </span>
         </div>
 
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500">
-            Live tracking is temporarily unavailable. Showing your latest booking details.
-          </p>
-        </div>
+        {!shouldFetchLiveOrder && (
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500">
+              Live tracking is temporarily unavailable. Showing your latest booking details.
+            </p>
+          </div>
+        )}
+
+        {orderError ? (
+          <div className="mt-4 text-center">
+            <p className="text-xs text-red-500">{orderError}</p>
+          </div>
+        ) : null}
 
         <div className="mt-10">
           {booking.damagedDeviceImageUrl && (
             <div className="mb-10 flex justify-center">
-              <img
+              {/* <img
                 src={booking.damagedDeviceImageUrl}
                 alt="Damaged device"
                 className="w-56 h-56 object-cover rounded-xl border"
-              />
+              /> */}
             </div>
           )}
 
