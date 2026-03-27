@@ -1,4 +1,5 @@
 const USER_BASE_URL = "https://dev-user-api.fixserv.co/api";
+const SERVICE_BASE_URL = "https://dev-service-api.fixserv.co/api/service";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("fixserv_token");
@@ -19,6 +20,47 @@ const safeJson = async (res) => {
   }
 };
 
+const getResolvedArtisanId = (record) =>
+  record?.id || record?._id || record?.artisanId || null;
+
+const getSavedBio = (artisanId) => {
+  if (!artisanId) return "";
+  return localStorage.getItem(`fixserv_artisan_bio_${artisanId}`) || "";
+};
+
+const setSavedBio = (artisanId, bio) => {
+  if (!artisanId) return;
+  localStorage.setItem(`fixserv_artisan_bio_${artisanId}`, typeof bio === "string" ? bio : "");
+};
+
+const firstNonEmptyText = (...values) => {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim() !== "") {
+      return value.trim();
+    }
+  }
+  return "";
+};
+
+const hydrateArtisanBio = (record) => {
+  if (!record || typeof record !== "object") return record;
+
+  const artisanId = getResolvedArtisanId(record);
+
+  const resolvedBio = firstNonEmptyText(
+    record?.bio,
+    record?.user?.bio,
+    record?.artisan?.bio,
+    record?.data?.bio,
+    getSavedBio(artisanId)
+  );
+
+  return {
+    ...record,
+    bio: resolvedBio,
+  };
+};
+
 export const getArtisanById = async (artisanId) => {
   const res = await fetch(`${USER_BASE_URL}/admin/user/${artisanId}`, {
     headers: getAuthHeaders(),
@@ -30,7 +72,13 @@ export const getArtisanById = async (artisanId) => {
     throw new Error(json?.message || "Failed to fetch artisan");
   }
 
-  return json?.data || json?.user || json;
+  const raw = json?.data || json?.user || json;
+  const hydrated = hydrateArtisanBio(raw);
+
+  console.log("GET ARTISAN BY ID RESPONSE =>", res.status, json);
+  console.log("GET ARTISAN BY ID HYDRATED =>", hydrated);
+
+  return hydrated;
 };
 
 export const getAllArtisans = async () => {
@@ -44,11 +92,82 @@ export const getAllArtisans = async () => {
     throw new Error(json?.message || "Failed to fetch artisans");
   }
 
-  return json?.users || json?.data || [];
+  const rawList = json?.users || json?.data || [];
+  const hydratedList = Array.isArray(rawList)
+    ? rawList.map((item) => hydrateArtisanBio(item))
+    : [];
+
+  console.log("GET ALL ARTISANS RESPONSE =>", res.status, json);
+  console.log("GET ALL ARTISANS HYDRATED =>", hydratedList);
+
+  return hydratedList;
+};
+
+export const updateArtisanData = async (artisanId, payload) => {
+  const safeHours =
+    payload?.businessHours && typeof payload.businessHours === "object"
+      ? payload.businessHours
+      : {};
+
+  const days = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+  ];
+
+  const openOnlyHours = {};
+
+  for (const day of days) {
+    const open = String(safeHours?.[day]?.open || "").trim();
+    const close = String(safeHours?.[day]?.close || "").trim();
+
+    if (open && close) {
+      openOnlyHours[day] = { open, close };
+    }
+  }
+
+  const finalPayload = {
+    ...payload,
+    businessHours: openOnlyHours,
+  };
+
+  const res = await fetch(`${USER_BASE_URL}/admin/${artisanId}`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(finalPayload),
+  });
+
+  const json = await safeJson(res);
+
+  console.log("UPDATE ARTISAN PAYLOAD =>", finalPayload);
+  console.log("UPDATE ARTISAN RESPONSE =>", res.status, json);
+
+  if (!res.ok) {
+    throw new Error(
+      json?.message ||
+        json?.error ||
+        json?.errors?.[0]?.message ||
+        `Failed to update artisan data (${res.status})`
+    );
+  }
+
+  const updated = hydrateArtisanBio(json?.data || json?.user || json);
+
+  if (typeof finalPayload?.bio === "string") {
+    setSavedBio(artisanId, finalPayload.bio);
+  } else if (typeof updated?.bio === "string") {
+    setSavedBio(artisanId, updated.bio);
+  }
+
+  return updated;
 };
 
 export const getArtisanServices = async (artisanId) => {
-  const res = await fetch(`/api/service/artisan/${artisanId}`, {
+  const res = await fetch(`${SERVICE_BASE_URL}/artisan/${artisanId}`, {
     headers: getAuthHeaders(),
   });
 
@@ -64,4 +183,36 @@ export const getArtisanServices = async (artisanId) => {
   if (Array.isArray(json?.data?.services)) return json.data.services;
 
   return [];
+};
+
+export const createArtisanService = async (payload) => {
+  const res = await fetch(`${SERVICE_BASE_URL}/createService`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const json = await safeJson(res);
+
+  if (!res.ok) {
+    throw new Error(json?.message || `Failed to create service (${res.status})`);
+  }
+
+  return json?.data || json?.service || json;
+};
+
+export const updateArtisanService = async (serviceId, payload) => {
+  const res = await fetch(`${SERVICE_BASE_URL}/${serviceId}`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const json = await safeJson(res);
+
+  if (!res.ok) {
+    throw new Error(json?.message || `Failed to update service (${res.status})`);
+  }
+
+  return json?.data || json?.service || json;
 };

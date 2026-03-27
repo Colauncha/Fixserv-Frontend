@@ -79,10 +79,10 @@ const TrackRepairA = () => {
         setOrderError(e?.message || "Failed to load booking");
         setCompletedStep(statusToStep("PENDING_ARTISAN_RESPONSE"));
 
-        const status = e?.response?.status;
-        if (status === 400 || status === 404) {
-          setEnableLiveTracking(false);
-        }
+        const status = e?.response?.status || e?.status || e?.statusCode;
+if (status === 400 || status === 404) {
+  setEnableLiveTracking(false);
+}
       } finally {
         setLoadingOrder(false);
       }
@@ -103,52 +103,39 @@ const TrackRepairA = () => {
       } catch (e) {
         console.error("TRACK ORDER POLLING ERROR:", e);
 
-        const status = e?.response?.status;
-        if (status === 400 || status === 404) {
-          setEnableLiveTracking(false);
-        }
+        const status = e?.response?.status || e?.status || e?.statusCode;
+if (status === 400 || status === 404) {
+  setEnableLiveTracking(false);
+}
       }
     }, 10000);
 
     return () => clearInterval(interval);
   }, [orderId, enableLiveTracking]);
 
-  const booking = useMemo(() => {
-    if (order) {
-      const createdAt = formatDate(order.createdAt);
-      const fallbackImageUrl =
-        localStorage.getItem("fixserv_last_uploaded_image_url") || "";
+const booking = useMemo(() => {
+  if (!bookingFromState) return null;
 
-      return {
-        id: order.id || order._id || orderId,
-        status: order.status || "PENDING_ARTISAN_RESPONSE",
-        currentStep: statusToStep(order.status),
-        timeline: [createdAt || null, null, null, null, null],
-        brand: order.deviceBrand || bookingFromState?.brand || "",
-        model: order.deviceModel || bookingFromState?.model || "",
-        damagedDeviceImageUrl:
-          order.damagedDeviceImageUrl ||
-          bookingFromState?.damagedDeviceImageUrl ||
-          fallbackImageUrl,
-      };
-    }
+  const createdAt = formatDate(order?.createdAt || new Date().toISOString());
 
-    if (bookingFromState) {
-      const nowStamp = formatDate(new Date().toISOString());
+  return {
+    id: bookingFromState.id || orderId,
 
-      return {
-        id: bookingFromState.id || orderId,
-        status: "PENDING_ARTISAN_RESPONSE",
-        currentStep: 0,
-        timeline: [nowStamp, null, null, null, null],
-        brand: bookingFromState.brand || "",
-        model: bookingFromState.model || "",
-        damagedDeviceImageUrl: bookingFromState.damagedDeviceImageUrl || "",
-      };
-    }
+    // status comes from API if available
+    status: order?.status || "PENDING_ARTISAN_RESPONSE",
 
-    return null;
-  }, [order, bookingFromState, orderId]);
+    currentStep: order
+      ? statusToStep(order.status)
+      : statusToStep("PENDING_ARTISAN_RESPONSE"),
+
+    timeline: [createdAt || null, null, null, null, null],
+
+    // keep original booking data EXACTLY
+    brand: bookingFromState.brand,
+    model: bookingFromState.model,
+    damagedDeviceImageUrl: bookingFromState.damagedDeviceImageUrl || "",
+  };
+}, [order, bookingFromState, orderId]);
 
   const displayStatus = booking?.status || "PENDING_ARTISAN_RESPONSE";
 

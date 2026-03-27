@@ -9,7 +9,14 @@ import { getAuthUser, getAuthToken } from "../../utils/auth";
 import ArtisanHeader from "./ArtisanHeader";
 
 const MAX_MB = 5;
-const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+const ACCEPTED_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
 
 const prettySize = (bytes) => {
   if (!bytes && bytes !== 0) return "";
@@ -46,10 +53,10 @@ const Verification = () => {
 
     for (const f of selected) {
       if (!ACCEPTED_TYPES.includes(f.type)) {
-        setError("Only JPG/JPEG/PNG images are allowed for certificates.");
-        hasError = true;
-        continue;
-      }
+  setError("Only JPG, JPEG, PNG, PDF, DOC, and DOCX files are allowed for certificates.");
+  hasError = true;
+  continue;
+}
 
       if (f.size > MAX_MB * 1024 * 1024) {
         setError(`Each file must be less than ${MAX_MB}MB.`);
@@ -153,7 +160,7 @@ const Verification = () => {
       files.forEach((f) => fd.append("certificates", f.file));
       fd.append("certificateNames", JSON.stringify(names));
 
-      const url = `https://dev-user-api.fixserv.co/api/certificate/${userId}/upload-certificates`;
+const url = `/api/certificate/${userId}/upload-certificates`;
 
       const xhr = new XMLHttpRequest();
       xhr.open("POST", url, true);
@@ -289,25 +296,25 @@ const Verification = () => {
 
               <button
                 onClick={handleBrowseClick}
-                className="bg-[#3E83C4] text-white px-6 py-3 rounded-lg font-medium"
+                className="bg-[#3E83C4] text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
                 disabled={submitting}
               >
                 Browse Files
               </button>
 
               <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/png,image/jpeg"
-                multiple
-                onChange={onSelectFiles}
-              />
+  type="file"
+  ref={fileInputRef}
+  className="hidden"
+  accept=".png,.jpg,.jpeg,.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
+  multiple
+  onChange={onSelectFiles}
+/>
             </div>
 
             <p className="text-xs text-center text-gray-500 mt-4">
-              Accepted formats: JPG, PNG. Max size: {MAX_MB}MB each.
-            </p>
+  Accepted formats: JPG, JPEG, PNG, PDF, DOC, DOCX. Max size: {MAX_MB}MB each.
+</p>
 
             <div className="mt-10 space-y-4 sm:space-y-5">
               {files.map((file) => (

@@ -478,7 +478,7 @@ const ProfileSettings = () => {
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm text-[#535353] mb-1">
                 Service Preference
               </label>
@@ -499,7 +499,7 @@ const ProfileSettings = () => {
                   Tablet Repair ✕
                 </span>
               </div>
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-xs text-[#535353] mb-1">
