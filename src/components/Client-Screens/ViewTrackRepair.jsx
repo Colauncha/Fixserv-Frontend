@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Circle, ArrowLeft } from "lucide-react";
+import { CheckCircle2, Circle, ArrowLeft, AlertTriangle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import {
+  cancelOrderByClient,
+  releasePaymentToArtisan,
+} from "../../api/order.api";
 import caution from "../../assets/client images/caution.png";
 import success from "../../assets/client images/client-home/success.png";
 
@@ -8,16 +12,16 @@ const stepsData = [
   "Request Received",
   "Device Drop-off",
   "Repair in Progress",
-  "Ready for Pick-up",
   "Completed",
+  "Ready for Pick-up",
 ];
 
 const stepDescriptions = [
   "Your repair request has been received",
   "Device has been dropped off with the technician",
   "Technician is currently working on the device",
-  "Repair is complete and awaiting pick-up",
   "Service has been completed",
+  "Repair is complete and awaiting pick-up",
 ];
 
 const formatDateTimeParts = (value) => {
@@ -54,15 +58,64 @@ const formatLastUpdated = (value) => {
   });
 };
 
+const pickValue = (...values) => {
+  for (const value of values) {
+    if (Array.isArray(value)) {
+      if (value.length > 0) return value;
+      continue;
+    }
+
+    if (typeof value === "number") return value;
+    if (typeof value === "boolean") return value;
+
+    const text = String(value ?? "").trim();
+
+    if (
+      text &&
+      text !== "—" &&
+      text.toLowerCase() !== "n/a" &&
+      text.toLowerCase() !== "null" &&
+      text.toLowerCase() !== "undefined" &&
+      !/^-+$/.test(text)
+    ) {
+      return value;
+    }
+  }
+
+  return "";
+};
+
+const normalizeProgressText = (status) => {
+  const value = String(status || "").toUpperCase().trim();
+
+  if (value === "PENDING_ARTISAN_RESPONSE") return "Pending Artisan Response";
+  if (value === "REQUESTED") return "Request Received";
+  if (value === "NEW") return "Request Received";
+  if (value === "ACCEPTED") return "Accepted";
+  if (value === "DEVICE_DROPPED_OFF") return "Device Dropped Off";
+  if (value === "IN_PROGRESS") return "In Progress";
+  if (value === "ONGOING") return "In Progress";
+  if (value === "AVAILABLE") return "In Progress";
+  if (value === "READY_FOR_PICKUP") return "Ready for Pick-up";
+  if (value === "READY_FOR_PICK_UP") return "Ready for Pick-up";
+  if (value === "WORK_COMPLETED") return "Completed";
+  if (value === "COMPLETED") return "Completed";
+  if (value === "DONE") return "Completed";
+  if (value === "CANCELLED") return "Cancelled";
+  if (value === "REJECTED") return "Rejected";
+
+  return value.replace(/_/g, " ") || "Pending";
+};
+
 const getStepIndexFromStatus = (status) => {
   const value = String(status || "").toUpperCase().trim();
 
-  if (value === "PENDING_ARTISAN_RESPONSE") return 0;
-  if (value === "ACCEPTED") return 1;
-  if (value === "IN_PROGRESS") return 2;
-  if (value === "READY_FOR_PICKUP" || value === "READY_FOR_PICK_UP") return 3;
-  if (value === "COMPLETED") return 4;
-  if (value === "CANCELLED") return 0;
+  if (["PENDING_ARTISAN_RESPONSE", "REQUESTED", "NEW"].includes(value)) return 0;
+  if (["ACCEPTED", "DEVICE_DROPPED_OFF"].includes(value)) return 1;
+  if (["IN_PROGRESS", "ONGOING", "AVAILABLE"].includes(value)) return 2;
+  if (["READY_FOR_PICKUP", "READY_FOR_PICK_UP"].includes(value)) return 3;
+  if (["WORK_COMPLETED", "COMPLETED", "DONE"].includes(value)) return 4;
+  if (["CANCELLED", "REJECTED"].includes(value)) return 0;
 
   return 0;
 };
@@ -74,11 +127,18 @@ const getStatusBadge = (progress) => {
     return "bg-green-100 text-green-600";
   }
 
-  if (value.includes("cancel")) {
+  if (value.includes("cancel") || value.includes("reject")) {
     return "bg-red-100 text-red-600";
   }
 
-  if (value.includes("progress") || value.includes("pending") || value.includes("accepted")) {
+  if (
+    value.includes("progress") ||
+    value.includes("pending") ||
+    value.includes("accepted") ||
+    value.includes("request") ||
+    value.includes("pick-up") ||
+    value.includes("drop")
+  ) {
     return "bg-[#F6E4C7] text-[#F99F10]";
   }
 
@@ -90,6 +150,11 @@ const ViewTrackRepair = () => {
   const location = useLocation();
 
   const repair = location.state?.repair || null;
+  const raw = repair?.raw || {};
+
+  const rawUploadedProduct = Array.isArray(raw?.uploadedProducts)
+    ? raw.uploadedProducts[0]
+    : raw?.uploadedProduct || null;
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showCancelSuccess, setShowCancelSuccess] = useState(false);
@@ -97,53 +162,306 @@ const ViewTrackRepair = () => {
 
   const [cancelReason, setCancelReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
+  const [cancelEmail, setCancelEmail] = useState("");
+  const [cancelPassword, setCancelPassword] = useState("");
+  const [cancellingOrder, setCancellingOrder] = useState(false);
+
+  const [showReleaseConfirm, setShowReleaseConfirm] = useState(false);
+  const [releasingPayment, setReleasingPayment] = useState(false);
+  const [paymentReleased, setPaymentReleased] = useState(false);
+
+  const storedUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("fixserv_user") || "{}");
+    } catch {
+      return {};
+    }
+  })();
+
+  useEffect(() => {
+    if (storedUser?.email) {
+      setCancelEmail(storedUser.email);
+    }
+  }, [storedUser?.email]);
+
+  const booking = useMemo(() => {
+    return {
+      id: pickValue(repair?.id, raw?.id),
+
+      brand: pickValue(
+        repair?.deviceBrand,
+        repair?.brand,
+        raw?.deviceBrand,
+        raw?.brand
+      ),
+
+      model: pickValue(
+        repair?.deviceModel,
+        repair?.model,
+        raw?.deviceModel,
+        raw?.model
+      ),
+
+      deviceType: pickValue(repair?.deviceType, raw?.deviceType),
+
+      serviceRequired: pickValue(
+        repair?.serviceRequired,
+        raw?.serviceRequired,
+        raw?.service?.title
+      ),
+
+      objectName: pickValue(
+        repair?.objectName,
+        raw?.objectName,
+        rawUploadedProduct?.objectName
+      ),
+
+      progress: pickValue(
+        repair?.progress,
+        repair?.orderStatus,
+        raw?.status,
+        raw?.orderStatus
+      ),
+
+      createdAt: pickValue(repair?.createdAt, raw?.createdAt),
+
+      updatedAt: pickValue(
+        repair?.updatedAt,
+        raw?.updatedAt,
+        raw?.completedAt,
+        raw?.readyForPickupAt,
+        raw?.inProgressAt
+      ),
+
+      artisanResponseDeadline: pickValue(
+        repair?.artisanResponseDeadline,
+        raw?.artisanResponseDeadline
+      ),
+
+      paymentReleased:
+        raw?.paymentReleased ||
+        raw?.isPaymentReleased ||
+        raw?.released ||
+        raw?.paymentStatus === "RELEASED" ||
+        repair?.paymentReleased ||
+        repair?.isPaymentReleased ||
+        false,
+    };
+  }, [repair, raw, rawUploadedProduct]);
+
+  const backendStatus = useMemo(() => {
+    return pickValue(
+      repair?.orderStatus,
+      raw?.status,
+      raw?.orderStatus,
+      repair?.progress
+    );
+  }, [repair, raw]);
+
+  const currentStatus = useMemo(() => {
+    if (repair?.progress && repair.progress !== "—") return repair.progress;
+    return normalizeProgressText(backendStatus);
+  }, [repair, backendStatus]);
 
   const completedStep = useMemo(() => {
-    return getStepIndexFromStatus(repair?.orderStatus || repair?.raw?.status || repair?.progress);
-  }, [repair]);
+    return getStepIndexFromStatus(backendStatus);
+  }, [backendStatus]);
 
   const timestamps = useMemo(() => {
-    const createdAt = repair?.createdAt || repair?.raw?.createdAt || null;
-    const deadline = repair?.artisanResponseDeadline || repair?.raw?.artisanResponseDeadline || null;
+    const createdAt = booking.createdAt || null;
+    const updatedAt =
+      booking.updatedAt ||
+      booking.artisanResponseDeadline ||
+      booking.createdAt ||
+      null;
 
     return stepsData.map((_, index) => {
       if (index === 0) return formatDateTimeParts(createdAt);
-      if (index === 1 && completedStep >= 1) return formatDateTimeParts(deadline || createdAt);
-      if (index === 2 && completedStep >= 2) return formatDateTimeParts(deadline || createdAt);
-      if (index === 3 && completedStep >= 3) return formatDateTimeParts(deadline || createdAt);
-      if (index === 4 && completedStep >= 4) return formatDateTimeParts(deadline || createdAt);
+      if (index <= completedStep) return formatDateTimeParts(updatedAt);
       return null;
     });
-  }, [repair, completedStep]);
+  }, [booking, completedStep]);
+
+  const repairTitle = useMemo(() => {
+    return (
+      `${booking.brand || ""} ${booking.model || ""}`.trim() ||
+      booking.serviceRequired ||
+      booking.objectName ||
+      booking.deviceType ||
+      "Device repair"
+    );
+  }, [booking]);
+
+  const lastUpdated = useMemo(() => {
+    return (
+      booking.updatedAt ||
+      booking.artisanResponseDeadline ||
+      booking.createdAt ||
+      null
+    );
+  }, [booking]);
+
+  const normalizedBackendStatus = String(backendStatus || "")
+    .toUpperCase()
+    .trim();
+
+  const canCancelOrder = ["PENDING_ARTISAN_RESPONSE", "ACCEPTED"].includes(
+    normalizedBackendStatus
+  );
+
+const backendPaymentReleased =
+  raw?.paymentReleased === true ||
+  raw?.isPaymentReleased === true ||
+  raw?.released === true ||
+  String(raw?.paymentStatus || "").toUpperCase() === "RELEASED" ||
+  String(raw?.escrowStatus || "").toUpperCase() === "RELEASED" ||
+  repair?.paymentReleased === true ||
+  repair?.isPaymentReleased === true ||
+  repair?.released === true ||
+  String(repair?.paymentStatus || "").toUpperCase() === "RELEASED" ||
+  String(repair?.escrowStatus || "").toUpperCase() === "RELEASED" ||
+  booking?.paymentReleased === true;
+
+const effectivePaymentReleased = backendPaymentReleased || paymentReleased;
+
+const canReleasePayment =
+  normalizedBackendStatus === "WORK_COMPLETED" && !effectivePaymentReleased;
 
   useEffect(() => {
     if (showCancelSuccess) {
       const timer = setTimeout(() => {
         setShowCancelSuccess(false);
-        navigate(-1);
+        navigate("/client", { replace: true });
       }, 1000);
 
       return () => clearTimeout(timer);
     }
   }, [showCancelSuccess, navigate]);
 
+  useEffect(() => {
+    if (
+      showCancelConfirm ||
+      showCancelModal ||
+      showCancelSuccess ||
+      showReleaseConfirm
+    ) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [
+    showCancelConfirm,
+    showCancelModal,
+    showCancelSuccess,
+    showReleaseConfirm,
+  ]);
+
   const handleCancelReasonSelect = (reason) => {
     setCancelReason(reason);
   };
 
-  const handleSubmitCancel = () => {
-    if (!cancelReason) {
-      alert("Please select a reason for cancellation");
-      return;
-    }
+  const handleSubmitCancel = async () => {
+    try {
+      const orderId = raw?.id || repair?.id || booking?.id;
 
-    if (cancelReason === "Other (please specify)" && !otherReason.trim()) {
-      alert("Please specify your reason");
-      return;
-    }
+      if (!orderId) {
+        alert("Order ID not found");
+        return;
+      }
 
-    setShowCancelModal(false);
-    setShowCancelSuccess(true);
+      if (!cancelReason) {
+        alert("Please select a reason for cancellation");
+        return;
+      }
+
+      if (cancelReason === "Other (please specify)" && !otherReason.trim()) {
+        alert("Please specify your reason");
+        return;
+      }
+
+      if (!cancelEmail.trim()) {
+        alert("Email is required");
+        return;
+      }
+
+      if (!cancelPassword.trim()) {
+        alert("Password is required");
+        return;
+      }
+
+      setCancellingOrder(true);
+
+      await cancelOrderByClient(orderId, {
+        email: cancelEmail.trim(),
+        password: cancelPassword,
+      });
+
+      setShowCancelModal(false);
+      setShowCancelSuccess(true);
+      setCancelPassword("");
+    } catch (error) {
+      console.error("CANCEL ORDER ERROR:", error);
+
+      alert(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to cancel repair request"
+      );
+    } finally {
+      setCancellingOrder(false);
+    }
+  };
+
+  const handleReleasePayment = async () => {
+    try {
+      const orderId = raw?.id || repair?.id || booking?.id;
+
+      if (!orderId) {
+        alert("Order ID not found");
+        return;
+      }
+
+      setReleasingPayment(true);
+
+      const res = await releasePaymentToArtisan(orderId);
+
+      alert(res?.message || "Payment released successfully");
+
+setPaymentReleased(true);
+setShowReleaseConfirm(false);
+
+navigate("/client", {
+  replace: true,
+  state: {
+    repair: {
+      ...repair,
+      paymentReleased: true,
+      isPaymentReleased: true,
+      paymentStatus: "RELEASED",
+      raw: {
+        ...raw,
+        paymentReleased: true,
+        isPaymentReleased: true,
+        paymentStatus: "RELEASED",
+      },
+    },
+  },
+});
+    } catch (error) {
+      console.error("RELEASE PAYMENT ERROR:", error);
+
+      alert(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to release payment"
+      );
+    } finally {
+      setReleasingPayment(false);
+    }
   };
 
   if (!repair) {
@@ -177,18 +495,13 @@ const ViewTrackRepair = () => {
     );
   }
 
-  const repairTitle = [repair.deviceBrand, repair.deviceModel]
-    .filter(Boolean)
-    .join(" - ") || repair.deviceType || repair.serviceRequired || "Device Repair";
-
-  const currentStatus = repair.progress || "Pending";
-  const rawStatus = repair.orderStatus || repair.raw?.status || "—";
-  const lastUpdated = repair.artisanResponseDeadline || repair.createdAt || repair.raw?.updatedAt || repair.raw?.createdAt;
-
   return (
     <section className="w-full py-14 overflow-hidden bg-white relative">
       <div className="max-w-7xl mx-auto px-6 md:px-10">
-        {(showCancelConfirm || showCancelModal || showCancelSuccess) && (
+        {(showCancelConfirm ||
+          showCancelModal ||
+          showCancelSuccess ||
+          showReleaseConfirm) && (
           <div className="fixed inset-0 backdrop-blur-sm bg-white/30 z-40"></div>
         )}
 
@@ -235,9 +548,11 @@ const ViewTrackRepair = () => {
             <div className="bg-white w-full max-w-[420px] rounded-xl shadow-xl p-8 relative">
               <button
                 onClick={() => {
+                  if (cancellingOrder) return;
                   setShowCancelModal(false);
                   setCancelReason("");
                   setOtherReason("");
+                  setCancelPassword("");
                 }}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
               >
@@ -293,15 +608,46 @@ const ViewTrackRepair = () => {
                 />
               )}
 
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-black mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={cancelEmail}
+                  onChange={(e) => setCancelEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="w-full border border-gray-300 rounded-md p-3 text-sm outline-none"
+                />
+              </div>
+
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-black mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={cancelPassword}
+                  onChange={(e) => setCancelPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full border border-gray-300 rounded-md p-3 text-sm outline-none"
+                />
+              </div>
+
               <button
                 onClick={handleSubmitCancel}
-                className="w-full bg-red-600 hover:bg-red-700 text-white text-sm py-2.5 rounded-md transition cursor-pointer mb-3"
+                disabled={cancellingOrder}
+                className="w-full bg-red-600 hover:bg-red-700 text-white text-sm py-2.5 rounded-md transition cursor-pointer mb-3 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Cancel Repair
+                {cancellingOrder ? "Cancelling..." : "Cancel Repair"}
               </button>
 
               <button
-                onClick={() => setShowCancelModal(false)}
+                onClick={() => {
+                  if (cancellingOrder) return;
+                  setShowCancelModal(false);
+                  setCancelPassword("");
+                }}
                 className="w-full text-sm text-[#3E83C4] hover:underline cursor-pointer"
               >
                 Go Back
@@ -322,9 +668,50 @@ const ViewTrackRepair = () => {
           </div>
         )}
 
+        {showReleaseConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+            <div className="bg-white w-full max-w-md rounded-xl shadow-xl p-6 text-center">
+              <div className="flex justify-center mb-3">
+                <div className="bg-yellow-100 p-3 rounded-full">
+                  <AlertTriangle className="text-yellow-600 w-6 h-6" />
+                </div>
+              </div>
+
+              <h3 className="text-lg font-semibold mb-3">
+                Confirm Before Releasing Funds
+              </h3>
+
+              <p className="text-sm text-gray-600 mb-6">
+                Confirm your item is working, the stated repair is properly fixed, and your item is in good condition before you continue.
+              </p>
+
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={handleReleasePayment}
+                  disabled={releasingPayment}
+                  className="px-5 py-2 bg-[#3E83C4] text-white rounded-lg text-sm hover:bg-[#2f6fa5] transition disabled:opacity-70"
+                >
+                  {releasingPayment ? "Processing..." : "Continue"}
+                </button>
+
+                <button
+                  onClick={() => setShowReleaseConfirm(false)}
+                  disabled={releasingPayment}
+                  className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition disabled:opacity-70"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div
           className={`transition-all duration-300 ${
-            showCancelModal || showCancelSuccess || showCancelConfirm
+            showCancelModal ||
+            showCancelSuccess ||
+            showCancelConfirm ||
+            showReleaseConfirm
               ? "blur-sm"
               : ""
           }`}
@@ -353,12 +740,10 @@ const ViewTrackRepair = () => {
 
           <div className="mt-8 text-center space-y-2">
             <h3 className="font-semibold text-2xl">
-              Repair ID: <span className="font-semibold">{repair.id}</span>
+              Repair ID: <span className="font-semibold">{booking.id || "—"}</span>
             </h3>
 
-            <p className="text-lg font-normal text-black">
-              {repairTitle}
-            </p>
+            <p className="text-lg font-normal text-black">{repairTitle}</p>
           </div>
 
           <div className="flex justify-center items-center gap-2 mt-3">
@@ -377,7 +762,7 @@ const ViewTrackRepair = () => {
 
           <div className="mt-3 text-center">
             <p className="text-xs text-[#7A7A7A]">
-              Backend Status: {rawStatus}
+              Backend Status: {backendStatus || "—"}
             </p>
           </div>
 
@@ -436,21 +821,52 @@ const ViewTrackRepair = () => {
             })}
           </div>
 
-          <div className="flex flex-col gap-4 items-center mt-14">
-            <button
-              onClick={() => navigate("/client/rate-service", { state: { repair } })}
-              className="bg-[#3E83C4] text-white px-6 py-2 rounded-lg w-40 hover:bg-[#2d75b8] transition-colors cursor-pointer"
-            >
-              Rate Service
-            </button>
+         <div className="flex flex-col gap-4 items-center mt-14">
+  {(completedStep === 4 || canReleasePayment || effectivePaymentReleased) && (
+    <div className="flex flex-wrap justify-center gap-4">
+      {completedStep === 4 && (
+        <button
+          onClick={() =>
+            navigate("/client/rate-service", {
+              state: { repair },
+            })
+          }
+          className="bg-[#3E83C4] text-white px-6 py-2 rounded-lg min-w-[160px] hover:bg-[#2d75b8] transition-colors cursor-pointer"
+        >
+          Rate Service
+        </button>
+      )}
 
-            <button
-              onClick={() => setShowCancelConfirm(true)}
-              className="text-red-600 text-sm hover:text-red-700 transition-colors cursor-pointer"
-            >
-              Cancel Request
-            </button>
-          </div>
+      {canReleasePayment && (
+        <button
+          onClick={() => setShowReleaseConfirm(true)}
+          disabled={releasingPayment}
+          className="bg-[#3E83C4] text-white px-6 py-2 rounded-lg min-w-[160px] hover:bg-[#2d75b8] transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {releasingPayment ? "Processing..." : "Release Payment"}
+        </button>
+      )}
+
+      {effectivePaymentReleased && (
+        <button
+          disabled
+          className="bg-gray-300 text-gray-600 px-6 py-2 rounded-lg min-w-[160px] cursor-not-allowed"
+        >
+          Payment Released
+        </button>
+      )}
+    </div>
+  )}
+
+  {canCancelOrder && (
+    <button
+      onClick={() => setShowCancelConfirm(true)}
+      className="text-red-600 text-sm hover:text-red-700 transition-colors cursor-pointer"
+    >
+      Cancel Request
+    </button>
+  )}
+</div>
         </div>
       </div>
     </section>

@@ -1,20 +1,34 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { CheckCircle2, Circle, ArrowLeft } from "lucide-react";
+
+import {
+  CheckCircle2,
+  Circle,
+  ArrowLeft,
+  AlertTriangle,
+} from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { getOrderById } from "../../api/order.api";
+import {
+  getOrderById,
+  releasePaymentToArtisan,
+  cancelOrderByClient,
+} from "../../api/order.api";
+import caution from "../../assets/client images/caution.png";
+import success from "../../assets/client images/client-home/success.png";
 
 const stepsData = [
   "Request Received",
   "Device Drop-off",
   "Repair in Progress",
-  "Ready for Pick-up",
   "Completed",
+  "Ready for Pick-up",
 ];
 
 const statusToStep = (status) => {
   const s = String(status || "").toUpperCase();
 
-  if (["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(s)) {
+  if (
+    ["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(s)
+  ) {
     return 0;
   }
   if (["ACCEPTED", "DEVICE_DROPPED_OFF"].includes(s)) {
@@ -36,7 +50,9 @@ const statusToStep = (status) => {
 const formatStatusLabel = (status) => {
   const s = String(status || "").toUpperCase();
 
-  if (["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(s)) {
+  if (
+    ["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(s)
+  ) {
     return "Pending Artisan Response";
   }
   if (["ACCEPTED", "DEVICE_DROPPED_OFF"].includes(s)) {
@@ -50,6 +66,9 @@ const formatStatusLabel = (status) => {
   }
   if (["COMPLETED", "DONE"].includes(s)) {
     return "Completed";
+  }
+  if (["CANCELLED", "CANCELED"].includes(s)) {
+    return "Cancelled";
   }
 
   return status || "Pending Artisan Response";
@@ -73,10 +92,41 @@ const formatDate = (value) => {
   };
 };
 
+const getDuration = (start, end) => {
+  if (!start || !end) return null;
+
+  const diffMs = new Date(end) - new Date(start);
+  if (diffMs <= 0) return null;
+
+  const minutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${remainingMinutes}m`;
+  }
+
+  return `${minutes}m`;
+};
+
 const TrackRepair = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { orderId: orderIdFromParams } = useParams();
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+const [showCancelModal, setShowCancelModal] = useState(false);
+const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+const [showCancelSuccess, setShowCancelSuccess] = useState(false);
+
+const [cancelReason, setCancelReason] = useState("");
+const [otherReason, setOtherReason] = useState("");
+const [cancelEmail, setCancelEmail] = useState("");
+const [cancelPassword, setCancelPassword] = useState("");
+const [cancellingOrder, setCancellingOrder] = useState(false);
+
+  const [releasingPayment, setReleasingPayment] = useState(false);
+  const [paymentReleased, setPaymentReleased] = useState(false);
 
   const artisan = location.state?.artisan || null;
   const bookingFromState = location.state?.booking || null;
@@ -90,8 +140,65 @@ const TrackRepair = () => {
   const [orderError, setOrderError] = useState("");
   const [completedStep, setCompletedStep] = useState(0);
 
-  // keep false for now because backend is rejecting the id with 400
-  const shouldFetchLiveOrder = false;
+  const storedUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("fixserv_user") || "{}");
+    } catch {
+      return {};
+    }
+  })();
+
+  useEffect(() => {
+    if (storedUser?.email) {
+      setCancelEmail(storedUser.email);
+    }
+  }, [storedUser?.email]);
+
+  if (paymentReleased) {
+    return null;
+  }
+
+  const statusToStepIndex = (status) => {
+    const s = String(status || "").toUpperCase();
+
+    if (["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(s))
+      return 0;
+    if (["ACCEPTED", "DEVICE_DROPPED_OFF"].includes(s)) return 1;
+    if (["IN_PROGRESS", "ONGOING"].includes(s)) return 2;
+    if (["WORK_COMPLETED", "READY_FOR_PICKUP"].includes(s)) return 3;
+    if (["COMPLETED", "DONE"].includes(s)) return 4;
+
+    return null;
+  };
+
+  const shouldFetchLiveOrder = true;
+
+  const handleConfirmContinue = () => {
+    setShowConfirmModal(false);
+    handleReleasePayment();
+  };
+
+  const handleCancelModal = () => {
+    setShowConfirmModal(false);
+  };
+
+
+useEffect(() => {
+  if (
+    showConfirmModal ||
+    showCancelModal ||
+    showCancelConfirm ||
+    showCancelSuccess
+  ) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "auto";
+  }
+
+  return () => {
+    document.body.style.overflow = "auto";
+  };
+}, [showConfirmModal, showCancelModal, showCancelConfirm, showCancelSuccess]);
 
   useEffect(() => {
     const run = async () => {
@@ -116,93 +223,341 @@ const TrackRepair = () => {
     };
 
     run();
-  }, [orderId, shouldFetchLiveOrder]);
+  }, [orderId]);
 
-const booking = useMemo(() => {
-  const fallbackImageUrl =
-    localStorage.getItem("fixserv_last_uploaded_image_url") || "";
+  useEffect(() => {
+    if (!orderId || !shouldFetchLiveOrder) return;
 
-  if (order) {
-    const createdAt = formatDate(order.createdAt);
+    const interval = setInterval(async () => {
+      try {
+        const data = await getOrderById(orderId);
 
-    return {
-      ...bookingFromState,
-      id: order.id || order._id || order.orderId || orderId,
-      orderId: order.id || order._id || order.orderId || orderId,
-      status: order.status || "PENDING_ARTISAN_RESPONSE",
-      currentStep: statusToStep(order.status),
-      timeline: [createdAt || null, null, null, null, null],
-      brand:
-        order.deviceBrand ||
-        bookingFromState?.brand ||
-        bookingFromState?.deviceBrand ||
-        "",
-      model:
-        order.deviceModel ||
-        bookingFromState?.model ||
-        bookingFromState?.deviceModel ||
-        "",
-      deviceType:
-        order.deviceType ||
-        bookingFromState?.deviceType ||
-        "",
-      serviceRequired:
-        order.serviceRequired ||
-        bookingFromState?.serviceRequired ||
-        "",
-      issueDescription:
-        order.issueDescription ||
-        order.description ||
-        bookingFromState?.issueDescription ||
-        bookingFromState?.description ||
-        "",
-      objectName:
-        order.objectName ||
-        bookingFromState?.objectName ||
-        "",
-      damagedDeviceImageUrl:
-        order.damagedDeviceImageUrl ||
-        bookingFromState?.damagedDeviceImageUrl ||
-        fallbackImageUrl,
-    };
+        setOrder(data);
+        setCompletedStep(statusToStep(data?.status));
+        setOrderError("");
+      } catch (e) {
+        console.error("TRACK ORDER POLLING ERROR:", e);
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [orderId]);
+
+  useEffect(() => {
+  if (showCancelSuccess) {
+    const timer = setTimeout(() => {
+      setShowCancelSuccess(false);
+      navigate("/client", { replace: true });
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }
+}, [showCancelSuccess, navigate]);
 
-  if (bookingFromState) {
-    const nowStamp = formatDate(new Date().toISOString());
+  const booking = useMemo(() => {
+    const fallbackImageUrl =
+      localStorage.getItem("fixserv_last_uploaded_image_url") || "";
 
-    return {
-      ...bookingFromState,
-      id:
-        bookingFromState.id ||
-        bookingFromState.orderId ||
-        bookingFromState.draftOrderId ||
-        orderId,
-      orderId:
-        bookingFromState.orderId ||
-        bookingFromState.id ||
-        bookingFromState.draftOrderId ||
-        orderId,
-      status: bookingFromState.status || "PENDING_ARTISAN_RESPONSE",
-      currentStep: statusToStep(
-        bookingFromState.status || "PENDING_ARTISAN_RESPONSE"
-      ),
-      timeline: [nowStamp, null, null, null, null],
-      brand: bookingFromState.brand || bookingFromState.deviceBrand || "",
-      model: bookingFromState.model || bookingFromState.deviceModel || "",
-      deviceType: bookingFromState.deviceType || "",
-      serviceRequired: bookingFromState.serviceRequired || "",
-      issueDescription:
-        bookingFromState.issueDescription || bookingFromState.description || "",
-      objectName: bookingFromState.objectName || "",
-      damagedDeviceImageUrl:
-        bookingFromState.damagedDeviceImageUrl || fallbackImageUrl,
-    };
-  }
+    if (order) {
+      const activeStep = statusToStep(order.status);
 
-  return null;
-}, [order, bookingFromState, orderId]);
+      const sortedHistory = [...(order.statusHistory || [])].sort(
+        (a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0)
+      );
+
+      const timeline = Array(stepsData.length).fill(null);
+
+      sortedHistory.forEach((entry) => {
+        const stepIndex = statusToStepIndex(entry.status);
+
+        if (stepIndex !== null) {
+          const existing = timeline[stepIndex];
+
+          if (
+            !existing ||
+            new Date(entry.timestamp) > new Date(existing.raw || 0)
+          ) {
+            timeline[stepIndex] = {
+              ...formatDate(entry.timestamp),
+              raw: entry.timestamp,
+            };
+          }
+        }
+      });
+
+      const cleanedTimeline = timeline.map((t) => {
+        if (!t) return null;
+        return { date: t.date, time: t.time };
+      });
+
+      let durations = Array(stepsData.length).fill(null);
+
+      sortedHistory.forEach((entry, index) => {
+        if (index === 0) return;
+
+        const prev = sortedHistory[index - 1];
+        const current = entry;
+        const stepIndex = statusToStepIndex(current.status);
+
+        if (stepIndex !== null) {
+          durations[stepIndex] = getDuration(prev.timestamp, current.timestamp);
+        }
+      });
+
+      let totalDuration = null;
+
+      if (sortedHistory.length > 1) {
+        totalDuration = getDuration(
+          sortedHistory[0].timestamp,
+          sortedHistory[sortedHistory.length - 1].timestamp
+        );
+      }
+
+      return {
+        ...bookingFromState,
+        id: order.id || order._id || order.orderId || orderId,
+        orderId: order.id || order._id || order.orderId || orderId,
+        status: order.status || "PENDING_ARTISAN_RESPONSE",
+        currentStep: activeStep,
+        timeline: cleanedTimeline,
+        durations,
+        totalDuration,
+        brand: order.deviceBrand || bookingFromState?.brand || "",
+        model: order.deviceModel || bookingFromState?.model || "",
+        deviceType: order.deviceType || "",
+        serviceRequired: order.serviceRequired || "",
+        issueDescription:
+          order.issueDescription ||
+          order.description ||
+          bookingFromState?.issueDescription ||
+          "",
+        objectName: order.objectName || "",
+        damagedDeviceImageUrl:
+          order.damagedDeviceImageUrl ||
+          bookingFromState?.damagedDeviceImageUrl ||
+          fallbackImageUrl,
+      };
+    }
+
+    if (bookingFromState) {
+      const nowStamp = formatDate(new Date().toISOString());
+
+      return {
+        ...bookingFromState,
+        id:
+          bookingFromState.id ||
+          bookingFromState.orderId ||
+          bookingFromState.draftOrderId ||
+          orderId,
+        orderId:
+          bookingFromState.orderId ||
+          bookingFromState.id ||
+          bookingFromState.draftOrderId ||
+          orderId,
+        status: bookingFromState.status || "PENDING_ARTISAN_RESPONSE",
+        currentStep: statusToStep(
+          bookingFromState.status || "PENDING_ARTISAN_RESPONSE"
+        ),
+        timeline: [nowStamp, null, null, null, null],
+        brand: bookingFromState.brand || bookingFromState.deviceBrand || "",
+        model: bookingFromState.model || bookingFromState.deviceModel || "",
+        deviceType: bookingFromState.deviceType || "",
+        serviceRequired: bookingFromState.serviceRequired || "",
+        issueDescription:
+          bookingFromState.issueDescription || bookingFromState.description || "",
+        objectName: bookingFromState.objectName || "",
+        damagedDeviceImageUrl:
+          bookingFromState.damagedDeviceImageUrl || fallbackImageUrl,
+      };
+    }
+
+    return null;
+  }, [order, bookingFromState, orderId]);
 
   const displayStatus = booking?.status || "PENDING_ARTISAN_RESPONSE";
+  const normalizedStatus = String(displayStatus || "").toUpperCase();
+
+  const backendPaymentReleased =
+    order?.paymentReleased ||
+    order?.isPaymentReleased ||
+    order?.released ||
+    order?.paymentStatus === "RELEASED" ||
+    booking?.paymentReleased ||
+    booking?.isPaymentReleased;
+
+  const isCompletedStageOrAfter = [
+    "WORK_COMPLETED",
+    "READY_FOR_PICKUP",
+    "COMPLETED",
+    "DONE",
+  ].includes(normalizedStatus);
+
+  const canReleasePayment =
+    isCompletedStageOrAfter && !backendPaymentReleased && !paymentReleased;
+
+  const canCancelOrder = ["PENDING_ARTISAN_RESPONSE", "ACCEPTED"].includes(
+    normalizedStatus
+  );
+
+  const handleReleasePayment = async () => {
+    try {
+      if (!booking?.orderId) {
+        alert("Order ID not found");
+        return;
+      }
+
+      setReleasingPayment(true);
+
+      const res = await releasePaymentToArtisan(booking.orderId);
+
+      alert(res?.message || "Payment released successfully");
+
+      setPaymentReleased(true);
+
+      setOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              paymentReleased: true,
+              isPaymentReleased: true,
+              paymentStatus: "RELEASED",
+            }
+          : prev
+      );
+
+      navigate("/client", { replace: true });
+    } catch (error) {
+      console.error("RELEASE PAYMENT ERROR:", error);
+
+      alert(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to release payment"
+      );
+    } finally {
+      setReleasingPayment(false);
+    }
+  };
+
+  // const handleCancelOrder = async () => {
+  //   try {
+  //     if (!booking?.orderId) {
+  //       alert("Order ID not found");
+  //       return;
+  //     }
+
+  //     if (!cancelEmail.trim()) {
+  //       alert("Email is required");
+  //       return;
+  //     }
+
+  //     if (!cancelPassword.trim()) {
+  //       alert("Password is required");
+  //       return;
+  //     }
+
+  //     setCancellingOrder(true);
+
+  //     const res = await cancelOrderByClient(booking.orderId, {
+  //       email: cancelEmail.trim(),
+  //       password: cancelPassword,
+  //     });
+
+  //     alert(
+  //       res?.message ||
+  //         "Order cancelled successfully. Your funds have been refunded to your wallet."
+  //     );
+
+  //     setOrder((prev) =>
+  //       prev
+  //         ? {
+  //             ...prev,
+  //             status: "CANCELLED",
+  //           }
+  //         : prev
+  //     );
+
+  //     setCompletedStep(statusToStep("CANCELLED"));
+  //     setShowCancelModal(false);
+  //     setCancelPassword("");
+
+  //     navigate("/client", { replace: true });
+  //   } catch (error) {
+  //     console.error("CANCEL ORDER ERROR:", error);
+
+  //     alert(
+  //       error?.response?.data?.message ||
+  //         error?.message ||
+  //         "Failed to cancel order"
+  //     );
+  //   } finally {
+  //     setCancellingOrder(false);
+  //   }
+  // };
+
+  const handleCancelReasonSelect = (reason) => {
+  setCancelReason(reason);
+};
+
+const handleSubmitCancel = async () => {
+  try {
+    if (!booking?.orderId) {
+      alert("Order ID not found");
+      return;
+    }
+
+    if (!cancelReason) {
+      alert("Please select a reason for cancellation");
+      return;
+    }
+
+    if (cancelReason === "Other (please specify)" && !otherReason.trim()) {
+      alert("Please specify your reason");
+      return;
+    }
+
+    if (!cancelEmail.trim()) {
+      alert("Email is required");
+      return;
+    }
+
+    if (!cancelPassword.trim()) {
+      alert("Password is required");
+      return;
+    }
+
+    setCancellingOrder(true);
+
+    await cancelOrderByClient(booking.orderId, {
+      email: cancelEmail.trim(),
+      password: cancelPassword,
+    });
+
+    setOrder((prev) =>
+      prev
+        ? {
+            ...prev,
+            status: "CANCELLED",
+          }
+        : prev
+    );
+
+    setCompletedStep(statusToStep("CANCELLED"));
+    setShowCancelModal(false);
+    setShowCancelSuccess(true);
+    setCancelPassword("");
+  } catch (error) {
+    console.error("CANCEL ORDER ERROR:", error);
+
+    alert(
+      error?.response?.data?.message ||
+        error?.message ||
+        "Failed to cancel order"
+    );
+  } finally {
+    setCancellingOrder(false);
+  }
+};
 
   if (!orderId) {
     return (
@@ -228,6 +583,15 @@ const booking = useMemo(() => {
     );
   }
 
+  const showNewRequestBtn = [
+    "WORK_COMPLETED",
+    "READY_FOR_PICKUP",
+    "REJECTED",
+    "COMPLETED",
+    "CANCELLED",
+    "DONE",
+  ].includes(normalizedStatus);
+
   return (
     <section className="w-full py-14 overflow-hidden bg-white relative">
       <div className="max-w-7xl mx-auto px-6 md:px-10">
@@ -243,7 +607,9 @@ const booking = useMemo(() => {
           </div>
 
           <div className="text-center">
-            <h2 className="text-black font-semibold text-xl">Track Your Repair</h2>
+            <h2 className="text-black font-semibold text-xl">
+              Track Your Repair
+            </h2>
             <p className="text-[#6B6B6B] text-sm mt-1">
               View your device status and repair progress in real time.
             </p>
@@ -262,7 +628,13 @@ const booking = useMemo(() => {
 
         <div className="flex justify-center items-center gap-2 mt-3">
           <p className="text-sm text-[#535353]">Status:</p>
-          <span className="bg-[#F6E4C7] text-[#F99F10] text-xs px-3 py-[2px] rounded-full">
+          <span
+            className={`text-xs px-3 py-[2px] rounded-full ${
+              normalizedStatus === "CANCELLED"
+                ? "bg-red-100 text-red-600"
+                : "bg-[#F6E4C7] text-[#F99F10]"
+            }`}
+          >
             {formatStatusLabel(displayStatus)}
           </span>
         </div>
@@ -270,7 +642,8 @@ const booking = useMemo(() => {
         {!shouldFetchLiveOrder && (
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500">
-              Live tracking is temporarily unavailable. Showing your latest booking details.
+              Live tracking is temporarily unavailable. Showing your latest
+              booking details.
             </p>
           </div>
         )}
@@ -283,13 +656,7 @@ const booking = useMemo(() => {
 
         <div className="mt-10">
           {booking.damagedDeviceImageUrl && (
-            <div className="mb-10 flex justify-center">
-              {/* <img
-                src={booking.damagedDeviceImageUrl}
-                alt="Damaged device"
-                className="w-56 h-56 object-cover rounded-xl border"
-              /> */}
-            </div>
+            <div className="mb-10 flex justify-center"></div>
           )}
 
           {stepsData.map((step, index) => {
@@ -327,18 +694,269 @@ const booking = useMemo(() => {
                 </div>
 
                 <div className="w-32 text-[11px] text-gray-400 text-right pt-1">
-                  {timestamp?.date && timestamp?.time ? (
+                  {timestamp?.date && timestamp?.time && (
                     <>
                       <p>{timestamp.date}</p>
                       <p>{timestamp.time}</p>
+
+                      {booking.durations?.[index] && (
+                        <p className="text-[10px] text-blue-500 mt-1">
+                          +{booking.durations[index]}
+                        </p>
+                      )}
                     </>
-                  ) : null}
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+
+        {(canCancelOrder || isCompletedStageOrAfter || showNewRequestBtn) && (
+          <div className="mt-10 flex justify-center gap-4 flex-wrap">
+            {canCancelOrder && (
+  <button
+    onClick={() => setShowCancelConfirm(true)}
+    className="px-6 py-3 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition cursor-pointer"
+  >
+    Cancel Request
+  </button>
+)}
+
+            {isCompletedStageOrAfter && (
+              <button
+                onClick={() => setShowConfirmModal(true)}
+                disabled={!canReleasePayment || releasingPayment}
+                className={`px-6 py-3 rounded-lg text-sm font-medium transition ${
+                  canReleasePayment && !releasingPayment
+                    ? "bg-[#3E83C4] text-white hover:bg-[#2f6fa5] cursor-pointer"
+                    : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                }`}
+              >
+                {backendPaymentReleased || paymentReleased
+                  ? "Payment Released"
+                  : releasingPayment
+                  ? "Releasing Payment..."
+                  : "Release Payment"}
+              </button>
+            )}
+
+            {showNewRequestBtn && (
+              <button
+                onClick={() => navigate("/client")}
+                className="px-6 py-3 bg-[#3E83C4] text-white rounded-lg text-sm font-medium hover:bg-[#2f6fa5] transition cursor-pointer"
+              >
+                Create a New Request
+              </button>
+            )}
+          </div>
+        )}
       </div>
+
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fadeIn">
+          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md shadow-lg text-center transform animate-scaleIn">
+            <div className="flex justify-center mb-3">
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <AlertTriangle className="text-yellow-600 w-6 h-6" />
+              </div>
+            </div>
+
+            <h3 className="text-lg font-semibold mb-3">
+              Confirm Before Releasing Funds
+            </h3>
+
+            <p className="text-sm text-gray-600 mb-6">
+              Confirm your item is working, stated repair is properly fixed and
+              your item is in good condition before you continue.
+            </p>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleConfirmContinue}
+                className="px-5 py-2 bg-[#3E83C4] text-white rounded-lg text-sm hover:bg-[#2f6fa5] transition"
+              >
+                Continue
+              </button>
+
+              <button
+                onClick={handleCancelModal}
+                className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+{(showCancelConfirm || showCancelModal || showCancelSuccess) && (
+  <div className="fixed inset-0 backdrop-blur-sm bg-white/30 z-40"></div>
+)}
+
+{showCancelConfirm && (
+  <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-gray-200 text-center">
+      <img
+        src={caution}
+        alt="warning"
+        className="mx-auto mb-4 w-12 h-12"
+      />
+
+      <h3 className="text-lg font-bold text-gray-900 mb-2">
+        Cancel Repair?
+      </h3>
+
+      <p className="text-gray-600 text-sm mb-6">
+        Cancelling a repair in progress may result in partial charges
+        depending on the technician’s effort so far.
+      </p>
+
+      <button
+        onClick={() => {
+          setShowCancelConfirm(false);
+          setShowCancelModal(true);
+        }}
+        className="w-full bg-red-200 text-red-600 py-3 rounded-lg font-medium hover:bg-red-300 transition mb-3 cursor-pointer"
+      >
+        Yes, Cancel Repair
+      </button>
+
+      <button
+        onClick={() => setShowCancelConfirm(false)}
+        className="text-sm text-blue-600 hover:underline cursor-pointer"
+      >
+        Go Back
+      </button>
+    </div>
+  </div>
+)}
+
+{showCancelModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+    <div className="bg-white w-full max-w-[420px] rounded-xl shadow-xl p-8 relative">
+      <button
+        onClick={() => {
+          if (cancellingOrder) return;
+          setShowCancelModal(false);
+          setCancelReason("");
+          setOtherReason("");
+          setCancelPassword("");
+        }}
+        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+      >
+        ✕
+      </button>
+
+      <h3 className="text-lg font-semibold text-black mb-2">
+        Cancel Repair Request?
+      </h3>
+
+      <p className="text-sm text-[#535353] mb-5">
+        We're sorry to see you cancel this request. Please tell us why so
+        we can improve your experience.
+      </p>
+
+      <p className="text-sm font-medium text-black mb-3">
+        Why do you want to cancel?
+      </p>
+
+      <div className="space-y-3 mb-6">
+        {[
+          "Technician hasn't responded",
+          "Found another repair option",
+          "Took too long to get a quote",
+          "Decided not to fix the device",
+          "Issue was resolved elsewhere",
+          "Other (please specify)",
+        ].map((reason) => (
+          <label
+            key={reason}
+            className="flex items-center gap-3 text-sm text-[#535353] cursor-pointer"
+          >
+            <input
+              type="radio"
+              name="cancelReason"
+              value={reason}
+              checked={cancelReason === reason}
+              onChange={(e) => handleCancelReasonSelect(e.target.value)}
+              className="accent-[#3E83C4]"
+            />
+            {reason}
+          </label>
+        ))}
+      </div>
+
+      {cancelReason === "Other (please specify)" && (
+        <textarea
+          value={otherReason}
+          onChange={(e) => setOtherReason(e.target.value)}
+          placeholder="Please specify your reason..."
+          className="w-full border border-gray-300 rounded-md p-3 text-sm mb-5 outline-none"
+          rows={3}
+        />
+      )}
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-black mb-2">
+          Email
+        </label>
+        <input
+          type="email"
+          value={cancelEmail}
+          onChange={(e) => setCancelEmail(e.target.value)}
+          placeholder="Enter your email"
+          className="w-full border border-gray-300 rounded-md p-3 text-sm outline-none"
+        />
+      </div>
+
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-black mb-2">
+          Password
+        </label>
+        <input
+          type="password"
+          value={cancelPassword}
+          onChange={(e) => setCancelPassword(e.target.value)}
+          placeholder="Enter your password"
+          className="w-full border border-gray-300 rounded-md p-3 text-sm outline-none"
+        />
+      </div>
+
+      <button
+        onClick={handleSubmitCancel}
+        disabled={cancellingOrder}
+        className="w-full bg-red-600 hover:bg-red-700 text-white text-sm py-2.5 rounded-md transition cursor-pointer mb-3 disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {cancellingOrder ? "Cancelling..." : "Cancel Repair"}
+      </button>
+
+      <button
+        onClick={() => {
+          if (cancellingOrder) return;
+          setShowCancelModal(false);
+          setCancelPassword("");
+        }}
+        className="w-full text-sm text-[#3E83C4] hover:underline cursor-pointer"
+      >
+        Go Back
+      </button>
+    </div>
+  </div>
+)}
+
+{showCancelSuccess && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+    <div className="bg-white w-full max-w-[420px] rounded-xl shadow-xl p-10 text-center">
+      <img src={success} alt="success" className="w-14 h-14 mx-auto mb-5" />
+
+      <p className="text-base font-medium text-black">
+        Your repair request has been cancelled successfully
+      </p>
+    </div>
+  </div>
+)}
+
     </section>
   );
 };

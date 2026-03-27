@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import profileImage from "../../assets/client images/client-home/profile.png";
 import tick from "../../assets/client images/client-home/tick.png";
 import share from "../../assets/client images/client-home/share.png";
@@ -32,8 +32,16 @@ const ArtisanProfile = () => {
   const [recommendedArtisans, setRecommendedArtisans] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
+  const [hoveredRecommendation, setHoveredRecommendation] = useState(null);
+
   const [loadingServices, setLoadingServices] = useState(false);
   const [servicesError, setServicesError] = useState("");
+
+  const marqueeWrapRef = useRef(null);
+const marqueeTrackRef = useRef(null);
+
+const [isDraggingMarquee, setIsDraggingMarquee] = useState(false);
+
 
   const cleanText = (v, fallback = "") =>
     typeof v === "string" && v.trim() === "" ? fallback : v ?? fallback;
@@ -235,15 +243,6 @@ console.log("RESOLVED BIO =>", resolvedBio);
         )
       )
     : null;
-
-  const fallbackServices = [
-    { id: 1, title: "Screen Replacement", price: 12000, icon: settingImage },
-    { id: 2, title: "Battery Replacement", price: 7000, icon: battery },
-    { id: 3, title: "Charging port Fix", price: 5000, icon: flashImage },
-    { id: 4, title: "Camera Repair", price: 8000, icon: cameraImage },
-    { id: 5, title: "General Diagnostics", price: 3500, icon: settingImage },
-  ];
-
   const requestState = {
     draftOrderId: passedState?.draftOrderId || "",
     uploadedProductId: passedState?.uploadedProductId || "",
@@ -466,6 +465,89 @@ const servicesToShow = apiServices;
         raw: a,
       }));
   }, [recommendedArtisans, artisan?.id, artisanId]);
+  
+useEffect(() => {
+  const wrap = marqueeWrapRef.current;
+  const track = marqueeTrackRef.current;
+  if (!wrap || !track) return;
+
+  let animationFrameId;
+  let isDragging = false;
+  let isHovered = false;
+  let startX = 0;
+  let startScrollLeft = 0;
+  const speed = 0.6;
+
+  const getHalf = () => track.scrollWidth / 2;
+
+  const normalizeLoop = () => {
+    const half = getHalf();
+    if (half <= 0) return;
+
+    if (wrap.scrollLeft >= half) {
+      wrap.scrollLeft -= half;
+    } else if (wrap.scrollLeft <= 0) {
+      wrap.scrollLeft += half;
+    }
+  };
+
+  const animate = () => {
+    if (!isDragging && !isHovered) {
+      wrap.scrollLeft += speed;
+      normalizeLoop();
+    }
+    animationFrameId = requestAnimationFrame(animate);
+  };
+
+  const onDown = (x) => {
+    isDragging = true;
+    setIsDraggingMarquee(true);
+    startX = x;
+    startScrollLeft = wrap.scrollLeft;
+  };
+
+  const onMove = (x) => {
+    if (!isDragging) return;
+    const walk = x - startX;
+    wrap.scrollLeft = startScrollLeft - walk;
+    normalizeLoop();
+  };
+
+  const onUp = () => {
+    isDragging = false;
+    setIsDraggingMarquee(false);
+  };
+
+  // Mouse
+  wrap.addEventListener("mousedown", (e) => onDown(e.pageX));
+  window.addEventListener("mousemove", (e) => onMove(e.pageX));
+  window.addEventListener("mouseup", onUp);
+
+  // Touch
+  wrap.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    if (t) onDown(t.pageX);
+  });
+
+  window.addEventListener("touchmove", (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    if (t) onMove(t.pageX);
+  }, { passive: false });
+
+  window.addEventListener("touchend", onUp);
+
+  // Hover pause
+  wrap.addEventListener("mouseenter", () => (isHovered = true));
+  wrap.addEventListener("mouseleave", () => (isHovered = false));
+
+  animationFrameId = requestAnimationFrame(animate);
+
+  return () => {
+    cancelAnimationFrame(animationFrameId);
+  };
+}, [mappedRecommendations.length]);
 
   const renderStars = (rating) => {
     const r = Math.max(0, Math.min(5, Number(rating || 0)));
@@ -516,7 +598,8 @@ const handleBookRepair = () => {
 };
 
   const handleRecommendedProfile = (recommended) => {
-    navigate(`/client/artisan-profile/${recommended.id}`, {
+    navigate(`/client/a-profile/${recommended.id}`, {
+    // navigate(`/client/artisan-profile/${recommended.id}`, {
       state: {
         artisan: recommended.raw,
         draftOrderId: requestState.draftOrderId,
@@ -568,7 +651,12 @@ const handleBookRepair = () => {
                 <img src={tick} alt="verified" className="w-5 h-5" />
               </div>
 
-              <p className="text-sm opacity-90 mt-1">Technician</p>
+              <p>
+    Business Name:{" "}
+    <span className="font-medium">{artisan.businessName || "—"}</span>
+  </p>
+
+              {/* <p className="text-sm opacity-90 mt-1">Technician</p> */}
 
               <div className="mt-3 space-y-1 text-sm opacity-90">
   <p>
@@ -580,10 +668,7 @@ const handleBookRepair = () => {
   <p>
     Location: <span className="font-medium">{artisan.location}</span>
   </p>
-  <p>
-    Business Name:{" "}
-    <span className="font-medium">{artisan.businessName || "—"}</span>
-  </p>
+  
   <p>
     Phone:{" "}
     <span className="font-medium">{artisan.phoneNumber || "—"}</span>
@@ -849,76 +934,115 @@ const handleBookRepair = () => {
       <section className="w-full py-14 overflow-hidden">
         <div className="max-w-7xl mx-auto px-2 md:px-6">
           <h2 className="text-lg font-semibold text-black mb-6">You may also like</h2>
-
-          <div className="relative w-full overflow-hidden">
-            <div className="flex w-max gap-8 marquee">
-              {loadingRecommendations ? (
-                <p className="text-sm text-gray-500 px-4">Loading recommendations...</p>
-              ) : (
-                mappedRecommendations.slice(0, 6).map((a) => (
-                  <div
-                    key={a.id}
-                    className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm"
-                  >
-                    <div className="relative">
-                      <img
-                        src={a.image}
-                        alt={a.name}
-                        className="w-full h-60 object-cover rounded-lg"
-                      />
-                    </div>
-
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-medium text-black">{a.name}</h3>
-
-                        {typeof a.isAvailableNow === "boolean" ? (
-                          a.isAvailableNow ? (
-                            <span className="text-xs text-[#43A047] bg-[#C9E8CA] px-2 py-0.5 rounded-full">
-                              Available
-                            </span>
-                          ) : (
-                            <span className="text-xs text-[#8B8B8B] bg-[#EFEFEF] px-2 py-0.5 rounded-full">
-                              Offline
-                            </span>
-                          )
-                        ) : null}
-                      </div>
-
-                      <p className="text-sm text-[#535353] mb-2">{a.location}</p>
-
-                      <div className="flex items-center gap-1 text-sm mb-3">
-                        <img src={starIcon} alt="star" className="w-4 h-4" />
-                        <span className="font-medium text-black">{a.rating}</span>
-                      </div>
-
-                      <div className="flex gap-2 mb-4">
-                        {(a.skills || []).slice(0, 3).map((s, idx) => {
-                          const label =
-                            typeof s === "string"
-                              ? s
-                              : s?.name || s?.title || `Skill ${idx + 1}`;
-                          return (
-                            <span
-                              key={label + idx}
-                              className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
+      
+          <div className="relative">
+            <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-12 bg-gradient-to-r from-white to-transparent" />
+            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-12 bg-gradient-to-l from-white to-transparent" />
+      
+            <div
+              ref={marqueeWrapRef}
+              className={`overflow-x-hidden select-none ${
+                isDraggingMarquee ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              <div
+                ref={marqueeTrackRef}
+                className="flex w-max gap-4"
+                onDragStart={(e) => e.preventDefault()}
+              >
+                {[...Array(2)].flatMap((_, loopIndex) =>
+                  loadingRecommendations
+                    ? [...Array(3)].map((_, i) => (
+                        <div
+                          key={`loading-${loopIndex}-${i}`}
+                          className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm animate-pulse"
+                        >
+                          <div className="w-full h-60 bg-gray-200 rounded-lg mb-4" />
+                          <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
+                          <div className="h-3 bg-gray-200 rounded w-1/2 mb-3" />
+                          <div className="flex gap-2 mb-4">
+                            <div className="h-6 w-16 bg-gray-200 rounded-md" />
+                            <div className="h-6 w-16 bg-gray-200 rounded-md" />
+                          </div>
+                          <div className="h-10 bg-gray-200 rounded-md" />
+                        </div>
+                      ))
+                    : mappedRecommendations.slice(0, 6).map((a, index) => (
+                        <div
+                          key={`${loopIndex}-${a.id}-${index}`}
+                          onMouseEnter={() => setHoveredRecommendation(a.id)}
+                          onMouseLeave={() => setHoveredRecommendation(null)}
+                          className={`min-w-[300px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 ${
+                            hoveredRecommendation && hoveredRecommendation !== a.id
+                              ? "opacity-30 grayscale"
+                              : ""
+                          }`}
+                        >
+                          <div className="relative">
+                            <img
+                              src={a.image}
+                              alt={a.name}
+                              className="w-full h-60 object-cover rounded-lg"
+                              onDragStart={(e) => e.preventDefault()}
+                              onError={(e) => {
+                                e.currentTarget.src = johnOne;
+                              }}
+                            />
+                          </div>
+      
+                          <div className="mt-4">
+                            <div className="flex items-center justify-between mb-1">
+                              <h3 className="font-medium text-black">{a.name}</h3>
+      
+                              {typeof a.isAvailableNow === "boolean" ? (
+                                a.isAvailableNow ? (
+                                  <span className="text-xs text-[#43A047] bg-[#C9E8CA] px-2 py-0.5 rounded-full">
+                                    Available
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-[#8B8B8B] bg-[#EFEFEF] px-2 py-0.5 rounded-full">
+                                    Offline
+                                  </span>
+                                )
+                              ) : null}
+                            </div>
+      
+                            <p className="text-sm text-[#535353] mb-2">{a.location}</p>
+      
+                            <div className="flex items-center gap-1 text-sm mb-3">
+                              <img src={starIcon} alt="star" className="w-4 h-4" />
+                              <span className="font-medium text-black">{a.rating}</span>
+                            </div>
+      
+                            <div className="flex gap-2 mb-4 flex-wrap">
+                              {(a.skills || []).slice(0, 3).map((s, idx) => {
+                                const label =
+                                  typeof s === "string"
+                                    ? s
+                                    : s?.name || s?.title || `Skill ${idx + 1}`;
+                                return (
+                                  <span
+                                    key={label + idx}
+                                    className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
+                                  >
+                                    {label}
+                                  </span>
+                                );
+                              })}
+                            </div>
+      
+                            <button
+                              onClick={() => handleRecommendedProfile(a)}
+                              className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer"
                             >
-                              {label}
-                            </span>
-                          );
-                        })}
-                      </div>
-
-                      <button
-                        onClick={() => handleRecommendedProfile(a)}
-                        className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white text-sm py-2 rounded-md transition cursor-pointer"
-                      >
-                        View Profile
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+                              View Profile
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                )}
+              </div>
             </div>
           </div>
         </div>

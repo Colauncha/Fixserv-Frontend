@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const SEARCH_API = axios.create({
-  baseURL: "", 
+  baseURL: "/",
   headers: { "Content-Type": "application/json" },
   timeout: 30000,
 });
@@ -17,29 +17,47 @@ SEARCH_API.interceptors.request.use((config) => {
 });
 
 SEARCH_API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log("SEARCH AXIOS RESPONSE =>", {
+      status: response?.status,
+      url: response?.config?.url,
+      data: response?.data,
+    });
+    return response;
+  },
   (error) => {
-    console.log("SEARCH AXIOS ERROR FULL =>", {
+    console.warn("SEARCH AXIOS ERROR FULL =>", {
       status: error?.response?.status,
       url: error?.config?.url,
       data: error?.response?.data,
       errors: error?.response?.data?.errors,
     });
 
-    // shows the exact message if it's validation
     const first = error?.response?.data?.errors?.[0];
-    if (first) console.log("SEARCH FIRST ERROR =>", first);
+    if (first) console.warn("SEARCH FIRST ERROR =>", first);
 
     return Promise.reject(error);
   }
 );
 
-export const searchServicesAndArtisans = async (params) => {
+export const searchServicesAndArtisans = async (params = {}) => {
+  const keyword = (params?.keyword || "").trim();
+
+  if (!keyword || keyword.length < 2) {
+    return {
+      success: true,
+      data: {
+        artisans: {
+          data: [],
+        },
+      },
+    };
+  }
+
   const queryParams = {
-    keyword: (params?.keyword || "").trim(),
+    keyword,
   };
 
-  // Only include isAvailableNow if explicitly provided
   if (typeof params?.isAvailableNow !== "undefined") {
     queryParams.isAvailableNow = params.isAvailableNow;
   }

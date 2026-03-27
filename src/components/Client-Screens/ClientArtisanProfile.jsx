@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { ArrowLeft } from "lucide-react";
 import profileImage from "../../assets/client images/client-home/profile.png";
 import tick from "../../assets/client images/client-home/tick.png";
 import share from "../../assets/client images/client-home/share.png";
@@ -200,6 +201,14 @@ const ClientArtisanProfile = () => {
 
   const [hoveredRecommendation, setHoveredRecommendation] = useState(null);
 
+// const marqueeTwoRef = useRef(null);
+
+const marqueeWrapRef = useRef(null);
+const marqueeTrackRef = useRef(null);
+
+const [isDraggingMarquee, setIsDraggingMarquee] = useState(false);
+
+
   const requestState = {
     draftOrderId: passedState?.draftOrderId || "",
     uploadedProductId: passedState?.uploadedProductId || "",
@@ -221,15 +230,6 @@ const ClientArtisanProfile = () => {
         )
       )
     : null;
-
-  const fallbackServices = [
-    { id: 1, title: "Screen Replacement", price: 12000, icon: settingImage },
-    { id: 2, title: "Battery Replacement", price: 7000, icon: battery },
-    { id: 3, title: "Charging port Fix", price: 5000, icon: flashImage },
-    { id: 4, title: "Camera Repair", price: 8000, icon: cameraImage },
-    { id: 5, title: "General Diagnostics", price: 3500, icon: settingImage },
-  ];
-
   const formatNaira = (value) => {
     const num = Number(value);
     if (Number.isNaN(num)) return value;
@@ -379,7 +379,7 @@ const ClientArtisanProfile = () => {
       ? profileServicesMapped
       : skillServicesMapped.length > 0
       ? skillServicesMapped
-      : fallbackServices;
+      : [] ;
 
   const mappedRecommendations = useMemo(() => {
     return (recommendedArtisans || [])
@@ -443,6 +443,91 @@ const ClientArtisanProfile = () => {
     });
   };
 
+useEffect(() => {
+  const wrap = marqueeWrapRef.current;
+  const track = marqueeTrackRef.current;
+  if (!wrap || !track) return;
+
+  let animationFrameId;
+  let isDragging = false;
+  let isHovered = false;
+  let startX = 0;
+  let startScrollLeft = 0;
+  const speed = 0.6;
+
+  const getHalf = () => track.scrollWidth / 2;
+
+  const normalizeLoop = () => {
+    const half = getHalf();
+    if (half <= 0) return;
+
+    if (wrap.scrollLeft >= half) {
+      wrap.scrollLeft -= half;
+    } else if (wrap.scrollLeft <= 0) {
+      wrap.scrollLeft += half;
+    }
+  };
+
+  const animate = () => {
+    if (!isDragging && !isHovered) {
+      wrap.scrollLeft += speed;
+      normalizeLoop();
+    }
+    animationFrameId = requestAnimationFrame(animate);
+  };
+
+  
+
+  const onDown = (x) => {
+    isDragging = true;
+    setIsDraggingMarquee(true);
+    startX = x;
+    startScrollLeft = wrap.scrollLeft;
+  };
+
+  const onMove = (x) => {
+    if (!isDragging) return;
+    const walk = x - startX;
+    wrap.scrollLeft = startScrollLeft - walk;
+    normalizeLoop();
+  };
+
+  const onUp = () => {
+    isDragging = false;
+    setIsDraggingMarquee(false);
+  };
+
+  // Mouse
+  wrap.addEventListener("mousedown", (e) => onDown(e.pageX));
+  window.addEventListener("mousemove", (e) => onMove(e.pageX));
+  window.addEventListener("mouseup", onUp);
+
+  // Touch
+  wrap.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    if (t) onDown(t.pageX);
+  });
+
+  window.addEventListener("touchmove", (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    if (t) onMove(t.pageX);
+  }, { passive: false });
+
+  window.addEventListener("touchend", onUp);
+
+  // Hover pause
+  wrap.addEventListener("mouseenter", () => (isHovered = true));
+  wrap.addEventListener("mouseleave", () => (isHovered = false));
+
+  animationFrameId = requestAnimationFrame(animate);
+
+  return () => {
+    cancelAnimationFrame(animationFrameId);
+  };
+}, [mappedRecommendations.length]);
+
   if (loadingArtisan || !artisan) {
     return (
       <div className="py-20 text-center text-gray-500">
@@ -455,6 +540,14 @@ const ClientArtisanProfile = () => {
     <div className="w-full">
       <section className="w-full bg-[#3E83C4] py-14 mt-4 overflow-hidden">
         <div className="max-w-7xl mx-auto px-2 md:px-6">
+        
+<button
+              onClick={() => navigate(-1)}
+              className="text-sm text-[#ffffff] mb-6 flex items-center gap-1 cursor-pointer"
+            >
+              <ArrowLeft size={18} />
+              Back
+            </button>
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="relative">
               <img
@@ -479,9 +572,14 @@ const ClientArtisanProfile = () => {
                 <img src={tick} alt="verified" className="w-5 h-5" />
               </div>
 
-              <p className="text-sm opacity-90 mt-1">
+               <p>
+    Business Name:{" "}
+    <span className="font-medium">{artisan.businessName || "—"}</span>
+  </p>
+
+              {/* <p className="text-sm opacity-90 mt-1">
                 {artisan.businessName || "Technician"}
-              </p>
+              </p> */}
 
               <div className="mt-3 space-y-1 text-sm opacity-90">
                 <p>
@@ -493,6 +591,14 @@ const ClientArtisanProfile = () => {
                 <p>
                   Location: <span className="font-medium">{artisan.location}</span>
                 </p>
+                
+  <p>
+    Phone:{" "}
+    <span className="font-medium">{artisan.phoneNumber || "—"}</span>
+  </p>
+  <p>
+    Email: <span className="font-medium">{artisan.email || "—"}</span>
+  </p>
               </div>
 
               <button
@@ -742,21 +848,49 @@ const ClientArtisanProfile = () => {
         </div>
       </section>
 
-      <section className="w-full py-14 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-2 md:px-6">
-          <h2 className="text-lg font-semibold text-black mb-6">You may also like</h2>
+<section className="w-full py-14 overflow-hidden">
+  <div className="max-w-7xl mx-auto px-2 md:px-6">
+    <h2 className="text-lg font-semibold text-black mb-6">You may also like</h2>
 
-          <div className="relative w-full overflow-hidden">
-            <div className="flex min-w-[200%] gap-8 marquee-two">
-              {loadingRecommendations ? (
-                <p className="text-sm text-gray-500 px-4">Loading recommendations...</p>
-              ) : (
-                [...mappedRecommendations.slice(0, 6), ...mappedRecommendations.slice(0, 6)].map((a, index) => (
+    <div className="relative">
+      <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-12 bg-gradient-to-r from-white to-transparent" />
+      <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-12 bg-gradient-to-l from-white to-transparent" />
+
+      <div
+        ref={marqueeWrapRef}
+        className={`overflow-x-hidden select-none ${
+          isDraggingMarquee ? "cursor-grabbing" : "cursor-grab"
+        }`}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        <div
+          ref={marqueeTrackRef}
+          className="flex w-max gap-4"
+          onDragStart={(e) => e.preventDefault()}
+        >
+          {[...Array(2)].flatMap((_, loopIndex) =>
+            loadingRecommendations
+              ? [...Array(3)].map((_, i) => (
                   <div
-                    key={`${a.id}-${index}`}
+                    key={`loading-${loopIndex}-${i}`}
+                    className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm animate-pulse"
+                  >
+                    <div className="w-full h-60 bg-gray-200 rounded-lg mb-4" />
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2 mb-3" />
+                    <div className="flex gap-2 mb-4">
+                      <div className="h-6 w-16 bg-gray-200 rounded-md" />
+                      <div className="h-6 w-16 bg-gray-200 rounded-md" />
+                    </div>
+                    <div className="h-10 bg-gray-200 rounded-md" />
+                  </div>
+                ))
+              : mappedRecommendations.slice(0, 6).map((a, index) => (
+                  <div
+                    key={`${loopIndex}-${a.id}-${index}`}
                     onMouseEnter={() => setHoveredRecommendation(a.id)}
                     onMouseLeave={() => setHoveredRecommendation(null)}
-                    className={`min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm cursor-pointer hover:shadow-md transition-all duration-300 ${
+                    className={`min-w-[300px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 ${
                       hoveredRecommendation && hoveredRecommendation !== a.id
                         ? "opacity-30 grayscale"
                         : ""
@@ -767,6 +901,10 @@ const ClientArtisanProfile = () => {
                         src={a.image}
                         alt={a.name}
                         className="w-full h-60 object-cover rounded-lg"
+                        onDragStart={(e) => e.preventDefault()}
+                        onError={(e) => {
+                          e.currentTarget.src = johnOne;
+                        }}
                       />
                     </div>
 
@@ -794,7 +932,7 @@ const ClientArtisanProfile = () => {
                         <span className="font-medium text-black">{a.rating}</span>
                       </div>
 
-                      <div className="flex gap-2 mb-4">
+                      <div className="flex gap-2 mb-4 flex-wrap">
                         {(a.skills || []).slice(0, 3).map((s, idx) => {
                           const label =
                             typeof s === "string"
@@ -820,11 +958,12 @@ const ClientArtisanProfile = () => {
                     </div>
                   </div>
                 ))
-              )}
-            </div>
-          </div>
+          )}
         </div>
-      </section>
+      </div>
+    </div>
+  </div>
+</section>
     </div>
   );
 };

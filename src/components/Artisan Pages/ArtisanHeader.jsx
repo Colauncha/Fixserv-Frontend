@@ -1,24 +1,62 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 import not from "../../assets/Artisan Images/not.png";
 import profile from "../../assets/Artisan Images/profileImg.jpg";
 import ArtisanNotification from "../Artisan Pages/ArtisanNotification";
+import {
+  getNotifications,
+  isOrderNotificationSeen,
+} from "../../api/notification.api";
 
 const ArtisanHeader = ({ title }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
   const notificationRef = useRef(null);
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: "Repair accepted", read: false },
-    { id: 2, text: "Technician on the way", read: false },
-  ]);
+  const getOrderIdFromNotification = (item) => {
+    return (
+      item?.data?.orderId ||
+      item?.data?.requestId ||
+      item?.data?.jobId ||
+      item?.orderId ||
+      item?.data?.id ||
+      null
+    );
+  };
 
-  const notificationCount = notifications.filter((n) => !n.read).length;
+  const loadUnreadCount = useCallback(async () => {
+    const token =
+      localStorage.getItem("fixserv_token") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken");
+
+    if (!token) {
+      setNotificationCount(0);
+      return;
+    }
+
+    try {
+      const response = await getNotifications();
+      const list = Array.isArray(response?.data) ? response.data : [];
+
+      const count = list.filter((item) => {
+        const orderId = getOrderIdFromNotification(item);
+        const handled = orderId ? isOrderNotificationSeen(orderId) : false;
+
+        return !handled && !item?.readAt;
+      }).length;
+
+      setNotificationCount(count);
+    } catch (error) {
+      console.error("Failed to load unread notification count:", error);
+      setNotificationCount(0);
+    }
+  }, []);
 
   const toggleNotifications = (e) => {
     if (e) {
@@ -27,6 +65,25 @@ const ArtisanHeader = ({ title }) => {
     }
     setShowNotifications((prev) => !prev);
   };
+
+  useEffect(() => {
+    loadUnreadCount();
+  }, [loadUnreadCount]);
+
+  useEffect(() => {
+    const token =
+      localStorage.getItem("fixserv_token") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken");
+
+    if (!token) return;
+
+    const interval = setInterval(() => {
+      loadUnreadCount();
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [loadUnreadCount]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -53,6 +110,24 @@ const ArtisanHeader = ({ title }) => {
     return () => document.removeEventListener("keydown", handleEsc);
   }, []);
 
+  useEffect(() => {
+    const handleNotificationRefresh = () => {
+      loadUnreadCount();
+    };
+
+    window.addEventListener(
+      "fixserv-notifications-updated",
+      handleNotificationRefresh
+    );
+
+    return () => {
+      window.removeEventListener(
+        "fixserv-notifications-updated",
+        handleNotificationRefresh
+      );
+    };
+  }, [loadUnreadCount]);
+
   return (
     <div className="relative">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 py-4">
@@ -72,6 +147,7 @@ const ArtisanHeader = ({ title }) => {
             onClick={toggleNotifications}
             className="relative flex items-center justify-center w-10 h-10 cursor-pointer shrink-0"
             aria-expanded={showNotifications}
+            aria-label="Notifications"
           >
             <img
               src={not}
@@ -101,9 +177,8 @@ const ArtisanHeader = ({ title }) => {
       >
         <ArtisanNotification
           isOpen={showNotifications}
-          notifications={notifications}
-          setNotifications={setNotifications}
           onClose={() => setShowNotifications(false)}
+          onChanged={loadUnreadCount}
         />
       </div>
 

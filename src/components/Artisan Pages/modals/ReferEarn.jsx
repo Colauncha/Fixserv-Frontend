@@ -9,16 +9,10 @@ import insta from "../../assets/client images/client-home/referal part/insta.png
 import linkedin from "../../assets/client images/client-home/referal part/linkedin.png";
 import twitter from "../../assets/client images/client-home/referal part/x.png";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 
 
-const ReferEarn = ({ onClose }) => {
+const ReferEarn = ({ onClose, referralCode }) => {
 
-  const navigate = useNavigate();
-
-  const { user } = useAuth();
-
-  // Close on ESC
   useEffect(() => {
     const handler = (e) => {
       if (e.key === "Escape") {
@@ -29,6 +23,19 @@ const ReferEarn = ({ onClose }) => {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
+
+  const copyText = async (text) => {
+    if (!text) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Copied!");
+    } catch (err) {
+      console.error("Copy failed:", err);
+    }
+  };
+
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -92,18 +99,13 @@ const ReferEarn = ({ onClose }) => {
 
         <div className="flex mb-4">
           <input
-            value={user?.referralCode || ""}
+            value={referralCode || ""}
             readOnly
             className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm"
           />
-          <button
-  onClick={() => {
-    if (!user?.referralCode) return;
-
-    navigator.clipboard.writeText(user.referralCode);
-    alert("Referral code copied!");
-  }}
-  className="bg-blue-500 text-white px-5 rounded-r-md text-sm"
+         <button
+  onClick={() => copyText(referralCode)}
+  className="bg-gray-800 text-white px-5 rounded-r-md text-sm cursor-pointer"
 >
   Copy Code
 </button>

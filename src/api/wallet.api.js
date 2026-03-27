@@ -133,3 +133,20 @@ export const resolveAccount = ({ accountNumber, bankCode }) =>
 
 export const getFixpointsBalance = (userId) =>
   GENERAL_API.get(`/wallet/fixpoints/balance/${userId}`);
+
+export const lockFunds = ({ userId, amount, password }) =>
+  WALLET_API.post("/lock", {
+    userId,
+    amount: Number(amount),
+    password: String(password || "").trim(),
+  });
+
+export const unlockFunds = ({ userId, amount, password }) =>
+  WALLET_API.post("/unlock", {
+    userId,
+    amount: Number(amount),
+    password: String(password || "").trim(),
+  });
+
+export const getLockedBalanceBreakdown = (userId) =>
+  WALLET_API.get(`/locked-breakdown/${userId}`);
