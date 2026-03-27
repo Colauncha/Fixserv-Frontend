@@ -89,9 +89,7 @@ function extractArray(payload, keys = []) {
   return null;
 }
 
-/* =========================
-   ORDER API
-========================= */
+
 
 export const createDraftOrder = async (payload) => {
   const res = await ORDER_API.post("/draft", payload);
@@ -110,19 +108,6 @@ export const getClientHistory = async () => {
 
   return Array.isArray(orders) ? orders : [];
 };
-
-// export const getArtisanHistory = async () => {
-//   const res = await ORDER_API.get("/artisan-history");
-//   const data = res?.data;
-
-//   const orders =
-//     extractArray(data?.data, ["orders", "history"]) ||
-//     extractArray(data, ["orders", "history"]) ||
-//     (Array.isArray(data?.data) ? data.data : []) ||
-//     (Array.isArray(data) ? data : []);
-
-//   return Array.isArray(orders) ? orders : [];
-// };
 
 export const getArtisanHistory = async () => {
   const res = await ORDER_API.get("/artisan-history");
@@ -144,6 +129,11 @@ export const getOrderById = async (orderId) => {
   return normalizeOrderResponse(res?.data);
 };
 
+export const createOrder = async (payload) => {
+  const res = await ORDER_API.post("/create", payload);
+  return normalizeOrderResponse(res?.data);
+};
+
 export const startWorkOnOrder = async (orderId) => {
   if (!orderId) throw new Error("orderId is required");
 
@@ -156,10 +146,35 @@ export const completeWorkOnOrder = async (orderId) => {
   await ORDER_API.patch(`/${orderId}/complete-work`);
 };
 
-export const acceptOrder = (orderId) => {
-  return axios.post(`/api/orders/${orderId}/accept`);
+export const acceptOrder = async (orderId) => {
+  if (!orderId) throw new Error("orderId is required");
+
+  await ORDER_API.post(`/${orderId}/accept`);
 };
 
-export const rejectOrder = (orderId) => {
-  return axios.post(`/api/orders/${orderId}/reject`);
+export const rejectOrder = async (orderId) => {
+  if (!orderId) throw new Error("orderId is required");
+
+  await ORDER_API.post(`/${orderId}/reject`);
+};
+
+export const releasePaymentToArtisan = async (orderId) => {
+  if (!orderId) throw new Error("orderId is required");
+
+  const res = await ORDER_API.post(`/${orderId}/release-payment`, {});
+  return res?.data;
+};
+
+export const deleteOrder = async (orderId) => {
+  if (!orderId) throw new Error("orderId is required");
+
+  const res = await ORDER_API.delete(`/${orderId}`);
+  return res?.data;
+};
+
+export const cancelOrderByClient = async (orderId, payload) => {
+  if (!orderId) throw new Error("orderId is required");
+
+  const res = await ORDER_API.patch(`/${orderId}/cancel`, payload);
+  return res?.data;
 };

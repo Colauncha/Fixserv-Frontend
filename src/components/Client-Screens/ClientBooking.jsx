@@ -10,6 +10,10 @@ import cameraImage from "../../assets/client images/client-home/camera.png";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { getArtisanById, getArtisanServices } from "../../api/artisan.api";
 
+import { normalizeArtisan } from "../../utils/normalizeArtisan";
+
+import ArtisanCard from "./ArtisanCard";
+
 const ClientBooking = () => {
   const navigate = useNavigate();
   const { artisanId } = useParams();
@@ -17,11 +21,13 @@ const ClientBooking = () => {
 
   const artisanFromState = location.state?.artisan;
 
+  const [imagePreview, setImagePreview] = useState(null);
   const [artisanData, setArtisanData] = useState(artisanFromState || null);
   const [loading, setLoading] = useState(!artisanFromState);
-
   const [artisanServiceList, setArtisanServiceList] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
+
+  const [continueBlockMessage, setContinueBlockMessage] = useState("");
 
   const [bookingData, setBookingData] = useState({
     deviceType: "",
@@ -35,7 +41,6 @@ const ClientBooking = () => {
   });
 
   const [errors, setErrors] = useState({});
-
   const fileRef = useRef(null);
 
   const cleanText = (v, fallback = "") =>
@@ -68,65 +73,110 @@ const ClientBooking = () => {
     return out;
   };
 
-  const normalizeArtisan = (raw) => {
-    const rawReviews = raw?.reviews;
+  const serviceApiMapped = useMemo(() => {
+    return (Array.isArray(artisanServiceList) ? artisanServiceList : [])
+      .filter((s) => s?.isActive !== false)
+      .map((s, idx) => {
+        const title =
+          s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
 
-    const reviewsList = Array.isArray(raw?.reviewsList)
-      ? raw.reviewsList
-      : Array.isArray(raw?.reviewsData)
-      ? raw.reviewsData
-      : Array.isArray(rawReviews)
-      ? rawReviews
-      : [];
+        return {
+          id: s?.id || s?._id || `api-${idx}`,
+          title,
+          price: s?.price ?? s?.amount ?? null,
+          icon: String(title).toLowerCase().includes("battery")
+            ? battery
+            : String(title).toLowerCase().includes("camera")
+            ? cameraImage
+            : String(title).toLowerCase().includes("charg")
+            ? flashImage
+            : settingImage,
+        };
+      });
+  }, [artisanServiceList]);
 
-    const reviewsCount = Number(
-      raw?.reviewsCount ||
-        (Array.isArray(rawReviews) ? rawReviews.length : rawReviews) ||
-        0
-    );
+  
+  const serviceOptions = useMemo(() => {
+    if (serviceApiMapped.length > 0) return serviceApiMapped;
+    return [];
+  }, [serviceApiMapped]);
 
-    const skills = Array.isArray(raw?.skillSet)
-      ? raw.skillSet
-      : Array.isArray(raw?.skills)
-      ? raw.skills
-      : [];
+  const serviceMap = useMemo(() => {
+    const map = new Map();
+    serviceOptions.forEach((s) => {
+      map.set(String(s.id), s);
+    });
+    return map;
+  }, [serviceOptions]);
 
-    return {
-      ...raw,
-      id: raw?.id || raw?._id,
-      fullName: cleanText(
-        raw?.fullName,
-        cleanText(raw?.businessName, "Unnamed Artisan")
-      ),
-      businessName: cleanText(raw?.businessName, ""),
-      location: cleanText(raw?.location, "Unknown location"),
-      categories: Array.isArray(raw?.categories) ? raw.categories : [],
-      skills,
-      rating: Number(raw?.rating || 0),
-      bio: cleanText(raw?.bio || raw?.about || raw?.description, ""),
-      services: Array.isArray(raw?.services) ? raw.services : [],
-      reviewsList,
-      reviewsCount,
-      businessHours: normalizeBusinessHours(raw?.businessHours),
-      createdAt: raw?.createdAt,
-      totalRepairs: Number(raw?.totalRepairs || raw?.jobsDone || 0),
-      profilePicture: raw?.profilePicture || raw?.avatar || raw?.photoURL || "",
-      profession:
-        raw?.profession ||
-        raw?.roleTitle ||
-        raw?.categoryTitle ||
-        raw?.specialty ||
-        "Technician",
+  const hasUploadedServices = serviceOptions.length > 0;
+
+  const selectedService =
+    serviceMap.get(String(bookingData.serviceRequired)) || null;
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
     };
-  };
+  }, [imagePreview]);
 
-  const fallbackServices = [
-    { id: 1, title: "Screen Replacement", price: 12000, icon: settingImage },
-    { id: 2, title: "Battery Replacement", price: 7000, icon: battery },
-    { id: 3, title: "Charging port Fix", price: 5000, icon: flashImage },
-    { id: 4, title: "Camera Repair", price: 8000, icon: cameraImage },
-    { id: 5, title: "General Diagnostics", price: 3500, icon: settingImage },
-  ];
+  useEffect(() => {
+    if (
+      bookingData.serviceRequired &&
+      serviceOptions.length > 0 &&
+      !selectedService
+    ) {
+      setErrors((prev) => ({
+        ...prev,
+        serviceRequired: "Invalid service selected",
+      }));
+    }
+  }, [bookingData.serviceRequired, selectedService, serviceOptions]);
+
+  useEffect(() => {
+    const fetchBookingData = async () => {
+      if (!artisanId) return;
+
+      try {
+        setLoading(true);
+        setLoadingServices(true);
+
+        const [artisanRes, servicesRes] = await Promise.allSettled([
+          artisanFromState
+            ? Promise.resolve(artisanFromState)
+            : getArtisanById(artisanId),
+          getArtisanServices(artisanId),
+        ]);
+
+        if (artisanRes.status === "fulfilled") {
+          setArtisanData(normalizeArtisan(artisanRes.value));
+        } else {
+          setArtisanData(null);
+        }
+
+        if (servicesRes.status === "fulfilled") {
+          setArtisanServiceList(
+            Array.isArray(servicesRes.value) ? servicesRes.value : []
+          );
+        } else {
+          setArtisanServiceList([]);
+        }
+      } finally {
+        setLoading(false);
+        setLoadingServices(false);
+      }
+    };
+
+    fetchBookingData();
+  }, [artisanId, artisanFromState]);
+
+  useEffect(() => {
+  if (hasUploadedServices) {
+    setContinueBlockMessage("");
+  }
+}, [hasUploadedServices]);
 
   const handlePickFile = () => fileRef.current?.click();
 
@@ -150,7 +200,15 @@ const ClientBooking = () => {
       return;
     }
 
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+
     setBookingData((prev) => ({ ...prev, imageFile: file }));
+    setImagePreview(previewUrl);
+
     setErrors((prev) => ({ ...prev, imageFile: "" }));
   };
 
@@ -173,15 +231,17 @@ const ClientBooking = () => {
       nextErrors.location = "Location is required";
     }
 
-    if (!bookingData.serviceRequired.trim()) {
-      nextErrors.serviceRequired = "Service is required";
-    }
+if (!hasUploadedServices) {
+  nextErrors.serviceRequired = "You Cant Continue, No Services Uploaded Yet";
+} else if (!bookingData.serviceRequired.trim()) {
+  nextErrors.serviceRequired = "Service is required";
+}
 
     if (!bookingData.issueDescription.trim()) {
       nextErrors.issueDescription = "Issue description is required";
     }
 
-    if (!bookingData.imageFile) {
+    if (!bookingData.imageFile && !imagePreview) {
       nextErrors.imageFile = "Please upload an image of the damaged device";
     }
 
@@ -196,134 +256,6 @@ const ClientBooking = () => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  useEffect(() => {
-    const fetchBookingData = async () => {
-      if (!artisanId) return;
-
-      try {
-        setLoading(true);
-        setLoadingServices(true);
-
-        const [artisanRes, servicesRes] = await Promise.allSettled([
-          artisanFromState
-            ? Promise.resolve(artisanFromState)
-            : getArtisanById(artisanId),
-          getArtisanServices(artisanId),
-        ]);
-
-        if (artisanRes.status === "fulfilled") {
-          setArtisanData(normalizeArtisan(artisanRes.value));
-        } else {
-          console.error("BOOKING ARTISAN ERROR:", artisanRes.reason);
-          setArtisanData(null);
-        }
-
-        if (servicesRes.status === "fulfilled") {
-          setArtisanServiceList(
-            Array.isArray(servicesRes.value) ? servicesRes.value : []
-          );
-        } else {
-          console.error("BOOKING SERVICES ERROR:", servicesRes.reason);
-          setArtisanServiceList([]);
-        }
-      } finally {
-        setLoading(false);
-        setLoadingServices(false);
-      }
-    };
-
-    fetchBookingData();
-  }, [artisanId, artisanFromState]);
-
-  const serviceApiMapped = useMemo(() => {
-    return (Array.isArray(artisanServiceList) ? artisanServiceList : [])
-      .filter((s) => s?.isActive !== false)
-      .map((s, idx) => {
-        const title =
-          s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
-
-        return {
-          id: s?.id || s?._id || `api-${idx}`,
-          title,
-          description: s?.description || "",
-          price: s?.price ?? s?.amount ?? null,
-          estimatedDuration: s?.estimatedDuration || s?.duration || "",
-          icon: String(title).toLowerCase().includes("battery")
-            ? battery
-            : String(title).toLowerCase().includes("camera")
-            ? cameraImage
-            : String(title).toLowerCase().includes("charg")
-            ? flashImage
-            : settingImage,
-        };
-      });
-  }, [artisanServiceList]);
-
-  const profileServicesMapped = useMemo(() => {
-    const rawProfileServices = Array.isArray(artisanData?.services)
-      ? artisanData.services
-      : [];
-
-    return rawProfileServices
-      .filter((s) => s?.isActive !== false)
-      .map((s, idx) => {
-        const title =
-          s?.title || s?.name || s?.serviceName || `Service ${idx + 1}`;
-
-        return {
-          id: s?.id || s?._id || `profile-${idx}`,
-          title,
-          description: s?.description || "",
-          price: s?.price ?? s?.amount ?? null,
-          estimatedDuration: s?.estimatedDuration || s?.duration || "",
-          icon: String(title).toLowerCase().includes("battery")
-            ? battery
-            : String(title).toLowerCase().includes("camera")
-            ? cameraImage
-            : String(title).toLowerCase().includes("charg")
-            ? flashImage
-            : settingImage,
-        };
-      });
-  }, [artisanData]);
-
-  const skillServicesMapped = useMemo(() => {
-    const rawSkillServices = Array.isArray(artisanData?.skills)
-      ? artisanData.skills
-      : [];
-
-    return rawSkillServices.map((s, idx) => {
-      const title =
-        typeof s === "string"
-          ? s
-          : s?.name || s?.title || s?.serviceName || `Service ${idx + 1}`;
-
-      return {
-        id: s?.id || s?._id || `skill-${idx}`,
-        title,
-        description: "",
-        price: null,
-        estimatedDuration: "",
-        icon: String(title).toLowerCase().includes("battery")
-          ? battery
-          : String(title).toLowerCase().includes("camera")
-          ? cameraImage
-          : String(title).toLowerCase().includes("charg")
-          ? flashImage
-          : settingImage,
-      };
-    });
-  }, [artisanData]);
-
-  const serviceOptions =
-    serviceApiMapped.length > 0
-      ? serviceApiMapped
-      : profileServicesMapped.length > 0
-      ? profileServicesMapped
-      : skillServicesMapped.length > 0
-      ? skillServicesMapped
-      : fallbackServices;
-
   if (loading || !artisanData) {
     return (
       <div className="py-20 text-center text-gray-500">
@@ -335,25 +267,16 @@ const ClientBooking = () => {
   const displayName =
     artisanData.fullName || artisanData.businessName || "Unnamed Artisan";
 
-  const yearsFromCreatedAt = artisanData?.createdAt
+  const professionLabel = artisanData.profession || "Technician";
+
+  const reviewsCount = Number(artisanData.reviewsCount || 0);
+
+  const yearsFromCreatedAt = artisanData.createdAt
     ? Math.max(
         0,
-        Math.floor(
-          (Date.now() - new Date(artisanData.createdAt).getTime()) /
-            (1000 * 60 * 60 * 24 * 365)
-        )
+        new Date().getFullYear() - new Date(artisanData.createdAt).getFullYear()
       )
     : null;
-
-  const reviewsCount = Number(
-    artisanData?.reviewsCount ||
-      (Array.isArray(artisanData?.reviewsList)
-        ? artisanData.reviewsList.length
-        : 0) ||
-      0
-  );
-
-  const professionLabel = artisanData?.profession || "Technician";
 
   return (
     <div className="w-full">
@@ -463,28 +386,31 @@ const ClientBooking = () => {
 
                 <div data-field="serviceRequired">
                   <select
-                    value={bookingData.serviceRequired}
-                    onChange={(e) => {
-                      setBookingData((prev) => ({
-                        ...prev,
-                        serviceRequired: e.target.value,
-                      }));
-                      setErrors((prev) => ({ ...prev, serviceRequired: "" }));
-                    }}
-                    className={`w-full border rounded-md px-4 py-3 text-sm outline-none bg-white focus:border-[#3E83C4] ${
-                      errors.serviceRequired
-                        ? "border-red-400"
-                        : "border-[#5F8EBA]"
-                    }`}
-                    disabled={loadingServices}
-                  >
-                    <option value="">
-                      {loadingServices
-                        ? "Loading services..."
-                        : "Select Service Required"}
-                    </option>
+  value={bookingData.serviceRequired}
+  onChange={(e) => {
+    setBookingData((prev) => ({
+      ...prev,
+      serviceRequired: e.target.value,
+    }));
+    setErrors((prev) => ({ ...prev, serviceRequired: "" }));
+    setContinueBlockMessage("");
+  }}
+  className={`w-full border rounded-md px-4 py-3 text-sm outline-none bg-white focus:border-[#3E83C4] ${
+    errors.serviceRequired
+      ? "border-red-400"
+      : "border-[#5F8EBA]"
+  }`}
+  disabled={loadingServices || !hasUploadedServices}
+>
+  <option value="">
+    {loadingServices
+      ? "Loading services..."
+      : !hasUploadedServices
+      ? "No Services Uploaded Yet"
+      : "Select Service Required"}
+  </option>
                     {serviceOptions.map((service) => (
-                      <option key={service.id} value={service.title}>
+                      <option key={service.id} value={service.id}>
                         {service.title}
                         {service.price != null
                           ? ` — ₦${Number(service.price).toLocaleString("en-NG")}`
@@ -522,18 +448,30 @@ const ClientBooking = () => {
                     }`}
                   >
                     <div className="flex flex-col items-center gap-4">
-                      <img
-                        src={upload}
-                        alt=""
-                        className="w-10 h-10 flex items-center justify-center rounded-full bg-[#B3B3B3]"
-                      />
+                      {imagePreview ? (
+                        <>
+                          <img
+                            src={imagePreview}
+                            alt="preview"
+                            className="w-40 h-40 object-cover rounded-md"
+                          />
 
-                      <p className="break-words">
-                        {bookingData.imageFile
-                          ? bookingData.imageFile.name
-                          : "Click to upload or drag & drop"}
-                      </p>
-                      <p className="text-xs">PNG, JPG, JPEG up to 5MB</p>
+                          <p className="text-xs text-gray-600 break-words">
+                            {bookingData.imageFile?.name}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <img
+                            src={upload}
+                            alt=""
+                            className="w-10 h-10 rounded-full bg-[#B3B3B3]"
+                          />
+
+                          <p>Click to upload or drag & drop</p>
+                          <p className="text-xs">PNG, JPG, JPEG up to 5MB</p>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -584,94 +522,63 @@ const ClientBooking = () => {
                   />
                 </div>
 
-                <div className="pt-4">
-                  <button
-                    onClick={() => {
-                      const ok = validateBooking();
-                      if (!ok) return;
+<div className="pt-4">
+  <button
+    type="button"
+    onClick={() => {
+      if (!hasUploadedServices) {
+        setContinueBlockMessage("You Cant Continue, No Services Uploaded Yet");
+        setErrors((prev) => ({
+          ...prev,
+          serviceRequired: "You Cant Continue, No Services Uploaded Yet",
+        }));
 
-                      navigate("/client/booking-summary", {
-                        state: {
-                          artisan: artisanData,
-                          booking: bookingData,
-                        },
-                      });
-                    }}
-                    className="w-full sm:w-56 md:w-48 mx-auto block bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md text-sm font-medium transition cursor-pointer"
-                  >
-                    Continue
-                  </button>
-                </div>
+        const el = document.querySelector(`[data-field="serviceRequired"]`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+
+      setContinueBlockMessage("");
+
+      const ok = validateBooking();
+      if (!ok) return;
+
+      navigate("/client/booking-summary", {
+  state: {
+    artisan: artisanData,
+    booking: {
+      ...bookingData,
+      artisanId:
+        artisanData?.id || artisanData?._id || artisanData?.artisanId || null,
+      serviceId: selectedService?.id || null,
+      serviceRequired: selectedService?.title || "",
+      serviceCost: selectedService?.price || null,
+    },
+  },
+});
+    }}
+    aria-disabled={!hasUploadedServices}
+    className={`w-full sm:w-56 md:w-48 mx-auto block py-3 rounded-md text-sm font-medium transition ${
+      !hasUploadedServices
+        ? "bg-gray-300 text-white cursor-not-allowed"
+        : "bg-[#3E83C4] hover:bg-[#2d75b8] text-white cursor-pointer"
+    }`}
+  >
+    Continue
+  </button>
+
+  {continueBlockMessage && (
+    <p className="text-sm text-red-500 text-center mt-3">
+      {continueBlockMessage}
+    </p>
+  )}
+</div>
               </div>
             </div>
 
-            <div className="order-1 lg:order-2 bg-[#EEF6FF] rounded-xl px-4 sm:px-6 py-4 w-full h-fit mx-auto max-w-md lg:max-w-none">
-              <div className="flex flex-col items-center text-center gap-2">
-                <img
-                  src={artisanData.profilePicture || profileImage}
-                  alt="artisan"
-                  className="w-full max-w-[240px] aspect-square rounded-lg object-cover"
-                />
-
-                <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
-                  <h3 className="font-semibold text-black break-words">
-                    {displayName}
-                  </h3>
-                  <img src={mark} alt="verified" className="w-4 h-4" />
-                </div>
-
-                <p className="text-sm text-[#656565] break-words">
-                  {professionLabel}
-                </p>
-
-                <div className="flex items-center gap-1 mt-1 text-sm text-black flex-wrap justify-center">
-                  <img src={star} alt="star" className="w-4 h-4" />
-                  <span>{Number(artisanData.rating || 0).toFixed(1)}</span>
-                  <span className="text-black">({reviewsCount} reviews)</span>
-                </div>
-
-                <div className="flex gap-2 mt-2 flex-wrap justify-center">
-                  {(Array.isArray(artisanData.categories) &&
-                  artisanData.categories.length
-                    ? artisanData.categories
-                    : ["Phone", "Tablet", "Laptop"]
-                  )
-                    .slice(0, 3)
-                    .map((c, idx) => {
-                      const label =
-                        typeof c === "string"
-                          ? c
-                          : c?.name || c?.title || `Category ${idx + 1}`;
-                      return (
-                        <span
-                          key={label + idx}
-                          className="bg-[#C1DAF3] text-[#3E83C4] px-3 py-1 rounded-full text-xs break-words"
-                        >
-                          {label}
-                        </span>
-                      );
-                    })}
-                </div>
-
-                <div className="mt-2 text-sm text-[#656565] space-y-1">
-                  <p className="break-words">
-                    Experience:{" "}
-                    <span className="font-medium text-black">
-                      {yearsFromCreatedAt != null
-                        ? `${yearsFromCreatedAt}+ years`
-                        : "—"}
-                    </span>
-                  </p>
-
-                  <p className="break-words">
-                    Location:{" "}
-                    <span className="font-medium text-black">
-                      {artisanData.location?.trim()
-                        ? artisanData.location
-                        : "Unknown"}
-                    </span>
-                  </p>
-                </div>
+           <div className="bg-[#EEF6FF] rounded-2xl p-5 w-full max-w-[340px] mx-auto lg:mx-0 lg:max-w-[420px] xl:max-w-[460px] shadow-sm">
+  <div className="flex flex-col gap-3">
+                <ArtisanCard artisan={artisanData} />
               </div>
             </div>
           </div>

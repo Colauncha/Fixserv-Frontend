@@ -13,14 +13,26 @@ import lock from "../../assets/client images/client-home/lock.png";
 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { getWalletBalance, getWithdrawalBanks } from "../../api/wallet.api";
+import {
+  getWalletBalance,
+  getWithdrawalBanks,
+  lockFunds,
+  unlockFunds,
+  getLockedBalanceBreakdown,
+} from "../../api/wallet.api";
 
 const ProfileSettings = () => {
   const [profileImage, setProfileImage] = useState(PraiseImg);
   const [uploading, setUploading] = useState(false);
   const { user, token, login } = useAuth();
   const navigate = useNavigate();
-  const userId = user?.id || user?._id;
+
+  const userId =
+    user?.id ||
+    user?.userId ||
+    user?._id ||
+    user?.wallet?.userId ||
+    null;
 
   const walletIdentifier =
     user?.walletId ||
@@ -33,6 +45,10 @@ const ProfileSettings = () => {
   const [walletData, setWalletData] = useState({
     balance: 0,
     lockedBalance: 0,
+    available: 0,
+    totalLocked: 0,
+    manuallyLocked: 0,
+    orderEscrow: 0,
   });
 
   const [walletLoading, setWalletLoading] = useState(false);
@@ -61,6 +77,47 @@ const ProfileSettings = () => {
     street: "",
     postalCode: "",
   });
+
+  const [lockingFunds, setLockingFunds] = useState(false);
+  const [unlockingFunds, setUnlockingFunds] = useState(false);
+
+  const [showLockModal, setShowLockModal] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [showAddSuccess, setShowAddSuccess] = useState(false);
+
+  const notifications = [
+    {
+      title: "News",
+      desc: "News about products and feature updates",
+    },
+    {
+      title: "Updates",
+      desc: "Feature updates",
+    },
+    {
+      title: "User Research",
+      desc: "Get involved in our beta testing program or participate in paid product user research",
+    },
+    {
+      title: "Reminders",
+      desc: "These are notifications to remind you of updates and repair progress",
+    },
+  ];
+
+  const min = 0;
+  const max = 10000;
+
+  const [notificationEnabled, setNotificationEnabled] = useState(
+    notifications.map(() => false)
+  );
+  const [lowBalanceEnabled, setLowBalanceEnabled] = useState(false);
+  const [value, setValue] = useState(10000);
+
+  const percentage = ((value - min) / (max - min)) * 100;
+
+  const formatMoney = (amount) =>
+    `₦${Number(amount || 0).toLocaleString()}`;
 
   const handleProfileUpload = async (file) => {
     if (!file) return;
@@ -120,19 +177,19 @@ const ProfileSettings = () => {
         servicePreferences: user?.servicePreferences || [],
       };
 
-      console.log("PATCH payload:", payload);
-
-      const res = await fetch(`https://dev-user-api.fixserv.co/api/admin/${userId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `https://dev-user-api.fixserv.co/api/admin/${userId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const data = await res.json().catch(() => ({}));
-      console.log("PATCH response:", res.status, data);
 
       if (!res.ok) {
         throw new Error(data?.message || data?.error || "Update failed");
@@ -150,7 +207,6 @@ const ProfileSettings = () => {
       alert("Profile updated successfully!");
       navigate("/client/profile");
     } catch (err) {
-      console.error("Profile update error:", err);
       alert(err.message || "Something went wrong");
     }
   };
@@ -182,31 +238,70 @@ const ProfileSettings = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (!walletIdentifier || !token) return;
+  const fetchWallet = async () => {
+    if ((!walletIdentifier && !userId) || !token) return;
 
-    const fetchWallet = async () => {
-      try {
-        setWalletLoading(true);
+    try {
+      setWalletLoading(true);
 
-        const res = await getWalletBalance(walletIdentifier);
-        const payload = res?.data;
+      const [balanceRes, breakdownRes] = await Promise.allSettled([
+        walletIdentifier ? getWalletBalance(walletIdentifier) : Promise.resolve(null),
+        userId ? getLockedBalanceBreakdown(userId) : Promise.resolve(null),
+      ]);
 
-        if (payload?.success) {
-          setWalletData({
-            balance: Number(payload?.data?.balance || 0),
-            lockedBalance: Number(payload?.data?.lockedBalance || 0),
-          });
-        }
-      } catch (err) {
-        console.error("Wallet fetch error:", err?.response?.data || err?.message);
-      } finally {
-        setWalletLoading(false);
+      let balance = 0;
+      let lockedBalance = 0;
+
+      if (
+        balanceRes.status === "fulfilled" &&
+        balanceRes.value?.data?.success
+      ) {
+        const payload = balanceRes.value.data;
+        balance = Number(payload?.data?.balance || 0);
+        lockedBalance = Number(payload?.data?.lockedBalance || 0);
       }
-    };
 
+      let available = balance;
+      let totalLocked = lockedBalance;
+      let manuallyLocked = 0;
+      let orderEscrow = 0;
+
+      if (
+        breakdownRes.status === "fulfilled" &&
+        breakdownRes.value?.data?.success
+      ) {
+        const breakdown = breakdownRes.value.data?.data || {};
+        available = Number(breakdown?.available || 0);
+        totalLocked = Number(breakdown?.totalLocked || 0);
+        manuallyLocked = Number(breakdown?.manuallyLocked || 0);
+        orderEscrow = Number(breakdown?.orderEscrow || 0);
+      }
+
+      setWalletData({
+        balance,
+        lockedBalance,
+        available,
+        totalLocked,
+        manuallyLocked,
+        orderEscrow,
+      });
+    } catch (err) {
+      setWalletData({
+        balance: 0,
+        lockedBalance: 0,
+        available: 0,
+        totalLocked: 0,
+        manuallyLocked: 0,
+        orderEscrow: 0,
+      });
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchWallet();
-  }, [walletIdentifier, token]);
+  }, [walletIdentifier, userId, token]);
 
   useEffect(() => {
     if (!token) return;
@@ -228,7 +323,6 @@ const ProfileSettings = () => {
 
         setBanks(uniqueBanks);
       } catch (err) {
-        console.error("Failed to fetch banks", err?.response?.data || err?.message);
         setBanks([]);
       }
     };
@@ -293,19 +387,20 @@ const ProfileSettings = () => {
       login(token, nextUser);
       alert("Withdrawal bank details updated successfully!");
     } catch (err) {
-      console.error("Save bank details error:", err);
       alert("Failed to update bank details");
     } finally {
       setSavingBank(false);
     }
   };
 
-  const handleLockFunds = () => {
+  const handleLockFunds = async () => {
+    if (!userId) return alert("User not found");
+
     if (!lockAmount || Number(lockAmount) <= 0) {
       return alert("Enter a valid amount to lock");
     }
 
-    if (Number(lockAmount) > Number(walletData.balance || 0)) {
+    if (Number(lockAmount) > Number(walletData.available || 0)) {
       return alert("Amount cannot be more than available balance");
     }
 
@@ -313,71 +408,76 @@ const ProfileSettings = () => {
       return alert("Enter your password");
     }
 
-    alert(
-      "Lock funds endpoint is not wired yet. Current backend shared so far only returns lockedBalance; no lock mutation endpoint has been provided yet."
-    );
+    try {
+      setLockingFunds(true);
+
+      await lockFunds({
+        userId,
+        amount: Number(lockAmount),
+        password: lockPassword.trim(),
+      });
+
+      alert("Funds locked successfully");
+      setLockAmount("");
+      setLockPassword("");
+      setShowLockModal(false);
+      await fetchWallet();
+    } catch (err) {
+      alert(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Failed to lock funds"
+      );
+    } finally {
+      setLockingFunds(false);
+    }
   };
 
-  const handleUnlockFunds = () => {
+  const handleUnlockFunds = async () => {
+    if (!userId) return alert("User not found");
+
     if (!unlockAmount || Number(unlockAmount) <= 0) {
       return alert("Enter a valid amount to unlock");
     }
 
-    if (Number(unlockAmount) > Number(walletData.lockedBalance || 0)) {
-      return alert("Amount cannot be more than locked balance");
+    if (Number(unlockAmount) > Number(walletData.manuallyLocked || 0)) {
+      return alert("Amount cannot be more than manually locked balance");
     }
 
     if (!unlockPassword.trim()) {
       return alert("Enter your password");
     }
 
-    alert(
-      "Unlock funds endpoint is not wired yet. Current backend shared so far only returns lockedBalance; no unlock mutation endpoint has been provided yet."
-    );
+    try {
+      setUnlockingFunds(true);
+
+      await unlockFunds({
+        userId,
+        amount: Number(unlockAmount),
+        password: unlockPassword.trim(),
+      });
+
+      alert("Funds unlocked successfully");
+      setUnlockAmount("");
+      setUnlockPassword("");
+      setShowUnlockModal(false);
+      await fetchWallet();
+    } catch (err) {
+      alert(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Failed to unlock funds"
+      );
+    } finally {
+      setUnlockingFunds(false);
+    }
   };
-
-  const notifications = [
-    {
-      title: "News",
-      desc: "News about products and feature updates",
-    },
-    {
-      title: "Updates",
-      desc: "Feature updates",
-    },
-    {
-      title: "User Research",
-      desc: "Get involved in our beta testing program or participate in paid product user research",
-    },
-    {
-      title: "Reminders",
-      desc: "These are notifications to remind you of updates and repair progress",
-    },
-  ];
-
-  const min = 0;
-  const max = 10000;
-
-  const [notificationEnabled, setNotificationEnabled] = useState(
-    notifications.map(() => false)
-  );
-
-  const [lowBalanceEnabled, setLowBalanceEnabled] = useState(false);
-  const [value, setValue] = useState(10000);
-
-  const percentage = ((value - min) / (max - min)) * 100;
-
-  const [showLockModal, setShowLockModal] = useState(false);
-  const [showUnlockModal, setShowUnlockModal] = useState(false);
 
   const toggleItem = (index) => {
     setNotificationEnabled((prev) =>
       prev.map((item, i) => (i === index ? !item : item))
     );
   };
-
-  const [showAddCard, setShowAddCard] = useState(false);
-  const [showAddSuccess, setShowAddSuccess] = useState(false);
 
   return (
     <div className="w-full">
@@ -417,15 +517,15 @@ const ProfileSettings = () => {
                   accept="image/*"
                   className="hidden"
                   onChange={(e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+                    const file = e.target.files[0];
+                    if (!file) return;
 
-  const previewUrl = URL.createObjectURL(file);
-  setProfileImage(previewUrl);
-  handleProfileUpload(file);
+                    const previewUrl = URL.createObjectURL(file);
+                    setProfileImage(previewUrl);
+                    handleProfileUpload(file);
 
-  setTimeout(() => URL.revokeObjectURL(previewUrl), 5000);
-}}
+                    setTimeout(() => URL.revokeObjectURL(previewUrl), 5000);
+                  }}
                 />
               </label>
             </div>
@@ -455,7 +555,6 @@ const ProfileSettings = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm text-[#535353] mb-1">Name</label>
-
               <input
                 type="text"
                 name="fullName"
@@ -477,29 +576,6 @@ const ProfileSettings = () => {
                 className="w-full border border-[#9BAAB9] rounded-md px-3 py-2 text-sm outline-none bg-gray-100 cursor-not-allowed"
               />
             </div>
-
-            {/* <div>
-              <label className="block text-sm text-[#535353] mb-1">
-                Service Preference
-              </label>
-              <input
-                type="text"
-                placeholder="Enter New Service Preference"
-                className="w-full border border-[#9BAAB9] rounded-md px-3 py-2 text-sm outline-none"
-              />
-
-              <div className="flex flex-wrap gap-2 mt-2">
-                <span className="bg-[#D3E4F4] text-[#3E83C4] text-xs px-3 py-1 rounded-full">
-                  General ✕
-                </span>
-                <span className="bg-[#D3E4F4] text-[#3E83C4] text-xs px-3 py-1 rounded-full">
-                  Phone Repair ✕
-                </span>
-                <span className="bg-[#D3E4F4] text-[#3E83C4] text-xs px-3 py-1 rounded-full">
-                  Tablet Repair ✕
-                </span>
-              </div>
-            </div> */}
 
             <div>
               <label className="block text-xs text-[#535353] mb-1">
@@ -619,22 +695,34 @@ const ProfileSettings = () => {
             <h2 className="text-lg font-semibold text-black">Wallet</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
             <div className="border border-[#C1DAF3] rounded-xl p-4 bg-[#F6FBFF]">
               <p className="text-sm text-[#535353] mb-2">Available Balance</p>
               <h3 className="text-2xl font-semibold text-black">
-                {walletLoading
-                  ? "Loading..."
-                  : `₦${Number(walletData.balance || 0).toLocaleString()}`}
+                {walletLoading ? "Loading..." : formatMoney(walletData.available)}
               </h3>
             </div>
 
             <div className="border border-[#C1DAF3] rounded-xl p-4 bg-[#F6FBFF]">
               <p className="text-sm text-[#535353] mb-2">Locked Balance</p>
               <h3 className="text-2xl font-semibold text-black">
-                {walletLoading
-                  ? "Loading..."
-                  : `₦${Number(walletData.lockedBalance || 0).toLocaleString()}`}
+                {walletLoading ? "Loading..." : formatMoney(walletData.totalLocked)}
+              </h3>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="border border-[#E5EEF8] rounded-xl p-4 bg-white">
+              <p className="text-xs text-[#535353] mb-2">Manually Locked</p>
+              <h3 className="text-lg font-semibold text-black">
+                {walletLoading ? "Loading..." : formatMoney(walletData.manuallyLocked)}
+              </h3>
+            </div>
+
+            <div className="border border-[#E5EEF8] rounded-xl p-4 bg-white">
+              <p className="text-xs text-[#535353] mb-2">Order Escrow</p>
+              <h3 className="text-lg font-semibold text-black">
+                {walletLoading ? "Loading..." : formatMoney(walletData.orderEscrow)}
               </h3>
             </div>
           </div>
@@ -651,7 +739,7 @@ const ProfileSettings = () => {
             <div className="relative">
               <input
                 type="text"
-                value={`₦${Number(walletData.lockedBalance || 0).toLocaleString()}`}
+                value={formatMoney(walletData.manuallyLocked)}
                 readOnly
                 className="w-full border border-[#9BAAB9] rounded-md px-3 py-2 text-sm outline-none bg-gray-50"
               />
@@ -839,7 +927,7 @@ const ProfileSettings = () => {
             {showLockModal && (
               <>
                 <div className="flex items-center gap-2 mb-5">
-                  <img src={fund} className="w-9 h-9" />
+                  <img src={fund} alt="fund" className="w-9 h-9" />
                   <div className="flex flex-col">
                     <span className="text-lg text-black font-medium">
                       Lock Funds
@@ -883,9 +971,10 @@ const ProfileSettings = () => {
 
                 <button
                   onClick={handleLockFunds}
-                  className="w-full bg-[#3E83C4] text-white text-sm py-2 rounded-md mb-2 cursor-pointer"
+                  disabled={lockingFunds}
+                  className="w-full bg-[#3E83C4] text-white text-sm py-2 rounded-md mb-2 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  Lock
+                  {lockingFunds ? "Locking..." : "Lock"}
                 </button>
               </>
             )}
@@ -893,7 +982,7 @@ const ProfileSettings = () => {
             {showUnlockModal && (
               <>
                 <div className="flex items-center gap-2 mb-5">
-                  <img src={fund} className="w-9 h-9" />
+                  <img src={fund} alt="fund" className="w-9 h-9" />
                   <div className="flex flex-col">
                     <span className="text-lg text-black font-medium">
                       Unlock Funds
@@ -939,9 +1028,10 @@ const ProfileSettings = () => {
 
                 <button
                   onClick={handleUnlockFunds}
-                  className="w-full bg-[#3E83C4] text-white text-sm py-2 rounded-md mb-2 cursor-pointer"
+                  disabled={unlockingFunds}
+                  className="w-full bg-[#3E83C4] text-white text-sm py-2 rounded-md mb-2 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  Unlock
+                  {unlockingFunds ? "Unlocking..." : "Unlock"}
                 </button>
               </>
             )}
@@ -949,6 +1039,7 @@ const ProfileSettings = () => {
             <div className="text-center">
               <button
                 onClick={() => {
+                  if (lockingFunds || unlockingFunds) return;
                   setShowLockModal(false);
                   setShowUnlockModal(false);
                 }}
@@ -1028,6 +1119,7 @@ const ProfileSettings = () => {
                   />
                   <img
                     src={card}
+                    alt="card"
                     className="w-5 absolute right-3 top-1/2 -translate-y-1/2 opacity-60"
                   />
                 </div>
@@ -1056,7 +1148,7 @@ const ProfileSettings = () => {
       {showAddSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white w-[400px] rounded-xl shadow-lg p-6 text-center">
-            <img src={success} className="w-16 mx-auto mb-4" />
+            <img src={success} alt="success" className="w-16 mx-auto mb-4" />
 
             <h3 className="text-xl text-black font-medium mb-2">
               Payment Method Saved

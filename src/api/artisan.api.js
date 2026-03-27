@@ -68,8 +68,19 @@ export const getArtisanById = async (artisanId) => {
 
   const json = await safeJson(res);
 
+  // ✅ silently ignore missing/bad artisan records
   if (!res.ok) {
-    throw new Error(json?.message || "Failed to fetch artisan");
+    const message = json?.message || "Failed to fetch artisan";
+
+    if (
+      res.status === 400 ||
+      res.status === 404 ||
+      /user not found/i.test(message)
+    ) {
+      return null;
+    }
+
+    throw new Error(message);
   }
 
   const raw = json?.data || json?.user || json;

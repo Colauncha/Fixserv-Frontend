@@ -1,4 +1,4 @@
-// src/pages/admin/Artisans.jsx
+
 import React, { useEffect, useState } from "react";
 
 const Artisans = () => {

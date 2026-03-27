@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import WelcomeBonus from "./WelcomeBonus";
 import ReferEarn from "./ReferEarn"; 
 
-
 import bgImage from "../../assets/client images/client-home/clientbg.png";
 import bgOverlay from "../../assets/client images/client-home/bgoverlay.png";
 import johnOne from "../../assets/client images/client-home/Johnone.png";
@@ -64,6 +63,12 @@ const [activeCategory, setActiveCategory] = useState("");
   const searchSectionRef = useRef(null);
   const marqueeSectionRef = useRef(null);
 
+  const [showChatModal, setShowChatModal] = useState(false);
+
+  const marqueeOneRef = useRef(null);
+const marqueeTwoRef = useRef(null);
+
+
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [animatedCount, setAnimatedCount] = useState(0);
   const [referralCode, setReferralCode] = useState("");
@@ -76,9 +81,7 @@ const [hoveredNewArtisan, setHoveredNewArtisan] = useState(null);
 
   const [categories, setCategories] = useState([]);
 
-  /* =========================
-     HELPERS
-  ========================== */
+
 
   const normalizeCategoryLabel = (value) => {
     return String(value || "")
@@ -126,9 +129,7 @@ const getCategoryImage = (cat) => {
   }
 };
 
-  /* =========================
-     FETCH ARTISANS
-  ========================== */
+
 useEffect(() => {
   fetchArtisans();
 
@@ -140,8 +141,6 @@ useEffect(() => {
   const fetchCategories = async () => {
     try {
       const data = await getAllCategories();
-      console.log("CATEGORIES FROM BACKEND =>", data);
-
       if (!data?.success) {
         throw new Error(data?.message || "Failed to fetch categories");
       }
@@ -213,40 +212,55 @@ useEffect(() => {
   }, [activeCategory]);
 
 
-  const handleSearch = async () => {
-    const q = searchQuery.trim();
-    if (!q) return;
+  const lastSearchedRef = useRef("");
 
-    setSearchLoading(true);
+const handleSearch = async (forcedQuery) => {
+  const q = (forcedQuery ?? searchQuery).trim();
+
+  if (!q) {
+    setIsSearching(false);
+    setSearchResults([]);
     setSearchError("");
-    setIsSearching(true);
+    return;
+  }
 
-    try {
+  // prevent duplicate same-query calls
+  if (lastSearchedRef.current === q) return;
+  lastSearchedRef.current = q;
+
+  setSearchLoading(true);
+  setSearchError("");
+  setIsSearching(true);
+
+  try {
+    let artisansFromSearch = [];
+
+    // only hit backend when query is meaningful
+    if (q.length >= 2) {
       const data = await searchServicesAndArtisans({ keyword: q });
-      if (!data?.success) throw new Error(data?.message || "Search failed");
 
-      const artisansFromSearch = data?.data?.artisans?.data || [];
-      setSearchResults(artisansFromSearch);
-      setSearchError("");
-    } catch (err) {
-      console.error("SEARCH ERROR:", err?.response?.data || err?.message);
+      if (data?.success) {
+        artisansFromSearch = data?.data?.artisans?.data || [];
+      } else {
+        throw new Error(data?.message || "Search failed");
+      }
+    }
 
-      const apiMsg =
-        err?.response?.data?.message ||
-        err?.response?.data?.errors?.[0]?.message ||
-        err?.message;
-
-      // fallback to local filtering
+    // fallback/local search
+    if (!artisansFromSearch.length) {
       const keyword = q.toLowerCase();
-      const localFiltered = (apiArtisans || []).filter((a) => {
+
+      artisansFromSearch = (apiArtisans || []).filter((a) => {
         const fullName = (a.fullName || "").toLowerCase();
         const businessName = (a.businessName || "").toLowerCase();
         const location = (a.location || a.city || a.state || "").toLowerCase();
+
         const skillsArr = Array.isArray(a.skills)
           ? a.skills
           : Array.isArray(a.skillSet)
           ? a.skillSet
           : [];
+
         const skillsText = skillsArr.join(" ").toLowerCase();
 
         return (
@@ -256,14 +270,98 @@ useEffect(() => {
           skillsText.includes(keyword)
         );
       });
-
-      setSearchResults(localFiltered);
-      if (localFiltered.length === 0) setSearchError(apiMsg || "Search service is temporarily unavailable. Try again.");
-      else setSearchError("");
-    } finally {
-      setSearchLoading(false);
     }
-  };
+
+    setSearchResults(artisansFromSearch);
+    setSearchError("");
+  } catch (err) {
+    const keyword = q.toLowerCase();
+
+    const localFiltered = (apiArtisans || []).filter((a) => {
+      const fullName = (a.fullName || "").toLowerCase();
+      const businessName = (a.businessName || "").toLowerCase();
+      const location = (a.location || a.city || a.state || "").toLowerCase();
+
+      const skillsArr = Array.isArray(a.skills)
+        ? a.skills
+        : Array.isArray(a.skillSet)
+        ? a.skillSet
+        : [];
+
+      const skillsText = skillsArr.join(" ").toLowerCase();
+
+      return (
+        fullName.includes(keyword) ||
+        businessName.includes(keyword) ||
+        location.includes(keyword) ||
+        skillsText.includes(keyword)
+      );
+    });
+
+    setSearchResults(localFiltered);
+
+    if (localFiltered.length === 0) {
+      setSearchError("No artisans found.");
+    } else {
+      setSearchError("");
+    }
+  } finally {
+    setSearchLoading(false);
+  }
+};
+
+// On keypress trigger which works nice but backend cant handle the load right now, so switched to search button trigger for now. Can easily switch back when backend is ready.
+  // const handleSearch = async () => {
+  //   const q = searchQuery.trim();
+  //   if (!q) return;
+
+  //   setSearchLoading(true);
+  //   setSearchError("");
+  //   setIsSearching(true);
+
+  //   try {
+  //     const data = await searchServicesAndArtisans({ keyword: q });
+  //     if (!data?.success) throw new Error(data?.message || "Search failed");
+
+  //     const artisansFromSearch = data?.data?.artisans?.data || [];
+  //     setSearchResults(artisansFromSearch);
+  //     setSearchError("");
+  //   } catch (err) {
+  //     console.error("SEARCH ERROR:", err?.response?.data || err?.message);
+
+  //     const apiMsg =
+  //       err?.response?.data?.message ||
+  //       err?.response?.data?.errors?.[0]?.message ||
+  //       err?.message;
+
+  //     // fallback to local filtering
+  //     const keyword = q.toLowerCase();
+  //     const localFiltered = (apiArtisans || []).filter((a) => {
+  //       const fullName = (a.fullName || "").toLowerCase();
+  //       const businessName = (a.businessName || "").toLowerCase();
+  //       const location = (a.location || a.city || a.state || "").toLowerCase();
+  //       const skillsArr = Array.isArray(a.skills)
+  //         ? a.skills
+  //         : Array.isArray(a.skillSet)
+  //         ? a.skillSet
+  //         : [];
+  //       const skillsText = skillsArr.join(" ").toLowerCase();
+
+  //       return (
+  //         fullName.includes(keyword) ||
+  //         businessName.includes(keyword) ||
+  //         location.includes(keyword) ||
+  //         skillsText.includes(keyword)
+  //       );
+  //     });
+
+  //     setSearchResults(localFiltered);
+  //     if (localFiltered.length === 0) setSearchError(apiMsg || "Search service is temporarily unavailable. Try again.");
+  //     else setSearchError("");
+  //   } finally {
+  //     setSearchLoading(false);
+  //   }
+  // };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -272,9 +370,22 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // This effect is now triggered by debouncedQuery changes, which only updates after the user stops typing for 300ms. This way we avoid hitting the backend on every keystroke and only search when the user has paused typing.
+  // useEffect(() => {
+  //   if (debouncedQuery) handleSearch();
+  // }, [debouncedQuery]);
+
   useEffect(() => {
-    if (debouncedQuery) handleSearch();
-  }, [debouncedQuery]);
+  if (!debouncedQuery) return;
+
+  // avoid backend call for one-letter typing
+  if (debouncedQuery.length < 2) {
+    lastSearchedRef.current = "";
+    return;
+  }
+
+  handleSearch(debouncedQuery);
+}, [debouncedQuery, apiArtisans]);
 
   useEffect(() => {
     if (isSearching && !searchLoading && searchSectionRef.current) {
@@ -444,6 +555,198 @@ const mappedSearchResults = (searchResults || []).map((artisan) => ({
     return () => clearInterval(counter);
   }, [mappedSearchResults.length]);
 
+const enableManualScroll = (ref, speed = 0.35) => {
+  if (!ref.current) return;
+
+  const el = ref.current;
+
+  // start from middle for smooth infinite loop
+requestAnimationFrame(() => {
+  const maxScroll = el.scrollWidth - el.clientWidth;
+  if (maxScroll > 0) {
+    el.scrollLeft = maxScroll / 2;
+  }
+});
+
+  let isPointerDown = false;
+  let startX = 0;
+  let startScrollLeft = 0;
+  let velocity = 0;
+  let momentumId = null;
+  let autoScrollId = null;
+  let lastX = 0;
+  let lastTime = 0;
+  let isHovered = false;
+
+  const stopMomentum = () => {
+    if (momentumId) {
+      cancelAnimationFrame(momentumId);
+      momentumId = null;
+    }
+  };
+
+  const getMaxScroll = () => {
+    return Math.max(0, el.scrollWidth - el.clientWidth);
+  };
+
+  const normalizeInfiniteScroll = () => {
+    const maxScroll = getMaxScroll();
+    if (maxScroll <= 0) return;
+
+    const half = maxScroll / 2;
+
+if (el.scrollLeft >= half * 1.5) {
+  el.scrollLeft -= half;
+} else if (el.scrollLeft <= half * 0.5) {
+  el.scrollLeft += half;
+}
+  };
+
+  const runMomentum = () => {
+    stopMomentum();
+
+    const step = () => {
+      if (Math.abs(velocity) < 0.1) {
+        velocity = 0;
+        return;
+      }
+
+      el.scrollLeft -= velocity;
+      normalizeInfiniteScroll();
+
+      velocity *= 0.95;
+      momentumId = requestAnimationFrame(step);
+    };
+
+    momentumId = requestAnimationFrame(step);
+  };
+
+  const autoScroll = () => {
+    if (isPointerDown || isHovered) {
+      autoScrollId = requestAnimationFrame(autoScroll);
+      return;
+    }
+
+    el.scrollLeft += speed;
+    normalizeInfiniteScroll();
+    autoScrollId = requestAnimationFrame(autoScroll);
+  };
+
+  const pointerDown = (clientX) => {
+    isPointerDown = true;
+    stopMomentum();
+    startX = clientX;
+    startScrollLeft = el.scrollLeft;
+    lastX = clientX;
+    lastTime = Date.now();
+    velocity = 0;
+    el.style.cursor = "grabbing";
+    el.style.scrollBehavior = "auto";
+  };
+
+  const pointerMove = (clientX) => {
+    if (!isPointerDown) return;
+
+    const walk = clientX - startX;
+    el.scrollLeft = startScrollLeft - walk;
+
+    const now = Date.now();
+    const dx = clientX - lastX;
+    const dt = now - lastTime || 1;
+
+    velocity = dx / dt * 12;
+
+    lastX = clientX;
+    lastTime = now;
+
+    normalizeInfiniteScroll();
+  };
+
+  const pointerUp = () => {
+    if (!isPointerDown) return;
+    isPointerDown = false;
+    el.style.cursor = "grab";
+    runMomentum();
+  };
+
+  const onMouseDown = (e) => pointerDown(e.pageX - el.offsetLeft);
+
+  const onMouseMove = (e) => {
+    if (!isPointerDown) return;
+    e.preventDefault();
+    pointerMove(e.pageX - el.offsetLeft);
+  };
+
+  const onTouchStart = (e) => {
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    pointerDown(touch.pageX - el.offsetLeft);
+  };
+
+  const onTouchMove = (e) => {
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    pointerMove(touch.pageX - el.offsetLeft);
+  };
+
+  const onWheel = (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      el.scrollLeft += e.deltaY;
+    } else {
+      el.scrollLeft += e.deltaX;
+    }
+    normalizeInfiniteScroll();
+  };
+
+  const onMouseEnter = () => {
+    isHovered = true;
+  };
+
+  const onMouseLeave = () => {
+    isHovered = false;
+    pointerUp();
+  };
+
+  el.style.cursor = "grab";
+
+  el.addEventListener("mousedown", onMouseDown);
+  el.addEventListener("mousemove", onMouseMove);
+  el.addEventListener("mouseup", pointerUp);
+  el.addEventListener("mouseleave", onMouseLeave);
+  el.addEventListener("mouseenter", onMouseEnter);
+  el.addEventListener("touchstart", onTouchStart, { passive: true });
+  el.addEventListener("touchmove", onTouchMove, { passive: true });
+  el.addEventListener("touchend", pointerUp);
+  el.addEventListener("wheel", onWheel, { passive: true });
+
+  autoScrollId = requestAnimationFrame(autoScroll);
+
+  return () => {
+    stopMomentum();
+    if (autoScrollId) cancelAnimationFrame(autoScrollId);
+
+    el.removeEventListener("mousedown", onMouseDown);
+    el.removeEventListener("mousemove", onMouseMove);
+    el.removeEventListener("mouseup", pointerUp);
+    el.removeEventListener("mouseleave", onMouseLeave);
+    el.removeEventListener("mouseenter", onMouseEnter);
+    el.removeEventListener("touchstart", onTouchStart);
+    el.removeEventListener("touchmove", onTouchMove);
+    el.removeEventListener("touchend", pointerUp);
+    el.removeEventListener("wheel", onWheel);
+  };
+};
+
+useEffect(() => {
+  const cleanupOne = enableManualScroll(marqueeOneRef, 0.35);
+  const cleanupTwo = enableManualScroll(marqueeTwoRef, 0.32);
+
+  return () => {
+    cleanupOne && cleanupOne();
+    cleanupTwo && cleanupTwo();
+  };
+}, [mappedApiArtisans.length, mappedNewArtisans.length]);
+
 
   return (
     <div className="w-full">
@@ -460,11 +763,18 @@ const mappedSearchResults = (searchResults || []).map((artisan) => ({
             Connect with skilled and trusted professionals in minutes.
           </p>
 
-          <form
+{/* this form is now controlled by the search button to reduce load on backend, but can easily switch back to onChange trigger when backend is ready to handle it. Just uncomment the onSubmit handler and the useEffect that listens to debouncedQuery changes, and comment out the current onSubmit handler. */}
+          {/* <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSearch();
-            }}
+            }} */}
+            <form
+  onSubmit={(e) => {
+    e.preventDefault();
+    lastSearchedRef.current = "";
+    handleSearch(searchQuery);
+  }}
             className="flex w-full max-w-2xl mx-auto bg-white rounded-lg overflow-hidden shadow-lg"
           >
             <div className="flex items-center flex-1 px-4">
@@ -480,10 +790,11 @@ const mappedSearchResults = (searchResults || []).map((artisan) => ({
                   const value = e.target.value;
                   setSearchQuery(value);
                   if (!value.trim()) {
-                    setIsSearching(false);
-                    setSearchResults([]);
-                    setSearchError("");
-                  }
+  lastSearchedRef.current = "";
+  setIsSearching(false);
+  setSearchResults([]);
+  setSearchError("");
+}
                 }}
                 className="w-full py-3 text-sm text-black focus:outline-none"
               />
@@ -546,10 +857,14 @@ const mappedSearchResults = (searchResults || []).map((artisan) => ({
           >
             <div className="relative">
               <img
-                src={artisan.image}
-                alt={artisan.name}
-                className="w-full h-60 object-cover rounded-lg"
-              />
+  src={artisan.image}
+  alt={artisan.name}
+  className="w-full h-60 object-cover object-top rounded-lg"
+  onDragStart={(e) => e.preventDefault()}
+  onError={(e) => {
+    e.currentTarget.src = johnOne;
+  }}
+/>
             </div>
 
             <div className="mt-4">
@@ -612,24 +927,46 @@ const mappedSearchResults = (searchResults || []).map((artisan) => ({
       Top Artisans near you
     </h2>
 
+<div className="relative">
+  <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-12 bg-gradient-to-r from-white to-transparent" />
+  <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-12 bg-gradient-to-l from-white to-transparent" />
 
-    <div className="relative w-full overflow-hidden">
-<div className="flex min-w-[200%] gap-8 marquee-one">
+<div
+  ref={marqueeOneRef}
+  className="relative w-full overflow-x-auto overflow-y-hidden cursor-grab select-none [scrollbar-width:none] [-ms-overflow-style:none]"
+  style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+>
+
+<div className="flex min-w-[200%] gap-8">
 
 
   {[...Array(2)].map((_, loopIndex) => (
     <React.Fragment key={loopIndex}>
       {loadingArtisans ? (
-        <p className="text-sm text-gray-500 px-4">
-          Loading artisans...
-        </p>
+       <div className="flex gap-8">
+  {[...Array(3)].map((_, i) => (
+    <div
+      key={i}
+      className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm animate-pulse"
+    >
+      <div className="w-full h-60 bg-gray-200 rounded-lg mb-4" />
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
+      <div className="h-3 bg-gray-200 rounded w-1/2 mb-3" />
+      <div className="flex gap-2 mb-4">
+        <div className="h-6 w-16 bg-gray-200 rounded-md" />
+        <div className="h-6 w-16 bg-gray-200 rounded-md" />
+      </div>
+      <div className="h-10 bg-gray-200 rounded-md" />
+    </div>
+  ))}
+</div>
       ) : (
         mappedApiArtisans.slice(0, 6).map((artisan) => (
           <div
   key={`${loopIndex}-${artisan.id}`}
 onMouseEnter={() => setHoveredTopArtisan(artisan.id)}
 onMouseLeave={() => setHoveredTopArtisan(null)}
-  className={`min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer ${
+  className={`min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-lg ${
     hoveredTopArtisan && hoveredTopArtisan !== artisan.id
  ? "opacity-30 grayscale" : ""
   }`}
@@ -640,6 +977,7 @@ onMouseLeave={() => setHoveredTopArtisan(null)}
   src={artisan.image}
   alt={artisan.name}
   className="w-full h-60 object-cover rounded-lg"
+  onDragStart={(e) => e.preventDefault()}
   onError={(e) => {
     e.currentTarget.src = johnOne;
   }}
@@ -677,14 +1015,14 @@ onMouseLeave={() => setHoveredTopArtisan(null)}
               </div>
 
               <div className="flex gap-2 mb-4">
-                {artisan.skills.slice(0, 3).map((skill) => (
-                  <span
-                    key={skill}
-                    className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
-                  >
-                    {skill}
-                  </span>
-                ))}
+                {(artisan.skills || []).slice(0, 3).map((skill, i) => (
+  <span
+    key={`${skill}-${i}`}
+    className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
+  >
+    {skill}
+  </span>
+))}
               </div>
 
               <button
@@ -705,6 +1043,7 @@ onMouseLeave={() => setHoveredTopArtisan(null)}
 </div>
 
     </div>
+    </div>
   </div>
 </section>
 
@@ -716,22 +1055,45 @@ onMouseLeave={() => setHoveredTopArtisan(null)}
     </h2>
 
 
-    <div className="relative w-full overflow-hidden">
-      <div className="flex min-w-[200%] gap-8 marquee-two">
+<div className="relative">
+  <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-12 bg-gradient-to-r from-white to-transparent" />
+  <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-12 bg-gradient-to-l from-white to-transparent" />
+
+  <div
+    ref={marqueeTwoRef}
+    className="relative w-full overflow-x-auto overflow-y-hidden cursor-grab select-none [scrollbar-width:none] [-ms-overflow-style:none]"
+    style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+  >
+
+      <div className="flex min-w-[200%] gap-8">
 
         {[...Array(2)].map((_, loopIndex) => (
           <React.Fragment key={loopIndex}>
             {loadingArtisans ? (
-              <p className="text-sm text-gray-500 px-4">
-                Loading artisans...
-              </p>
-            ) : (
+  <div className="flex gap-8">
+    {[...Array(3)].map((_, i) => (
+      <div
+        key={i}
+        className="min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm animate-pulse"
+      >
+        <div className="w-full h-60 bg-gray-200 rounded-lg mb-4" />
+        <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
+        <div className="h-3 bg-gray-200 rounded w-1/2 mb-3" />
+        <div className="flex gap-2 mb-4">
+          <div className="h-6 w-16 bg-gray-200 rounded-md" />
+          <div className="h-6 w-16 bg-gray-200 rounded-md" />
+        </div>
+        <div className="h-10 bg-gray-200 rounded-md" />
+      </div>
+    ))}
+  </div>
+) : (
               mappedNewArtisans.map((artisan) => (
                 <div
   key={`${loopIndex}-${artisan.id}`}
 onMouseEnter={() => setHoveredNewArtisan(artisan.id)}
 onMouseLeave={() => setHoveredNewArtisan(null)}
-  className={`min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer ${
+  className={`min-w-[320px] bg-white border border-[#3E83C4] rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-lg ${
     hoveredNewArtisan && hoveredNewArtisan !== artisan.id
  ? "opacity-30 grayscale" : ""
   }`}
@@ -742,6 +1104,10 @@ onMouseLeave={() => setHoveredNewArtisan(null)}
                       src={artisan.image}
                       alt={artisan.name}
                       className="w-full h-60 object-cover rounded-lg"
+                      onDragStart={(e) => e.preventDefault()}
+  onError={(e) => {
+    e.currentTarget.src = johnOne;
+  }}
                     />
                     <span className="absolute top-3 right-3 bg-[#3E83C4] text-white text-xs px-2 py-1 rounded-full">
                       New
@@ -774,16 +1140,14 @@ onMouseLeave={() => setHoveredNewArtisan(null)}
                     </div>
 
                     <div className="flex gap-2 mb-4 flex-wrap">
-                      {(artisan.skills || [])
-                        .slice(0, 3)
-                        .map((skill, i) => (
-                          <span
-                            key={`${skill}-${i}`}
-                            className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
-                          >
-                            {skill}
-                          </span>
-                        ))}
+                      {(artisan.skills || []).slice(0, 3).map((skill, i) => (
+  <span
+    key={`${skill}-${i}`}
+    className="text-xs text-[#3E83C4] bg-[#C1DAF3] px-2 py-1 rounded-md"
+  >
+    {skill}
+  </span>
+))}
                     </div>
 
                     <button
@@ -801,6 +1165,7 @@ onMouseLeave={() => setHoveredNewArtisan(null)}
           </React.Fragment>
         ))}
       </div>
+    </div>
     </div>
   </div>
 </section>
@@ -976,9 +1341,12 @@ onMouseLeave={() => setHoveredNewArtisan(null)}
     </p>
 
     <div className="mt-10 flex items-center justify-center gap-4 flex-wrap">
-      <button className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-7 py-3 rounded-md font-medium transition cursor-pointer">
-        Chat With Us
-      </button>
+     <button
+  onClick={() => setShowChatModal(true)}
+  className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-7 py-3 rounded-md font-medium transition cursor-pointer"
+>
+  Chat With Us
+</button>
       {/* <button onClick={() => navigate("/chat-with-us")} className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-7 py-3 rounded-md font-medium transition cursor-pointer">
         Chat With Us
       </button> */}
@@ -1012,6 +1380,42 @@ onMouseLeave={() => setHoveredNewArtisan(null)}
       <div className="fixed bottom-4 right-4 z-[999999] bg-black text-white text-xs p-2 rounded">
   welcome:{String(showWelcomeBonus)} refer:{String(showReferEarn)}
 </div>
+{showChatModal && (
+  <div
+  onClick={() => setShowChatModal(false)}
+  className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+>
+    <div
+  onClick={(e) => e.stopPropagation()}
+  className="bg-white rounded-xl p-8 w-[100%] max-w-md text-center shadow-xl"
+>
+      
+      {/* Spinner */}
+      <div className="flex justify-center mb-6">
+        <div className="w-13 h-13 border-4 border-[#3E83C4] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+
+      {/* Title */}
+      <h2 className="text-2xl font-semibold text-black mb-2">
+        Chat! ...Coming Soon 💬
+      </h2>
+
+      {/* Message */}
+      <p className="text-sm text-gray-500 mb-6">
+        We're currently working on our chat feature to give you the best experience.
+        Please try again shortly.
+      </p>
+
+      {/* Button */}
+      <button
+        onClick={() => setShowChatModal(false)}
+        className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white px-6 py-2 rounded-md text-lg cursor-pointer"
+      >
+        Please try again Later
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };

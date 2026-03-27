@@ -97,6 +97,8 @@ import PublicOnlyRoute from "./routes/PublicOnlyRoute";
 import VerifyEmail from "./components/Sign-Auth/VerifyEmail";
 import ArtisanProfile from "./components/Client-Screens/ArtisanProfile";
 import TrackRepairA from "./components/Client-Screens/TrackRepairA";
+import RateService from "./components/Client-Screens/RateService";
+import ArtisanCertificates from "./components/Artisan Pages/ArtisanCertificates";
 
 const App = () => {
   const router = createBrowserRouter(
@@ -167,6 +169,7 @@ const App = () => {
             <Route path="refer-earn" element={<ReferEarn />} />
             <Route path="upload-item" element={<Additem />} />
             <Route path="view-track-repair" element={<ViewTrackRepair />} />
+            <Route path ="rate-service" element={<RateService />} />
             <Route path="referral" element={<ReferalPage />} />
             <Route path="repair" element={<RepairHistory />} />
             <Route path="view" element={<ViewRepair />} />
@@ -188,6 +191,7 @@ const App = () => {
             <Route path="wallet" element={<Wallet />} />
             <Route path="profile" element={<Profile />} />
             <Route path="verification" element={<Verification />} />
+            <Route path="certificates" element={<ArtisanCertificates />} />
             <Route path="settings" element={<Settings />} />
             <Route path="help" element={<Help />} />
             <Route path="accept-request" element={<AcceptRequest />} />

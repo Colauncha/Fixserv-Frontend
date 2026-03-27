@@ -45,7 +45,7 @@ const Wallet = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const walletId = user?.id;
+  const walletId = user?.id || user?._id;
 
   const [screen, setScreen] = useState("home");
 
@@ -71,21 +71,32 @@ const Wallet = () => {
   const [accountName, setAccountName] = useState("");
   const [withdrawing, setWithdrawing] = useState(false);
 
+  const [showBankDropdown, setShowBankDropdown] = useState(false);
+const [bankSearch, setBankSearch] = useState("");
+
   const [banks, setBanks] = useState([]);
   const [banksLoading, setBanksLoading] = useState(false);
 
   const [lastWithdrawalResult, setLastWithdrawalResult] = useState(null);
+  const [submittedWithdrawal, setSubmittedWithdrawal] = useState(null);
+  const [withdrawalError, setWithdrawalError] = useState("");
 
   const fee = 50;
   const withdrawalAmount = Number(amount || 0);
+  const totalDebit = withdrawalAmount;
   const netAmount = Math.max(withdrawalAmount - fee, 0);
+  const availableForWithdrawal = Math.max(Number(walletBalance || 0), 0);
+
+  const hasSufficientBalance =
+    withdrawalAmount > 0 && totalDebit <= availableForWithdrawal;
 
   const canWithdraw =
     withdrawalAmount > 0 &&
     accountNumber.length === 10 &&
-    bankCode &&
-    accountName &&
+    !!bankCode &&
+    !!accountName &&
     pin?.length >= 4 &&
+    hasSufficientBalance &&
     !withdrawing;
 
   const fetchBalance = async () => {
@@ -137,18 +148,38 @@ const Wallet = () => {
     }
   };
 
-  const fetchBanks = async () => {
-    try {
-      setBanksLoading(true);
-      const res = await getWithdrawalBanks();
-      setBanks(res?.data?.data || []);
-    } catch (err) {
-      console.error("Failed to fetch banks:", err);
-      setBanks([]);
-    } finally {
-      setBanksLoading(false);
-    }
-  };
+const fetchBanks = async () => {
+  try {
+    setBanksLoading(true);
+    const res = await getWithdrawalBanks();
+
+    const rawBanks = Array.isArray(res?.data?.data) ? res.data.data : [];
+
+    const normalizedBanks = rawBanks.map((bank, index) => ({
+      id: bank?.bank_id || bank?.id || bank?._id || `bank-${index}`,
+      code:
+        bank?.bank_code ||
+        bank?.code ||
+        bank?.bankCode ||
+        bank?.value ||
+        "",
+      name:
+        bank?.bank_name ||
+        bank?.name ||
+        bank?.bankName ||
+        bank?.label ||
+        bank?.title ||
+        `Bank ${index + 1}`,
+    }));
+
+    setBanks(normalizedBanks);
+  } catch (err) {
+    console.error("Failed to fetch banks:", err);
+    setBanks([]);
+  } finally {
+    setBanksLoading(false);
+  }
+};
 
   useEffect(() => {
     if (!walletId) return;
@@ -200,12 +231,29 @@ const Wallet = () => {
     });
   }, [withdrawals]);
 
+const filteredBanks = useMemo(() => {
+  const keyword = bankSearch.trim().toLowerCase();
+
+  if (!keyword) return banks;
+
+  return banks.filter((bank) =>
+    String(bank?.name || "")
+      .toLowerCase()
+      .includes(keyword)
+  );
+}, [banks, bankSearch]);
+
   const handleResolveAccount = async () => {
     if (accountNumber.length !== 10 || !bankCode) return;
 
     try {
       const res = await resolveAccount({ accountNumber, bankCode });
-      setAccountName(res?.data?.accountName || res?.accountName || "");
+setAccountName(
+  res?.data?.data?.accountName ||
+    res?.data?.accountName ||
+    res?.accountName ||
+    ""
+);
     } catch (err) {
       setAccountName("");
       console.error("Account resolution failed:", err);
@@ -221,20 +269,76 @@ const Wallet = () => {
   };
 
   const handleWithdraw = async () => {
-    if (!canWithdraw || withdrawing) return;
+    if (withdrawing) return;
+
+    setWithdrawalError("");
+
+    setLastWithdrawalResult(null);
+setSubmittedWithdrawal(null);
+
+    if (!walletId) {
+      setWithdrawalError("User ID not found.");
+      setScreen("failed");
+      return;
+    }
+
+    if (withdrawalAmount <= 0) {
+      setWithdrawalError("Enter a valid withdrawal amount.");
+      return;
+    }
+
+    if (!hasSufficientBalance) {
+      setWithdrawalError("Insufficient wallet balance.");
+      return;
+    }
+
+    if (accountNumber.length !== 10) {
+      setWithdrawalError("Enter a valid 10-digit account number.");
+      return;
+    }
+
+    if (!bankCode) {
+      setWithdrawalError("Select a bank.");
+      return;
+    }
+
+    if (!accountName) {
+      setWithdrawalError("Account name could not be resolved.");
+      return;
+    }
+
+    if (!pin || pin.length < 4) {
+      setWithdrawalError("Enter your transaction PIN.");
+      return;
+    }
 
     try {
       setWithdrawing(true);
 
-      const res = await initiateWithdrawal({
+      const withdrawalPayload = {
         userId: walletId,
         amount: withdrawalAmount,
         accountNumber,
         bankCode,
         pin,
+      };
+
+      setSubmittedWithdrawal({
+        amount: withdrawalAmount,
+        accountNumber,
+        bankCode,
+        accountName,
+        date: new Date().toISOString(),
       });
 
-      setLastWithdrawalResult(res?.data || null);
+      const res = await initiateWithdrawal(withdrawalPayload);
+const result =
+  res?.data?.data?.withdrawal ||
+  res?.data?.data ||
+  res?.data ||
+  {};
+
+      setLastWithdrawalResult(result);
 
       await fetchBalance();
       await fetchWithdrawals(1);
@@ -244,6 +348,14 @@ const Wallet = () => {
       setScreen("success");
     } catch (err) {
       console.error("Withdrawal failed:", err);
+
+      setWithdrawalError(
+  err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.response?.data?.data?.message ||
+    "We could not process your withdrawal. Please try again."
+);
+
       setScreen("failed");
     } finally {
       setWithdrawing(false);
@@ -255,6 +367,23 @@ const Wallet = () => {
       handleResolveAccount();
     }
   }, [accountNumber, bankCode]);
+  
+  useEffect(() => {
+  if (bankCode) {
+    setShowBankDropdown(false);
+  }
+}, [bankCode]);
+
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (!event.target.closest(".bank-dropdown-wrapper")) {
+      setShowBankDropdown(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
 
   return (
     <div className="w-full min-h-screen px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-[#f7f7f7]">
@@ -295,7 +424,10 @@ const Wallet = () => {
                 </div>
 
                 <button
-                  onClick={() => setScreen("withdraw")}
+                  onClick={() => {
+                    setWithdrawalError("");
+                    setScreen("withdraw");
+                  }}
                   className="w-full bg-[#3E83C4] cursor-pointer text-white py-3 rounded-lg text-sm"
                 >
                   Withdraw Funds
@@ -378,6 +510,12 @@ const Wallet = () => {
               <div className="bg-white p-5 sm:p-6 rounded-xl space-y-4">
                 <h3 className="font-semibold">Make a withdrawal</h3>
 
+                {withdrawalError && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3">
+                    {withdrawalError}
+                  </div>
+                )}
+
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Amount to withdraw</p>
                   <input
@@ -387,50 +525,90 @@ const Wallet = () => {
                     onChange={(e) => setAmount(e.target.value)}
                     className="w-full border border-blue-200 px-4 py-3 rounded-lg text-sm"
                   />
+                  {withdrawalAmount > 0 && !hasSufficientBalance && (
+                    <p className="text-red-500 text-sm mt-2">
+                      Insufficient balance for this withdrawal.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <input
-                    placeholder="Account Number"
-                    value={accountNumber}
-                    onChange={(e) =>
-                      setAccountNumber(
-                        e.target.value.replace(/\D/g, "").slice(0, 10)
-                      )
-                    }
+  placeholder="Account Number"
+  value={accountNumber}
+  onChange={(e) => {
+    setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10));
+    setAccountName("");
+  }}
                     onBlur={handleResolveAccount}
                     className="w-full border border-blue-200 px-4 py-2 rounded-lg text-sm"
                   />
 
-                  <select
-                    value={bankCode}
-                    onChange={(e) => {
-                      setBankCode(e.target.value);
-                      setAccountName("");
-                    }}
-                    className="w-full border border-blue-200 px-4 py-2 rounded-lg text-sm"
-                  >
-                    <option value="">
-                      {banksLoading ? "Loading banks..." : "Select Bank"}
-                    </option>
+{/* <div className="relative"> */}
+<div className="relative bank-dropdown-wrapper">
+  <button
+    type="button"
+    onClick={() => setShowBankDropdown((prev) => !prev)}
+    className="w-full border border-blue-200 px-4 py-3 rounded-lg text-sm bg-white text-left flex items-center justify-between"
+  >
+    <span className={bankCode ? "text-black" : "text-gray-400"}>
+      {bankCode
+        ? banks.find((bank) => bank.code === bankCode)?.name || "Selected Bank"
+        : banksLoading
+        ? "Loading banks..."
+        : "Select Bank"}
+    </span>
+    <span className="text-black">▼</span>
+  </button>
 
-                    {banks.map((bank, index) => (
-                      <option
-                        key={`${bank.bank_id || "bank"}-${
-                          bank.bank_code || "code"
-                        }-${index}`}
-                        value={bank.bank_code}
-                      >
-                        {bank.bank_name}
-                      </option>
-                    ))}
-                  </select>
+  {showBankDropdown && (
+    <div className="absolute left-0 right-0 z-[9999] mt-2 bg-white border border-blue-200 rounded-lg shadow-lg overflow-hidden">
+      <div className="p-2 border-b border-gray-100 bg-white">
+        <input
+          type="text"
+          placeholder="Search bank..."
+          value={bankSearch}
+          onChange={(e) => setBankSearch(e.target.value)}
+          className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm text-black bg-white outline-none"
+        />
+      </div>
+
+      <div className="max-h-60 overflow-y-auto bg-white">
+        {banksLoading ? (
+          <p className="px-4 py-3 text-sm text-black">Loading banks...</p>
+        ) : filteredBanks.length ? (
+          filteredBanks.map((bank) => (
+            <button
+              type="button"
+              key={bank.id}
+              onClick={() => {
+                setBankCode(bank.code);
+                setAccountName("");
+                setShowBankDropdown(false);
+                setBankSearch("");
+              }}
+              className="block w-full text-left px-4 py-3 text-sm text-black bg-white hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+            >
+              {bank.name}
+            </button>
+          ))
+        ) : (
+          <p className="px-4 py-3 text-sm text-black">No bank found</p>
+        )}
+      </div>
+    </div>
+  )}
+
+  <p className="text-xs text-gray-500 mt-1">
+    {banksLoading ? "Loading..." : `${banks.length} banks loaded`}
+  </p>
+</div>
 
                   <input
                     type="password"
                     placeholder="Enter PIN"
                     value={pin}
-                    onChange={(e) => setPin(e.target.value)}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
                     className="w-full border border-blue-200 px-4 py-2 rounded-lg text-sm"
                   />
 
@@ -589,24 +767,37 @@ const Wallet = () => {
               <div className="flex justify-between gap-4">
                 <span>Amount Withdrawn</span>
                 <span className="text-right">
-                  {formatMoney(lastWithdrawalResult?.amount || withdrawalAmount)}
+                  {formatMoney(
+                    lastWithdrawalResult?.amount || submittedWithdrawal?.amount || 0
+                  )}
                 </span>
               </div>
               <div className="flex justify-between gap-4">
                 <span>Destination Account</span>
                 <span className="text-right break-words">
-                  {lastWithdrawalResult?.accountName || accountName || "—"}
+                  {lastWithdrawalResult?.accountName ||
+                    submittedWithdrawal?.accountName ||
+                    "—"}
                 </span>
               </div>
               <div className="flex justify-between gap-4">
                 <span>Transaction ID</span>
                 <span className="text-right break-words">
-                  {lastWithdrawalResult?.withdrawalId || "—"}
+                  {lastWithdrawalResult?.withdrawalId ||
+                    lastWithdrawalResult?.reference ||
+                    lastWithdrawalResult?.id ||
+                    "—"}
                 </span>
               </div>
               <div className="flex justify-between gap-4">
                 <span>Date & Time</span>
-                <span className="text-right">{formatDateTime(new Date())}</span>
+                <span className="text-right">
+                  {formatDateTime(
+                    lastWithdrawalResult?.createdAt ||
+                      submittedWithdrawal?.date ||
+                      new Date()
+                  )}
+                </span>
               </div>
             </div>
 
@@ -646,8 +837,17 @@ const Wallet = () => {
             <h2 className="text-xl font-semibold">Withdrawal Unsuccessful</h2>
 
             <p className="text-gray-500 text-sm">
-              We couldn't process your withdrawal of <b>{formatMoney(netAmount)}</b>.
-              Please check your bank details or try again.
+              {withdrawalError || (
+                <>
+                  We couldn't process your withdrawal of{" "}
+                  <b>
+                    {formatMoney(
+                      submittedWithdrawal?.amount || withdrawalAmount || 0
+                    )}
+                  </b>
+                  . Please check your bank details or try again.
+                </>
+              )}
             </p>
 
             <div className="bg-gray-50 rounded-lg p-4 text-left text-sm space-y-2">

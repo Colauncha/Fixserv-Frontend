@@ -5,16 +5,23 @@ const AuthContext = createContext(null);
 const normalizeUser = (u) => {
   if (!u) return null;
 
-
-  const user = u?.data?.user ?? u?.user ?? u;
+  const root = u?.data ?? u;
+  const user = root?.user ?? root;
 
   const id = user?.id || user?._id;
 
   return {
     ...user,
-    id, 
+    id,
+
+    // IMPORTANT: ensure referralCode is preserved
+    referralCode:
+      user?.referralCode ||
+      root?.referralCode ||
+      "",
   };
 };
+
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

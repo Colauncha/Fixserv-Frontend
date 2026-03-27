@@ -12,6 +12,8 @@ import profile from "../../assets/Artisan Images/profile.png";
 import veri from "../../assets/Artisan Images/verification.png";
 import adebayoImg from "../../assets/Artisan Images/adebayo.png";
 import log from "../../assets/Artisan Images/log.png";
+import cert from "../../assets/Artisan Images/cert.png"
+// import cert from "../../assets/Artisan Images/certs.png"
 
 import { useAuth } from "../../context/AuthContext";
 
@@ -39,16 +41,12 @@ const navClass = ({ isActive }) =>
 
   const menuItems = [
     { to: "/artisan", label: "Dashboard", icon: dashboard, end: true },
-    { to: "/artisan/jobs", label: "Jobs", icon: job },
-    { to: "/artisan/repair-history", label: "Repair History", icon: noti },
-    {
-      to: "/artisan/accept-request",
-      label: "Accept Job / Decline Job",
-      icon: accept,
-    },
+    { to: "/artisan/jobs", label: "Jobs Board", icon: job },
+    
     { to: "/artisan/wallet", label: "Wallet", icon: wallet },
     { to: "/artisan/profile", label: "Profile", icon: profile },
     { to: "/artisan/verification", label: "Verification", icon: veri },
+    {to: "/artisan/certificates", label: "Certificates", icon: cert },
   ];
 
   return (
@@ -116,14 +114,16 @@ const navClass = ({ isActive }) =>
               >
                 {({ isActive }) => (
                   <>
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                       <img
-                        src={item.icon}
-                        alt=""
-                        className={`w-4 h-4 object-contain shrink-0 ${
-                          isActive ? "opacity-100" : "opacity-80"
-                        }`}
-                      />
+  src={item.icon}
+  alt=""
+  className={`object-contain shrink-0 ${
+    item.to === "/artisan/certificates"
+      ? "w-5 h-5"
+      : "w-4 h-4"
+  } ${isActive ? "opacity-100" : "opacity-80"}`}
+/>
                       <span className="truncate">{item.label}</span>
                     </div>
 

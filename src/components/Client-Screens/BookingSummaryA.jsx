@@ -1,19 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import profileImage from "../../assets/client images/client-home/profile.png";
-import mark from "../../assets/client images/client-home/mark.png";
-import star from "../../assets/client images/client-home/star.png";
 import master from "../../assets/client images/client-home/master.png";
 import paypal from "../../assets/client images/client-home/paypal.png";
 import visa from "../../assets/client images/client-home/visa.png";
 import wallet from "../../assets/client images/client-home/wallet.png";
 import creditImg from "../../assets/client images/client-home/creditcard.png";
-
+import { createOrder } from "../../api/order.api";
 import walletPay from "../../assets/client images/client-home/walletpay.png";
 import loading from "../../assets/client images/client-home/loading.png";
 import success from "../../assets/client images/client-home/success.png";
 import failure from "../../assets/client images/client-home/cancel.png";
+
+import { normalizeArtisan } from "../../utils/normalizeArtisan";
+
+import ArtisanCard from "./ArtisanCard";
 
 const MODAL = {
   WALLET: "wallet",
@@ -31,6 +32,8 @@ const BookingSummaryA = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
+   const [loadingServices, setLoadingServices] = useState(true);
+
   const paymentMethods = [
     { img: master, label: "Mastercard" },
     { img: paypal, label: "PayPal" },
@@ -41,7 +44,9 @@ const BookingSummaryA = () => {
   const [selected, setSelected] = useState("Mastercard");
 
   const state = location.state || {};
-  const artisan = state?.artisan || null;
+
+const rawArtisan = state?.artisan || null;
+const artisan = useMemo(() => normalizeArtisan(rawArtisan), [rawArtisan]);
 
   const extractConfirmedOrderId = (rawConfirm, fallbackId = "") => {
     return (
@@ -93,49 +98,48 @@ const BookingSummaryA = () => {
   const bookingIdToShow =
     finalBooking?.id || booking?.orderId || booking?.draftOrderId || "—";
 
-  const professionLabel =
-    artisan?.profession ||
-    artisan?.roleTitle ||
-    artisan?.categoryTitle ||
-    artisan?.specialty ||
-    (Array.isArray(artisan?.skills) && artisan.skills.length > 0
-      ? typeof artisan.skills[0] === "string"
-        ? artisan.skills[0]
-        : artisan.skills[0]?.name || artisan.skills[0]?.title || ""
-      : "") ||
-    (Array.isArray(artisan?.categories) && artisan.categories.length > 0
-      ? typeof artisan.categories[0] === "string"
-        ? artisan.categories[0]
-        : artisan.categories[0]?.name || artisan.categories[0]?.title || ""
-      : "") ||
-    "Technician";
+const artisanServices = useMemo(() => {
+  if (Array.isArray(artisan?.services) && artisan.services.length) {
+    return artisan.services;
+  }
 
-  const reviewsCount = Number(
-    artisan?.reviewsCount ||
-      (Array.isArray(artisan?.reviewsList) ? artisan.reviewsList.length : 0) ||
-      artisan?.reviews ||
-      0
-  );
+  // fallback fake service using starting price
+  if (artisan?.startingPrice) {
+    return [
+      {
+        title: "General Service",
+        price: artisan.startingPrice,
+      },
+    ];
+  }
 
-  const yearsFromCreatedAt = artisan?.createdAt
-    ? Math.max(
-        0,
-        Math.floor(
-          (Date.now() - new Date(artisan.createdAt).getTime()) /
-            (1000 * 60 * 60 * 24 * 365)
-        )
-      )
-    : null;
+  return [];
+}, [artisan]);
 
-  const categoriesToShow =
-    Array.isArray(artisan?.categories) && artisan.categories.length
-      ? artisan.categories.slice(0, 3)
-      : ["Phone", "Tablet", "Laptop"];
 
-  const artisanServices = useMemo(() => {
-    const services = Array.isArray(artisan?.services) ? artisan.services : [];
-    return services.filter((s) => s?.isActive !== false);
-  }, [artisan]);
+const startingPrice = useMemo(() => {
+  if (!artisanServices.length) return null;
+
+  const prices = artisanServices
+    .map((s) => {
+      const raw =
+        s?.price ||
+        s?.cost ||
+        s?.amount ||
+        s?.startingPrice ||
+        s?.details?.price ||
+        s?.details?.cost ||
+        s?.details?.amount;
+
+      const parsed = Number(raw);
+      return Number.isNaN(parsed) ? null : parsed;
+    })
+    .filter((p) => p !== null && p > 0);
+
+  return prices.length ? Math.min(...prices) : null;
+}, [artisanServices]);
+
+
 
   const selectedServiceFromArtisan = useMemo(() => {
     const normalizedRequired = String(booking?.serviceRequired || "")
@@ -163,14 +167,29 @@ const BookingSummaryA = () => {
     );
   }, [artisanServices, booking?.serviceRequired]);
 
-const serviceCost =
-  selectedServiceFromArtisan?.price ??
-  selectedServiceFromArtisan?.details?.price ??
-  booking?.serviceCost ??
-  artisan?.service?.price ??
-  artisan?.service?.details?.price ??
-  artisan?.startingPrice ??
-  null;
+  
+const serviceCost = useMemo(() => {
+  const selectedPrice =
+    selectedServiceFromArtisan?.price ||
+    selectedServiceFromArtisan?.cost ||
+    selectedServiceFromArtisan?.amount;
+
+  if (selectedPrice != null) return Number(selectedPrice);
+
+  if (startingPrice != null) return startingPrice;
+
+  // 🔥 ADD THIS
+  if (artisan?.startingPrice != null) {
+    return Number(artisan.startingPrice);
+  }
+
+  if (booking?.serviceCost != null) return Number(booking.serviceCost);
+
+  return null;
+}, [selectedServiceFromArtisan, startingPrice, artisan, booking]);
+
+
+
 
   const platformFee = 1000;
 
@@ -179,49 +198,74 @@ const serviceCost =
       ? Number(serviceCost) + Number(platformFee)
       : null;
 
-  const handleWalletPayment = async () => {
-    try {
-      setSubmitError("");
-      setIsSubmitting(true);
-      setActiveModal(MODAL.PROCESSING);
+const handleWalletPayment = async () => {
+  try {
+    setSubmitError("");
+    setIsSubmitting(true);
+    setActiveModal(MODAL.PROCESSING);
 
-      if (!artisan) throw new Error("Selected artisan not found.");
-      if (!booking?.orderId && !booking?.draftOrderId) {
-        throw new Error("Booking id not found. Please start again.");
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-
-      const finalOrderId = booking.orderId || booking.draftOrderId;
-
-      const finalData = {
-        id: finalOrderId,
-        orderId: finalOrderId,
-        uploadedProductId: booking.uploadedProductId,
-        deviceType: booking.deviceType,
-        brand: booking.brand,
-        model: booking.model,
-        serviceRequired: booking.serviceRequired,
-        issueDescription: booking.issueDescription,
-        objectName: booking.objectName,
-        serviceCost,
-        platformFee,
-        totalFee,
-        artisan,
-      };
-
-      localStorage.setItem("fixserv_last_order_id", finalOrderId);
-
-      setFinalBooking(finalData);
-      setActiveModal(MODAL.SUCCESS);
-    } catch (err) {
-      console.error(err);
-      setActiveModal(MODAL.WALLET);
-      setSubmitError(err?.message || "Something went wrong");
-    } finally {
-      setIsSubmitting(false);
+    if (!artisan) throw new Error("Selected artisan not found.");
+    if (!booking?.uploadedProductId) {
+      throw new Error("Uploaded product not found. Please start again.");
     }
-  };
+
+    const selectedServiceId =
+      selectedServiceFromArtisan?.id ||
+      selectedServiceFromArtisan?._id ||
+      selectedServiceFromArtisan?.serviceId ||
+      null;
+
+    if (!selectedServiceId) {
+      throw new Error("No valid artisan service selected for this booking.");
+    }
+
+    const createdOrder = await createOrder({
+      serviceId: selectedServiceId,
+      uploadedProductId: booking.uploadedProductId,
+    });
+
+    const finalOrderId =
+      createdOrder?.id ||
+      createdOrder?._id ||
+      createdOrder?.orderId ||
+      createdOrder?.data?.id ||
+      createdOrder?.data?._id ||
+      createdOrder?.data?.orderId ||
+      "";
+
+    if (!finalOrderId) {
+      throw new Error("Order created but no order id was returned.");
+    }
+
+    const finalData = {
+      id: finalOrderId,
+      orderId: finalOrderId,
+      uploadedProductId: booking.uploadedProductId,
+      deviceType: booking.deviceType,
+      brand: booking.brand,
+      model: booking.model,
+      serviceRequired: booking.serviceRequired,
+      issueDescription: booking.issueDescription,
+      objectName: booking.objectName,
+      serviceId: selectedServiceId,
+      serviceCost,
+      platformFee,
+      totalFee,
+      artisan,
+    };
+
+    localStorage.setItem("fixserv_last_order_id", finalOrderId);
+
+    setFinalBooking(finalData);
+    setActiveModal(MODAL.SUCCESS);
+  } catch (err) {
+    console.error(err);
+    setActiveModal(MODAL.WALLET);
+    setSubmitError(err?.message || "Something went wrong");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   useEffect(() => {
     if (activeModal) {
@@ -235,6 +279,12 @@ const serviceCost =
     };
   }, [activeModal]);
 
+    useEffect(() => {
+  if (artisan) {
+    setLoadingServices(false);
+  }
+}, [artisan]);
+
   if (!artisan || (!booking?.draftOrderId && !booking?.orderId)) {
     return (
       <div className="py-20 text-center text-gray-500">
@@ -242,6 +292,18 @@ const serviceCost =
       </div>
     );
   }
+
+
+
+// useEffect(() => {
+//   console.log("ARTISAN SERVICES =>", artisanServices);
+// }, [artisanServices]);
+
+// useEffect(() => {
+//   console.log("RAW ARTISAN =>", rawArtisan);
+// }, [rawArtisan]);
+
+
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -266,71 +328,11 @@ const serviceCost =
 
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-10 lg:gap-20 max-w-7xl mx-auto">
 
-           <div className="bg-[#EEF6FF] rounded-xl p-5 w-full max-w-[320px] mx-auto lg:mx-0 lg:w-[290px] flex flex-col items-center lg:items-start">
-              <div className="flex flex-col">
-                <img
-                  src={
-                    artisan?.profilePicture ||
-                    artisan?.profileImage ||
-                    artisan?.avatar ||
-                    profileImage
-                  }
-                  alt="artisan"
-                  className="w-full max-w-[260px] h-[220px] sm:h-[240px] rounded-xl object-cover mb-4"
-                />
+           <div className="bg-[#EEF6FF] rounded-2xl p-5 w-full max-w-[340px] mx-auto lg:mx-0 lg:max-w-[420px] xl:max-w-[460px] shadow-sm">
+  <div className="flex flex-col gap-3">
 
-                <div className="flex items-center justify-between w-full max-w-[260px]">
-                  <h2 className="font-semibold text-black text-xl text-left">
-                    {cleanText(
-                      artisan?.fullName,
-                      cleanText(artisan?.businessName, "Unnamed Artisan")
-                    )}
-                  </h2>
-                  <img src={mark} alt="verified" className="w-5 h-5" />
-                </div>
+    <ArtisanCard artisan={artisan} />
 
-                <p className="text-base text-[#656565] mt-1 text-center lg:text-left">
-{professionLabel}</p>
-
-                <div className="flex items-center justify-center lg:justify-start gap-1 mt-2 text-base">
-                  <img src={star} alt="star" className="w-6 h-6" />
-                  <span className="font-medium text-black">
-                    {Number(artisan?.rating || 0).toFixed(1)}
-                  </span>
-                  <span className="text-black">({reviewsCount} reviews)</span>
-                </div>
-
-                <div className="flex gap-2 mt-3 flex-wrap justify-center lg:justify-start">
-                  {categoriesToShow.map((c, idx) => {
-                    const label =
-                      typeof c === "string"
-                        ? c
-                        : c?.name || c?.title || `Category ${idx + 1}`;
-                    return (
-                      <span
-                        key={label + idx}
-                        className="bg-[#C1DAF3] text-[#3E83C4] px-3 py-1 rounded-lg text-lg"
-                      >
-                        {label}
-                      </span>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-4 text-sm text-[#656565] space-y-1 text-center lg:text-left">
-                  <p>
-                    Experience:{" "}
-                    <span className="font-medium text-black">
-                      {yearsFromCreatedAt != null ? `${yearsFromCreatedAt}+ years` : "—"}
-                    </span>
-                  </p>
-                  <p>
-                    Location:{" "}
-                    <span className="font-medium text-black">
-                      {cleanText(artisan?.location, "Unknown")}
-                    </span>
-                  </p>
-                </div>
               </div>
             </div>
 
@@ -370,7 +372,11 @@ const serviceCost =
                 <div className="pt-6 space-y-2">
                   <p>
                     <span className="text-[#656565]">Service Cost:</span>{" "}
-                    {serviceCost == null ? "—" : formatNaira(serviceCost)}
+                    {loadingServices
+                      ? "Loading..."
+                      : serviceCost == null
+                      ? "To be confirmed"
+                      : formatNaira(serviceCost)}
                   </p>
                   <p>
                     <span className="text-[#656565]">Platform Fee:</span>{" "}
@@ -378,7 +384,12 @@ const serviceCost =
                   </p>
 
                   <p className="text-base font-semibold text-blue-600 pt-2">
-                    Total Fee: {totalFee == null ? "—" : formatNaira(totalFee)}
+                    Total Fee:{" "}
+  {loadingServices
+    ? "Loading..."
+    : totalFee == null
+    ? "To be confirmed"
+    : formatNaira(totalFee)}
                   </p>
                 </div>
               </div>
@@ -389,127 +400,13 @@ const serviceCost =
 
       <section className="w-full py-2 overflow-hidden">
         <div className="max-w-7xl mx-auto px-2 md:px-6">
-          <h3 className="text-base font-semibold mb-4">Payment Method</h3>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-6">
-            {paymentMethods.map((item) => {
-              const isActive = selected === item.label;
-
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => setSelected(item.label)}
-                  className="flex items-center gap-3 p-3"
-                >
-                  <div
-                    className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                      isActive ? "border-[#3e83c4]" : "border-[#C1DAF3]"
-                    }`}
-                  >
-                    {isActive && (
-                      <div className="w-4 h-4 rounded-full bg-[#3e83c4]" />
-                    )}
-                  </div>
-
-                  <img
-                    src={item.img}
-                    alt={item.label}
-                    className="h-14 w-14 sm:h-16 sm:w-16 object-contain"
-                  />
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-[#8B8B8B] w-24">Card Number*</label>
-
-                <input
-                  type="text"
-                  placeholder="XXXX XXXX XXXX XXXX"
-                  inputMode="numeric"
-                  maxLength={19}
-                  onInput={(e) => {
-                    let value = e.target.value.replace(/[^0-9]/g, "");
-                    value = value.match(/.{1,4}/g)?.join(" ") || value;
-                    e.target.value = value;
-                  }}
-                  className="flex-1 border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none
-                 focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-[#8B8B8B] w-24">Cardholder*</label>
-
-                <input
-                  type="text"
-                  placeholder="Name"
-                  className="flex-1 border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none
-                 focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-[#8B8B8B] w-10">Expiry</label>
-
-                <input
-                  type="text"
-                  placeholder="MM / YY"
-                  maxLength={7}
-                  inputMode="numeric"
-                  onInput={(e) => {
-                    let value = e.target.value.replace(/[^0-9]/g, "");
-
-                    if (value.length >= 3) {
-                      value = value.slice(0, 2) + " / " + value.slice(2, 4);
-                    }
-
-                    e.target.value = value;
-                  }}
-                  className="w-36 border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none
-               focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
-                />
-              </div>
-
-              <div className="flex items-center">
-                <label className="text-sm text-[#8B8B8B] w-10">CVV</label>
-
-                <div className="relative w-26">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={3}
-                    placeholder="123"
-                    onInput={(e) => {
-                      e.target.value = e.target.value.replace(/[^0-9]/g, "");
-                    }}
-                    className="w-full border border-[#87AACB] rounded-md px-3 py-2.5 text-sm text-gray-700 outline-none
-                 focus:border-[#3e83c4] focus:ring-1 focus:ring-[#3e83c4]"
-                  />
-
-                  <img
-                    src={creditImg}
-                    alt="CVV info"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-5 opacity-60 pointer-events-none"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-14 text-center space-y-4">
+          
+          <div className="mt-2 text-center space-y-4">
             <button
               onClick={() => setActiveModal(MODAL.WALLET)}
               className="bg-[#3E83C4] hover:bg-[#2d75b8] text-white w-full sm:w-auto px-8 sm:px-16 py-3 rounded-md text-sm font-medium transition cursor-pointer"
             >
-              Make Payment
+              Confirm Booking
             </button>
 
             <div>
@@ -530,13 +427,13 @@ const serviceCost =
 
                         <h3 className="font-semibold text-lg">Your Wallet</h3>
                         <p className="text-sm text-gray-500">
-                          This amount will be deducted from your wallet once you confirm this booking
+                          To confirm booking you need to make payment. This amount will be deducted from your wallet once you confirm this booking
                         </p>
 
                         <div className="text-sm space-y-1 text-left mt-4">
                           <p>Total: {totalFee == null ? "—" : formatNaira(totalFee)}</p>
-                          <p>Balance: ₦—</p>
-                          <p>Balance After Payment: ₦—</p>
+                          {/* <p>Balance: ₦—</p>
+                          <p>Balance After Payment: ₦—</p> */}
                         </div>
 
                         <button
@@ -612,7 +509,7 @@ const serviceCost =
 
                         <h3 className="font-semibold text-lg">Cancel Booking?</h3>
                         <p className="text-sm text-gray-500">
-                          Are you sure you want to cancel this booking?
+                          Are you sure you want to cancel this booking?booking?
                         </p>
 
                         <button

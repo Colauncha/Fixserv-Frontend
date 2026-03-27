@@ -9,30 +9,32 @@ import locationBlue from "../../assets/client images/client-home/location blue.p
 import phone from "../../assets/client images/client-home/phone.png";
 import item from "../../assets/client images/client-home/items.png";
 import logOut from "../../assets/client images/client-home/logout.png";
-
 import fund from "../../assets/client images/client-home/fund.png";
 import secure from "../../assets/client images/client-home/secure.png";
 import shieldBlue from "../../assets/client images/client-home/shield blue.png";
 import success from "../../assets/client images/client-home/success.png";
-
 import icon from "../../assets/client images/client-home/icon.png";
 import current from "../../assets/client images/client-home/current.png";
 import bank from "../../assets/client images/client-home/bank.png";
 import card from "../../assets/client images/client-home/card.png";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useLocation } from "react-router-dom";
-import { getReferralInfo, getFixpointsBalance } from "../../api/wallet.api";
 import { ArrowLeft } from "lucide-react";
 
 import {
+  getReferralInfo,
+  getFixpointsBalance,
   initiateWithdrawal,
   topUpWallet,
   getWalletBalance,
   getWithdrawalBanks,
   verifyTopUp,
+  getLockedBalanceBreakdown,
 } from "../../api/wallet.api";
+
+import { deleteOrder } from "../../api/order.api";
+import { getArtisanById } from "../../api/artisan.api";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -40,30 +42,30 @@ const UserProfile = () => {
 
   const { user, token, logout, login } = useAuth();
 
-const profileUser =
-  user?.data?.user ||
-  user?.user ||
-  user?.client ||
-  user?.data?.client ||
-  user ||
-  {};
+  const profileUser =
+    user?.data?.user ||
+    user?.user ||
+    user?.client ||
+    user?.data?.client ||
+    user ||
+    {};
 
-const userId = profileUser?.id || profileUser?._id;
+  const userId = profileUser?.id || profileUser?._id;
 
-const walletIdentifier =
-  profileUser?.walletId ||
-  profileUser?.wallet?._id ||
-  profileUser?.wallet?.id ||
-  profileUser?.id ||
-  profileUser?._id ||
-  userId ||
-  null;
+  const walletIdentifier =
+    profileUser?.walletId ||
+    profileUser?.wallet?._id ||
+    profileUser?.wallet?.id ||
+    profileUser?.id ||
+    profileUser?._id ||
+    userId ||
+    null;
 
-const address = profileUser?.deliveryAddress || {};
+  const address = profileUser?.deliveryAddress || {};
 
-const servicePreferences = Array.isArray(profileUser?.servicePreferences)
-  ? profileUser.servicePreferences
-  : [];
+  const servicePreferences = Array.isArray(profileUser?.servicePreferences)
+    ? profileUser.servicePreferences
+    : [];
 
   const addressText =
     address?.street || address?.city || address?.state
@@ -91,6 +93,8 @@ const servicePreferences = Array.isArray(profileUser?.servicePreferences)
   const [uploadedProducts, setUploadedProducts] = useState([]);
   const [deletingId, setDeletingId] = useState(null);
 
+  const [deletingRequestId, setDeletingRequestId] = useState(null);
+
   const [showFundModal, setShowFundModal] = useState(false);
   const [fundStep, setFundStep] = useState("form");
 
@@ -100,6 +104,10 @@ const servicePreferences = Array.isArray(profileUser?.servicePreferences)
   const [wallet, setWallet] = useState({
     balance: 0,
     lockedBalance: 0,
+    available: 0,
+    totalLocked: 0,
+    manuallyLocked: 0,
+    orderEscrow: 0,
   });
 
   const [fixpoints, setFixpoints] = useState(0);
@@ -109,20 +117,12 @@ const servicePreferences = Array.isArray(profileUser?.servicePreferences)
     totalRewards: 0,
   });
 
-  const sortedUploads = [...uploadedProducts].sort((a, b) => {
-    const ta = new Date(a.uploadedAt || a.createdAt || 0).getTime();
-    const tb = new Date(b.uploadedAt || b.createdAt || 0).getTime();
-    return tb - ta;
-  });
+const sortedUploads = [...uploadedProducts].sort((a, b) => {
+  const ta = new Date(a?.uploadedAt || a?.createdAt || 0).getTime();
+  const tb = new Date(b?.uploadedAt || b?.createdAt || 0).getTime();
+  return tb - ta;
+});
 
-  const fetchUploadedProducts = () => {
-    try {
-      const products = user?.uploadedProducts || [];
-      setUploadedProducts(products);
-    } catch (err) {
-      console.error("Failed to fetch products", err);
-    }
-  };
 
   const fetchReferral = async () => {
     try {
@@ -132,6 +132,8 @@ const servicePreferences = Array.isArray(profileUser?.servicePreferences)
       const payload = res?.data;
 
       console.log("GET REFERRAL PAYLOAD =>", payload);
+
+      console.log("SORTED UPLOADS =>", sortedUploads);
 
       if (payload?.success) {
         setReferral({
@@ -146,22 +148,75 @@ const servicePreferences = Array.isArray(profileUser?.servicePreferences)
     }
   };
 
-  useEffect(() => {
-    if (userId && token) fetchUploadedProducts();
-  }, [userId, token]);
 
-  useEffect(() => {
-    if (user?.uploadedProducts) {
-      setUploadedProducts(user.uploadedProducts);
+  const canDeleteRequestStatus = (status) => {
+    const raw = String(status || "").toUpperCase();
+    return ["REJECTED", "CANCELLED", "COMPLETED"].includes(raw);
+  };
+
+  const handleDeleteRequestFromUpload = async (product) => {
+    const orderId = product?.orderId || product?.requestId || product?.bookingId;
+    const rawStatus = String(
+      product?.orderStatus || product?.status || product?.requestStatus || ""
+    ).toUpperCase();
+
+    if (!orderId) {
+      alert("No linked request found for this uploaded item");
+      return;
     }
-  }, [user?.uploadedProducts]);
 
-  useEffect(() => {
-    if (location.state?.refresh) {
-      fetchUploadedProducts();
+    if (!canDeleteRequestStatus(rawStatus)) {
+      alert(
+        `Cannot delete request with status: ${rawStatus || "UNKNOWN"}. Only REJECTED, CANCELLED, or COMPLETED requests can be deleted`
+      );
+      return;
     }
 
-  }, [location.state]);
+    const ok = window.confirm("Delete this request?");
+    if (!ok) return;
+
+    try {
+      setDeletingRequestId(orderId);
+
+      await deleteOrder(orderId);
+
+      alert("Request deleted successfully");
+    } catch (error) {
+      console.error(
+        "DELETE REQUEST ERROR =>",
+        error?.response?.data || error?.message
+      );
+
+      const backendErrors = error?.response?.data?.errors;
+      const firstError =
+        Array.isArray(backendErrors) && backendErrors.length > 0
+          ? backendErrors[0]?.message || backendErrors[0]
+          : null;
+
+      alert(
+        firstError ||
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Failed to delete request"
+      );
+    } finally {
+      setDeletingRequestId(null);
+    }
+  };
+
+  useEffect(() => {
+    const fallbackUploads =
+      profileUser?.uploadedProducts ||
+      profileUser?.data?.uploadedProducts ||
+      user?.uploadedProducts ||
+      [];
+
+    if (Array.isArray(fallbackUploads) && fallbackUploads.length > 0) {
+      setUploadedProducts(fallbackUploads);
+    }
+  }, [profileUser?.uploadedProducts, profileUser?.data?.uploadedProducts, user?.uploadedProducts]);
+
+
 
   const handleDeleteUpload = async (product) => {
     const pid = product?._id || product?.id;
@@ -171,8 +226,6 @@ const servicePreferences = Array.isArray(profileUser?.servicePreferences)
     if (!ok) return;
 
     setDeletingId(pid);
-
-    setUploadedProducts((prev) => prev.filter((x) => (x._id || x.id) !== pid));
 
     try {
       const res = await fetch(
@@ -185,12 +238,20 @@ const servicePreferences = Array.isArray(profileUser?.servicePreferences)
         }
       );
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        fetchUploadedProducts();
+        throw new Error(
+          data?.message || data?.error || `Delete failed with status ${res.status}`
+        );
       }
+
+      setUploadedProducts((prev) =>
+        prev.filter((x) => String(x?._id || x?.id) !== String(pid))
+      );
     } catch (err) {
       console.error("DELETE ERROR:", err);
-      fetchUploadedProducts();
+      alert(err?.message || "Failed to delete uploaded item");
     } finally {
       setDeletingId(null);
     }
@@ -198,23 +259,61 @@ const servicePreferences = Array.isArray(profileUser?.servicePreferences)
 
   const fetchWallet = async () => {
     try {
-      if (!walletIdentifier || !token) return;
+      if ((!walletIdentifier && !userId) || !token) return;
 
-      const res = await getWalletBalance(walletIdentifier);
-      const payload = res?.data;
+      const [balanceRes, breakdownRes] = await Promise.allSettled([
+        walletIdentifier ? getWalletBalance(walletIdentifier) : Promise.resolve(null),
+        userId ? getLockedBalanceBreakdown(userId) : Promise.resolve(null),
+      ]);
 
-      console.log("GET WALLET BALANCE PAYLOAD =>", payload);
+      let balance = 0;
+      let lockedBalance = 0;
 
-      if (payload?.success) {
-        setWallet({
-          balance: Number(payload?.data?.balance ?? 0),
-          lockedBalance: Number(payload?.data?.lockedBalance ?? 0),
-        });
-      } else {
-        console.log("GET BALANCE NOT SUCCESS =>", payload);
+      if (
+        balanceRes.status === "fulfilled" &&
+        balanceRes.value?.data?.success
+      ) {
+        const payload = balanceRes.value.data;
+
+        console.log("GET WALLET BALANCE PAYLOAD =>", payload);
+
+        balance = Number(payload?.data?.balance ?? 0);
+        lockedBalance = Number(payload?.data?.lockedBalance ?? 0);
       }
+
+      let available = balance;
+      let totalLocked = lockedBalance;
+      let manuallyLocked = 0;
+      let orderEscrow = 0;
+
+      if (
+        breakdownRes.status === "fulfilled" &&
+        breakdownRes.value?.data?.success
+      ) {
+        const payload = breakdownRes.value.data;
+        const data = payload?.data || {};
+
+        console.log("GET LOCKED BREAKDOWN PAYLOAD =>", payload);
+
+        available = Number(data?.available ?? 0);
+        totalLocked = Number(data?.totalLocked ?? 0);
+        manuallyLocked = Number(data?.manuallyLocked ?? 0);
+        orderEscrow = Number(data?.orderEscrow ?? 0);
+      }
+
+      setWallet({
+        balance,
+        lockedBalance,
+        available,
+        totalLocked,
+        manuallyLocked,
+        orderEscrow,
+      });
     } catch (err) {
-      console.error("Wallet fetch error:", err?.response?.data || err?.message);
+      console.error(
+        "Wallet fetch error:",
+        err?.response?.data || err?.message
+      );
     }
   };
 
@@ -275,78 +374,78 @@ const servicePreferences = Array.isArray(profileUser?.servicePreferences)
     fetchBanks();
   }, [showWithdrawModal, token]);
 
-const handleWithdraw = async () => {
-  try {
-    if (!userId) {
-      alert("User not found");
-      return;
+  const handleWithdraw = async () => {
+    try {
+      if (!userId) {
+        alert("User not found");
+        return;
+      }
+
+      const cleanAmount = Number(String(withdrawData.amount).replace(/[^\d.]/g, ""));
+      const cleanAccountNumber = String(withdrawData.accountNumber || "").replace(/\D/g, "");
+      const cleanPin = String(withdrawData.pin || "").trim();
+
+      if (!withdrawData.bankCode) {
+        alert("Please select a bank");
+        return;
+      }
+
+      if (!cleanAccountNumber) {
+        alert("Please enter account number");
+        return;
+      }
+
+      if (cleanAccountNumber.length < 10) {
+        alert("Enter a valid account number");
+        return;
+      }
+
+      if (!cleanAmount || cleanAmount <= 0) {
+        alert("Enter a valid withdrawal amount");
+        return;
+      }
+
+      if (cleanAmount > Number(wallet?.available || 0)) {
+        alert("Insufficient balance");
+        return;
+      }
+
+      if (!cleanPin) {
+        alert("Enter your transaction PIN");
+        return;
+      }
+
+      setLoading(true);
+
+      const res = await initiateWithdrawal({
+        userId,
+        amount: cleanAmount,
+        accountNumber: cleanAccountNumber,
+        bankCode: withdrawData.bankCode,
+        pin: cleanPin,
+      });
+
+      const payload = res?.data;
+
+      if (!payload?.success) {
+        throw new Error(payload?.message || "Withdrawal failed");
+      }
+
+      setWithdrawData({
+        amount: "",
+        accountNumber: "",
+        bankCode: "",
+        pin: "",
+      });
+      setSelectedBank("");
+      setWithdrawStep("success");
+      await fetchWallet();
+    } catch (err) {
+      alert(err?.response?.data?.message || err?.message || "Withdrawal failed");
+    } finally {
+      setLoading(false);
     }
-
-    const cleanAmount = Number(String(withdrawData.amount).replace(/[^\d.]/g, ""));
-    const cleanAccountNumber = String(withdrawData.accountNumber || "").replace(/\D/g, "");
-    const cleanPin = String(withdrawData.pin || "").trim();
-
-    if (!withdrawData.bankCode) {
-      alert("Please select a bank");
-      return;
-    }
-
-    if (!cleanAccountNumber) {
-      alert("Please enter account number");
-      return;
-    }
-
-    if (cleanAccountNumber.length < 10) {
-      alert("Enter a valid account number");
-      return;
-    }
-
-    if (!cleanAmount || cleanAmount <= 0) {
-      alert("Enter a valid withdrawal amount");
-      return;
-    }
-
-    if (cleanAmount > Number(wallet?.balance || 0)) {
-      alert("Insufficient balance");
-      return;
-    }
-
-    if (!cleanPin) {
-      alert("Enter your transaction PIN");
-      return;
-    }
-
-    setLoading(true);
-
-    const res = await initiateWithdrawal({
-      userId,
-      amount: cleanAmount,
-      accountNumber: cleanAccountNumber,
-      bankCode: withdrawData.bankCode,
-      pin: cleanPin,
-    });
-
-    const payload = res?.data;
-
-    if (!payload?.success) {
-      throw new Error(payload?.message || "Withdrawal failed");
-    }
-
-    setWithdrawData({
-      amount: "",
-      accountNumber: "",
-      bankCode: "",
-      pin: "",
-    });
-    setSelectedBank("");
-    setWithdrawStep("success");
-    await fetchWallet();
-  } catch (err) {
-    alert(err?.response?.data?.message || err?.message || "Withdrawal failed");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleFundWallet = async () => {
     try {
@@ -544,73 +643,226 @@ const handleWithdraw = async () => {
     }).format(num);
   };
 
-  const normalizeBookingRow = (item, index) => {
-    const id =
-      item?.bookingId ||
-      item?.booking_id ||
-      item?.orderId ||
-      item?.order_id ||
-      item?.id ||
-      `#FX-${index + 1}`;
+  // const normalizePaymentStatus = (escrowStatus) => {
+  //   const value = String(escrowStatus || "").toUpperCase().trim();
 
-    const device =
-      item?.device ||
-      item?.deviceName ||
-      item?.device_name ||
-      item?.service?.device ||
-      item?.service?.deviceName ||
-      item?.serviceName ||
-      item?.service_name ||
-      "—";
+  //   if (value === "PAID") return "Paid";
+  //   if (value === "NOT_PAID" || value === "UNPAID") return "Unpaid";
+  //   if (value.includes("CANCEL")) return "Cancelled";
+  //   return "Pending";
+  // };
 
-    const tech =
-      item?.technicianName ||
-      item?.technician_name ||
-      item?.technician?.name ||
-      item?.artisanName ||
-      item?.artisan_name ||
-      "—";
-
-    const statusRaw =
-      item?.paymentStatus ||
-      item?.payment_status ||
-      item?.payment?.status ||
+  const normalizePaymentStatus = (item) => {
+    const orderStatus = String(
       item?.status ||
-      "Pending";
-
-    const status =
-      String(statusRaw).toLowerCase().includes("paid")
-        ? "Paid"
-        : String(statusRaw).toLowerCase().includes("cancel")
-          ? "Cancelled"
-          : "Pending";
-
-    const costRaw =
-      item?.cost ||
-      item?.amount ||
-      item?.price ||
-      item?.totalAmount ||
-      item?.total_amount ||
-      item?.payment?.amount ||
-      0;
-
-    const progressRaw =
-      item?.progress ||
-      item?.jobStatus ||
-      item?.job_status ||
+      item?.orderStatus ||
       item?.repairStatus ||
-      item?.repair_status ||
-      item?.stage ||
-      "Not Started";
+      ""
+    ).toUpperCase().trim();
+
+    const escrowStatus = String(
+      item?.escrowStatus ||
+      item?.escrow?.status ||
+      item?.payment?.escrowStatus ||
+      ""
+    ).toUpperCase().trim();
+
+    const paymentStatus = String(
+      item?.paymentStatus ||
+      item?.payment?.status ||
+      item?.releasePaymentStatus ||
+      ""
+    ).toUpperCase().trim();
+
+    const releaseFlag =
+      item?.paymentReleased === true ||
+      item?.isPaymentReleased === true ||
+      item?.released === true ||
+      item?.isReleased === true ||
+      item?.payment?.released === true ||
+      item?.payment?.isReleased === true;
+
+    const isDone = [
+      "WORK_COMPLETED",
+      "READY_FOR_PICKUP",
+      "COMPLETED",
+      "DONE",
+    ].includes(orderStatus);
+
+    const isCancelledOrRejected = [
+      "CANCELLED",
+      "REJECTED",
+    ].includes(orderStatus);
+
+    const isNotCompletedYet = [
+      "PENDING_ARTISAN_RESPONSE",
+      "PENDING",
+      "REQUESTED",
+      "NEW",
+      "ACCEPTED",
+      "DEVICE_DROPPED_OFF",
+      "IN_PROGRESS",
+      "ONGOING",
+      "AVAILABLE",
+    ].includes(orderStatus);
+
+    const isReleased =
+      releaseFlag ||
+      [
+        "PAID",
+        "SUCCESS",
+        "SUCCESSFUL",
+        "RELEASED",
+        "COMPLETED",
+        "DONE",
+        "PAID_OUT",
+        "SETTLED",
+      ].includes(escrowStatus) ||
+      [
+        "PAID",
+        "SUCCESS",
+        "SUCCESSFUL",
+        "RELEASED",
+        "COMPLETED",
+        "DONE",
+        "PAID_OUT",
+        "SETTLED",
+      ].includes(paymentStatus);
+
+    if (isCancelledOrRejected) return "Unpaid";
+    if (isNotCompletedYet) return "Unpaid";
+    if (isDone && isReleased) return "Successful";
+    if (isDone && !isReleased) return "Pending";
+
+    return "Unpaid";
+  };
+
+  const normalizeProgress = (status) => {
+    const value = String(status || "").toUpperCase().trim();
+
+    if (["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(value)) {
+      return "Pending Artisan Response";
+    }
+    if (["ACCEPTED", "DEVICE_DROPPED_OFF"].includes(value)) {
+      return "Accepted";
+    }
+    if (["IN_PROGRESS", "ONGOING", "AVAILABLE"].includes(value)) {
+      return "In Progress";
+    }
+    if (["WORK_COMPLETED", "READY_FOR_PICKUP"].includes(value)) {
+      return "Work Completed";
+    }
+    if (["COMPLETED", "DONE"].includes(value)) {
+      return "Completed";
+    }
+    if (["CANCELLED", "REJECTED"].includes(value)) {
+      return "Cancelled";
+    }
+
+    return value.replace(/_/g, " ") || "Not Started";
+  };
+
+  const getArtisanPayload = (payload) => {
+    return payload?.data || payload?.user || payload || {};
+  };
+
+  const normalizeArtisan = (artisan) => {
+    const raw = getArtisanPayload(artisan);
 
     return {
-      id: String(id),
-      device,
-      tech,
-      status,
-      cost: formatNaira(costRaw),
-      progress:
-        typeof progressRaw === "string" ? progressRaw : String(progressRaw ?? "—"),
+      id: raw?.id || raw?._id || "—",
+      fullName: raw?.fullName || raw?.name || "Unknown Technician",
+      profilePicture: raw?.profilePicture || raw?.avatar || "",
+      category:
+        raw?.businessName ||
+        raw?.categories?.[0] ||
+        raw?.category ||
+        "Repair Technician",
+      rating: raw?.rating ?? 0,
+      reviewsCount:
+        raw?.reviewsCount ??
+        raw?.totalReviews ??
+        raw?.reviewCount ??
+        0,
+      experience:
+        raw?.experience ||
+        raw?.yearsOfExperience ||
+        raw?.experienceLevel ||
+        "—",
+      location:
+        raw?.location ||
+        raw?.address ||
+        raw?.city ||
+        "—",
+      skills: Array.isArray(raw?.skillSet)
+        ? raw.skillSet
+        : Array.isArray(raw?.skills)
+          ? raw.skills
+          : [],
+    };
+  };
+
+  const getUploadedProduct = (item) => {
+    if (Array.isArray(item?.uploadedProducts) && item.uploadedProducts.length > 0) {
+      return item.uploadedProducts[0];
+    }
+
+    if (item?.uploadedProduct && typeof item.uploadedProduct === "object") {
+      return item.uploadedProduct;
+    }
+
+    return null;
+  };
+
+  const pickDevice = (item, uploadedProduct) => {
+    return (
+      item?.serviceRequired ||
+      item?.service?.title ||
+      item?.serviceTitle ||
+      uploadedProduct?.objectName ||
+      [item?.deviceType, item?.deviceBrand, item?.deviceModel]
+        .filter(Boolean)
+        .join(" ")
+        .trim() ||
+      item?.deviceType ||
+      item?.deviceBrand ||
+      item?.deviceModel ||
+      "—"
+    );
+  };
+
+  const pickTechName = (item, artisan) => {
+    return (
+      artisan?.fullName ||
+      artisan?.name ||
+      artisan?.businessName ||
+      item?.artisan?.fullName ||
+      item?.artisan?.name ||
+      item?.assignedArtisan?.fullName ||
+      item?.assignedArtisan?.name ||
+      item?.artisanDetails?.fullName ||
+      item?.artisanDetails?.name ||
+      item?.technician?.fullName ||
+      item?.technician?.name ||
+      item?.artisanName ||
+      item?.technicianName ||
+      item?.assignedArtisanName ||
+      "Unknown Technician"
+    );
+  };
+
+  const normalizeBookingRow = (item) => {
+    const artisan = item?.artisan || {};
+    const uploadedProduct = getUploadedProduct(item);
+
+    return {
+      id: item?.id || "—",
+      device: pickDevice(item, uploadedProduct),
+      tech: pickTechName(item, artisan),
+      status: normalizePaymentStatus(item),
+      cost: formatNaira(item?.price || 0),
+      progress: normalizeProgress(item?.status),
+      createdAt: item?.createdAt || "",
     };
   };
 
@@ -639,18 +891,74 @@ const handleWithdraw = async () => {
           throw new Error(msg);
         }
 
-        const list = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.data)
-            ? payload.data
-            : Array.isArray(payload?.orders)
-              ? payload.orders
-              : Array.isArray(payload?.history)
-                ? payload.history
-                : [];
+        const orders = Array.isArray(payload?.orders) ? payload.orders : [];
 
-        const normalized = list.map(normalizeBookingRow);
-        const sorted = [...normalized].reverse();
+        const badArtisanIds = JSON.parse(
+          sessionStorage.getItem("fixserv_bad_artisan_ids") || "[]"
+        );
+        const badArtisanIdSet = new Set(badArtisanIds);
+
+        const hasEmbeddedArtisanName = (item) => {
+          return Boolean(
+            item?.artisan?.fullName ||
+            item?.artisan?.name ||
+            item?.assignedArtisan?.fullName ||
+            item?.assignedArtisan?.name ||
+            item?.artisanDetails?.fullName ||
+            item?.artisanDetails?.name ||
+            item?.technician?.fullName ||
+            item?.technician?.name ||
+            item?.artisanName ||
+            item?.technicianName ||
+            item?.assignedArtisanName
+          );
+        };
+
+        const uniqueArtisanIds = [
+  ...new Set(
+    orders
+      .filter((item) => !hasEmbeddedArtisanName(item))
+      .map((item) => item?.artisanId)
+      .filter((id) => id && !badArtisanIdSet.has(id))
+  ),
+];
+
+        const artisanResults = await Promise.all(
+          uniqueArtisanIds.map(async (id) => {
+            const response = await getArtisanById(id);
+
+            if (!response) {
+              badArtisanIdSet.add(id);
+              sessionStorage.setItem(
+  "fixserv_bad_artisan_ids",
+  JSON.stringify([...badArtisanIdSet])
+);
+              return [id, null];
+            }
+
+            return [id, normalizeArtisan(response)];
+          })
+        );
+
+        const artisanMap = Object.fromEntries(artisanResults);
+
+const normalized = orders.map((item) =>
+  normalizeBookingRow({
+    ...item,
+    artisan: artisanMap[item.artisanId] ?? item?.artisan ?? null,
+  })
+);
+
+        const sorted = normalized.sort((a, b) => {
+          const ta = new Date(a.createdAt).getTime();
+          const tb = new Date(b.createdAt).getTime();
+
+          if (Number.isNaN(ta) && Number.isNaN(tb)) return 0;
+          if (Number.isNaN(ta)) return 1;
+          if (Number.isNaN(tb)) return -1;
+
+          return tb - ta;
+        });
 
         if (!alive) return;
         setBookingHistory(sorted);
@@ -669,16 +977,19 @@ const handleWithdraw = async () => {
     };
   }, []);
 
-useEffect(() => {
-  console.log("USER PROFILE DEBUG =>", {
-    rawUser: user,
-    profileUser,
-    servicePreferences: profileUser?.servicePreferences,
-    userId,
-    walletIdentifier,
-    hasToken: !!token,
-  });
-}, [user, profileUser, userId, walletIdentifier, token]);
+  useEffect(() => {
+    console.log("USER PROFILE DEBUG =>", {
+      rawUser: user,
+      profileUser,
+      servicePreferences: profileUser?.servicePreferences,
+
+      userId,
+      walletIdentifier,
+      hasToken: !!token,
+    });
+
+    console.log("BOOKING HISTORY SAMPLE =>", bookingHistory[0]);
+  }, [user, profileUser, userId, walletIdentifier, token, bookingHistory]);
 
   return (
     <div className="w-full">
@@ -691,15 +1002,24 @@ useEffect(() => {
             <ArrowLeft size={18} />
             Back
           </button>
-          <div className="flex flex-col xl:flex-row justify-between items-start gap-8">
-            {/* LEFT — Profile */}
-            <div className="flex flex-col sm:flex-row gap-5 items-start w-full xl:flex-1">
-              <div className="relative w-full sm:w-[270px] h-[260px] sm:h-[270px] shrink-0">
+
+          {/* PROFILE INFO — FULL WIDTH */}
+          <div className="w-full rounded-2xl bg-white p-5 sm:p-6 mb-8 shadow-sm">
+          {/* <div className="w-full rounded-2xl bg-white p-5 sm:p-6 mb-8 shadow-sm border border-gray-100"> */}
+            <div className="flex flex-col lg:flex-row gap-10 items-start w-full">
+
+              {/* PROFILE IMAGE */}
+              <div className="relative w-full sm:w-[260px] h-[260px] shrink-0 group">
                 <img
-                 src={profilePreview || profileUser?.profilePicture || PraiseImg}
+                  src={profilePreview || profileUser?.profilePicture || PraiseImg}
                   alt="profile"
-                  className="w-full h-full rounded-xl object-cover"
+                  className="w-full h-full rounded-2xl object-cover"
                 />
+
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-sm font-medium rounded-2xl">
+                  Change Photo
+                </div>
 
                 <input
                   type="file"
@@ -717,49 +1037,45 @@ useEffect(() => {
                 />
 
                 {profileUploading && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-sm">
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm rounded-2xl">
                     Uploading...
                   </div>
                 )}
               </div>
 
-              <div className="space-y-3 w-full min-w-0">
-  <h2 className="text-xl sm:text-2xl font-semibold text-black break-words">
-    {profileUser?.fullName || "—"}
-  </h2>
+              {/* PROFILE INFO */}
+              {/* <div className="space-y-4 w-full min-w-0"> */}
+                <div className="space-y-4 w-full min-w-0 flex flex-col justify-end h-[260px]">
 
-  <div className="mt-2 mb-2">
-    <p className="text-sm text-[#535353] mb-2">Service Preference</p>
+                {/* NAME */}
+                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 leading-tight">
+                  {profileUser?.fullName || "—"}
+                </h2>
 
-    {Array.isArray(servicePreferences) && servicePreferences.length > 0 ? (
-      <div className="flex flex-wrap gap-2">
-        {servicePreferences.map((service, index) => (
-          <span
-            key={`${service}-${index}`}
-            className="bg-[#E8F2FC] text-[#3E83C4] text-xs px-3 py-1 rounded-full"
-          >
-            {service}
-          </span>
-        ))}
-      </div>
-    ) : (
-      <p className="text-sm text-[#8A8A8A]">No service preference added yet.</p>
-    )}
-  </div>
-
-  <div className="flex items-start gap-2 text-sm max-w-full text-[#535353] mb-4">
-                  <img src={locationBlack} alt="" className="w-4 h-4 mt-0.5 shrink-0" />
+                {/* ADDRESS */}
+                <div className="flex items-start gap-2 text-sm text-gray-500">
+                  <img
+                    src={locationBlack}
+                    alt=""
+                    className="w-4 h-4 mt-0.5 shrink-0 opacity-70"
+                  />
                   <span className="break-words">
-                    {[profileUser?.deliveryAddress?.street, profileUser?.deliveryAddress?.city, profileUser?.deliveryAddress?.state]
+                    {[
+                      profileUser?.deliveryAddress?.street,
+                      profileUser?.deliveryAddress?.city,
+                      profileUser?.deliveryAddress?.state,
+                    ]
                       .filter(Boolean)
-                      .join(", ") || "—"}
+                      .join(", ") || "No address added"}
                   </span>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 pt-2 w-full">
+                {/* ACTION BUTTONS */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-3">
+
                   <button
                     onClick={() => navigate("/client/settings")}
-                    className="flex items-center justify-center gap-2 bg-[#3E83C4] text-white px-5 py-2.5 rounded-md text-sm font-medium cursor-pointer w-full sm:w-auto"
+                    className="flex items-center justify-center gap-2 bg-[#3E83C4] text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-sm hover:shadow-md hover:bg-[#3572ad] transition w-full sm:w-auto cursor-pointer"
                   >
                     Edit Profile
                     <img src={edit} alt="" className="w-4 h-4" />
@@ -767,34 +1083,84 @@ useEffect(() => {
 
                   <button
                     onClick={() => navigate("/client/referral")}
-                    className="border border-[#3E83C4] text-[#3E83C4] px-5 py-2.5 rounded-md text-sm font-medium hover:bg-[#3E83C4] hover:text-[#fff] transition cursor-pointer w-full sm:w-auto"
+                    className="border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-100 transition w-full sm:w-auto cursor-pointer"
                   >
                     Refer & Earn
                   </button>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CONTACT INFO + WALLET */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+            {/* CONTACT INFO */}
+            <div className="border border-[#3E83C4] rounded-xl p-5 sm:p-6 bg-[#F6FBFF]">
+              <h3 className="font-semibold text-black text-lg sm:text-xl mb-4">
+                Contact Info
+              </h3>
+
+              <div className="bg-white rounded-lg shadow-lg p-4 space-y-4 text-gray-600">
+                <div className="flex items-start gap-2">
+                  <img src={email} alt="" className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span className="text-sm break-words">
+                    {profileUser?.email || "—"}
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <img
+                    src={locationBlue}
+                    alt=""
+                    className="w-4 h-4 mt-0.5 shrink-0"
+                  />
+                  <span className="text-sm break-words">{addressText}</span>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <img src={phone} alt="" className="w-5 h-5 mt-0.5 shrink-0" />
+                  <span className="text-sm break-words">
+                    {profileUser?.phoneNumber || "—"}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* RIGHT — Wallet Container */}
-            <div className="bg-[#F6FBFF] border border-[#3e83c4] rounded-xl p-5 w-full xl:w-[320px] shrink-0">
+            {/* WALLET */}
+            <div className="bg-[#F6FBFF] border border-[#3e83c4] rounded-xl p-5 w-full">
               <div className="flex items-center gap-2 mb-4">
-                <img src={walletIcon} alt="" className="w-5 h-5" />
-                <h3 className="font-semibold text-sm text-black">Wallet</h3>
+                <img src={walletIcon} alt="" className="w-6 h-6" />
+                <h3 className="font-semibold text-lg text-black">Wallet</h3>
               </div>
 
               <div className="bg-white rounded-lg shadow-sm p-4 space-y-3 text-sm">
                 <div className="space-y-2">
                   <div className="flex justify-between gap-4">
-                    <span className="text-[#535353]">Balance</span>
+                    <span className="text-[#535353]">Available Balance</span>
                     <span className="font-medium text-black text-right break-words">
-                      ₦{Number(wallet?.balance ?? 0).toLocaleString()}
+                      ₦{Number(wallet?.available ?? 0).toLocaleString()}
                     </span>
                   </div>
 
                   <div className="flex justify-between gap-4">
                     <span className="text-[#535353]">Locked Balance</span>
                     <span className="font-medium text-black text-right break-words">
-                      ₦{Number(wallet?.lockedBalance ?? 0).toLocaleString()}
+                      ₦{Number(wallet?.totalLocked ?? 0).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#535353]">Manual Lock</span>
+                    <span className="font-medium text-black text-right break-words">
+                      ₦{Number(wallet?.manuallyLocked ?? 0).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#535353]">Order Escrow</span>
+                    <span className="font-medium text-black text-right break-words">
+                      ₦{Number(wallet?.orderEscrow ?? 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -806,7 +1172,9 @@ useEffect(() => {
                   </span>
 
                   <div className="text-right">
-                    <p className="font-medium text-black">{Number(fixpoints ?? 0).toLocaleString()} pts</p>
+                    <p className="font-medium text-black">
+                      {Number(fixpoints ?? 0).toLocaleString()} pts
+                    </p>
                     <p className="text-xs text-[#535353]">
                       ₦{(fixpoints * 2).toLocaleString()}
                     </p>
@@ -816,16 +1184,16 @@ useEffect(() => {
                 <div className="pt-3 flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={() => {
-  setWithdrawData({
-    amount: "",
-    accountNumber: "",
-    bankCode: "",
-    pin: "",
-  });
-  setSelectedBank("");
-  setWithdrawStep("form");
-  setShowWithdrawModal(true);
-}}
+                      setWithdrawData({
+                        amount: "",
+                        accountNumber: "",
+                        bankCode: "",
+                        pin: "",
+                      });
+                      setSelectedBank("");
+                      setWithdrawStep("form");
+                      setShowWithdrawModal(true);
+                    }}
                     className="flex-1 border border-[#43A047] text-[#43A047] py-2.5 rounded-md text-sm font-medium hover:bg-[#43A047] hover:text-white transition cursor-pointer"
                   >
                     Withdraw
@@ -845,303 +1213,381 @@ useEffect(() => {
                 </div>
               </div>
             </div>
+          </div>
 
-            {showFundModal && <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"></div>}
+          {/* ITEMS UPLOADED / REQUESTS — FULL WIDTH */}
+          <div className="border border-[#5F8EBA] rounded-xl p-4 sm:p-6 bg-white mb-8">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+              <div className="flex items-center gap-2">
+                <img src={item} alt="item" className="w-9 h-8" />
+                <h3 className="font-semibold text-base sm:text-lg text-black">
+                  Items Uploaded
+                </h3>
+              </div>
 
-            {showFundModal && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
-                <div className="bg-white w-full max-w-[380px] rounded-xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] overflow-y-auto">
-                  {fundStep === "form" && (
-                    <div className="p-6 space-y-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <img src={fund} alt="fund" className="w-8 h-8 shrink-0" />
-                          <div className="min-w-0">
-                            <h3 className="font-semibold text-sm text-black">Fund Wallet</h3>
-                            <p className="text-xs text-[#535353] mt-0.5">
-                              Add money to your wallet securely
-                            </p>
-                          </div>
-                        </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => navigate("/client/request-repair")}
+                  className="border border-[#3E83C4] text-[#3E83C4] px-4 py-2 rounded-md text-sm font-medium hover:bg-[#3E83C4] hover:text-white transition cursor-pointer"
+                >
+                  + Upload Item
+                </button>
 
-                        <button
-                          onClick={() => setShowFundModal(false)}
-                          className="text-[#535353] hover:text-gray-600 transition cursor-pointer shrink-0"
-                        >
-                          ✕
-                        </button>
-                      </div>
+                 <button
+                    onClick={() => navigate("/client/repair")}
+                    className="bg-[#3E83C4] text-white px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer hover:bg-[#2f6ea8] transition"
+                  >
+                  View All Request
+                </button>
+              </div>
+            </div>
 
-                      <div className="flex items-center justify-between text-xs text-[#535353]">
-                        <span className="flex items-center gap-2 text-[#3E83C4]">
-                          <span className="w-2 h-2 bg-[#3E83C4] rounded-full"></span>
-                          Amount
-                        </span>
-                        <span>Verify</span>
-                      </div>
+{/* Desktop table */}
+<div className="overflow-x-auto hidden md:block">
+  <div className="max-h-[400px] overflow-y-auto">
+    <table className="w-full text-sm lg:text-base border-separate border-spacing-0">
+      <thead>
+        <tr className="text-[#656565] text-left">
+          <th className="py-3 px-4 font-medium bg-[#ECF0F5] sticky top-0 z-20">
+            Booking ID
+          </th>
+          <th className="py-3 px-4 font-medium bg-[#ECF0F5] sticky top-0 z-20">
+            Device
+          </th>
+          <th className="py-3 px-4 font-medium bg-[#ECF0F5] sticky top-0 z-20">
+            Technician
+          </th>
+          <th className="py-3 px-4 font-medium bg-[#ECF0F5] sticky top-0 z-20">
+            Payment Status
+          </th>
+          <th className="py-3 px-4 font-medium bg-[#ECF0F5] sticky top-0 z-20">
+            Cost
+          </th>
+          <th className="py-3 px-4 font-medium bg-[#ECF0F5] sticky top-0 z-20">
+            Progress
+          </th>
+        </tr>
+      </thead>
 
-                      <div className="space-y-1">
-                        <label className="text-sm text-[#535353]">Enter Amount</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={fundAmount}
-                          onChange={(e) => setFundAmount(e.target.value)}
-                          placeholder="₦ 0"
-                          className="w-full border border-[#87AACB] rounded-md px-4 py-3 text-sm outline-none focus:border-[#3E83C4]"
-                        />
-                      </div>
+      <tbody className="text-[#535353] text-sm lg:text-base">
+        {bookingLoading ? (
+          <tr>
+            <td className="py-5 px-4 text-sm text-gray-500" colSpan={6}>
+              Loading requests...
+            </td>
+          </tr>
+        ) : bookingError ? (
+          <tr>
+            <td className="py-5 px-4 text-sm text-red-600" colSpan={6}>
+              {bookingError}
+            </td>
+          </tr>
+        ) : bookingHistory.length === 0 ? (
+          <tr>
+            <td className="py-5 px-4 text-sm text-gray-500" colSpan={6}>
+              No request found.
+            </td>
+          </tr>
+        ) : (
+          bookingHistory.slice(0, 10).map((row, i) => {
+            const color =
+              row.status === "Successful"
+                ? "bg-[#C9E8CA] text-[#43A047]"
+                : row.status === "Pending"
+                ? "bg-[#FFF0D9] text-[#F99F10]"
+                : "bg-red-100 text-red-600";
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                        {["₦1,000", "₦2,500", "₦5,000", "₦10,000"].map((amt) => (
-                          <button
-                            key={amt}
-                            onClick={() => setFundAmount(amt.replace(/[₦,]/g, ""))}
-                            className="bg-[#EEF6FF] text-[#3E83C4] py-2 rounded-md hover:bg-[#E2EFFF] transition"
-                          >
-                            {amt}
-                          </button>
-                        ))}
-                      </div>
+            return (
+              <tr key={`${row.id}-${i}`}>
+                <td className="py-4 px-4 break-words">{row.id}</td>
+                <td className="py-4 px-4 break-words">{row.device}</td>
+                <td className="py-4 px-4 break-words">{row.tech}</td>
 
-                      <div className="flex gap-3 bg-[#EEF7FF] border border-[#CFE3F8] p-3 rounded-md text-xs text-gray-600">
-                        <img src={secure} alt="secure" className="w-8 h-8 shrink-0" />
-                        <p>
-                          <span className="font-medium text-black">Secure Payment</span>
-                          <br />
-                          Your payment will be processed securely through our payment gateway.
-                        </p>
-                      </div>
+                <td className="py-4 px-4">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 w-fit ${color}`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-current" />
+                    {row.status}
+                  </span>
+                </td>
 
-                      <button
-                        onClick={handleFundWallet}
-                        disabled={loading || !fundAmount}
-                        className={`w-full py-2.5 rounded-md text-sm font-medium transition ${loading || !fundAmount
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white cursor-pointer"
-                          }`}
-                      >
-                        {loading ? "Processing..." : "Continue"}
-                      </button>
+                <td className="py-4 px-4 font-semibold break-words">
+                  {row.cost}
+                </td>
 
-                      <button
-                        onClick={() => {
-                          setShowFundModal(false);
-                          setFundStep("form");
-                          setFundAmount("");
-                          setFundReference(null);
-                        }}
-                        className="w-full text-sm text-[#3E83C4] hover:underline cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  )}
+                <td className="py-4 px-4 break-words">
+                  {row.progress}
+                </td>
+              </tr>
+            );
+          })
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
 
-                  {fundStep === "processing" && (
-                    <div className="p-6 space-y-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <button
-                          onClick={() => setFundStep("form")}
-                          className="text-sm text-[#3E83C4] flex items-center gap-1"
-                        >
-                          ← Back
-                        </button>
+{/* Mobile cards */}
+<div className="md:hidden space-y-4 max-h-[400px] overflow-y-auto pr-1">
+  {bookingLoading ? (
+    <p className="text-sm text-gray-500">Loading requests...</p>
+  ) : bookingError ? (
+    <p className="text-sm text-red-600">{bookingError}</p>
+  ) : bookingHistory.length === 0 ? (
+    <p className="text-sm text-gray-500">No request found.</p>
+  ) : (
+    bookingHistory.slice(0, 10).map((row, i) => {
+      const color =
+        row.status === "Successful"
+          ? "bg-[#C9E8CA] text-[#43A047]"
+          : row.status === "Pending"
+          ? "bg-[#FFF0D9] text-[#F99F10]"
+          : "bg-red-100 text-red-600";
 
-                        <button
-                          onClick={() => setShowFundModal(false)}
-                          className="text-[#535353] hover:text-gray-600"
-                        >
-                          ✕
-                        </button>
-                      </div>
+      return (
+        <div
+          key={`${row.id}-${i}`}
+          className="border border-[#D9E7F5] rounded-xl p-4 bg-[#FAFCFF] space-y-3"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-[#656565]">Booking ID</p>
+              <p className="font-medium text-black break-words">
+                {row.id}
+              </p>
+            </div>
 
-                      <div className="flex items-start gap-3">
-                        <img src={shieldBlue} className="w-10 h-10 shrink-0" alt="" />
-                        <div>
-                          <h3 className="font-semibold text-base text-black">Payment Verification</h3>
-                          <p className="text-xs text-[#535353] leading-relaxed mt-0.5">
-                            If you completed payment in the Paystack page, you can verify here
-                            (fallback).
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 w-fit shrink-0 ${color}`}
+            >
+              <span className="w-2 h-2 rounded-full bg-current" />
+              {row.status}
+            </span>
+          </div>
+
+          <div>
+            <p className="text-xs text-[#656565]">Device</p>
+            <p className="text-sm text-black break-words">
+              {row.device}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs text-[#656565]">Technician</p>
+            <p className="text-sm text-black break-words">
+              {row.tech}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-[#656565]">Cost</p>
+              <p className="text-sm font-semibold text-black break-words">
+                {row.cost}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs text-[#656565]">Progress</p>
+              <p className="text-sm text-black break-words">
+                {row.progress}
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    })
+  )}
+</div>
+
+          {showFundModal && (
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"></div>
+          )}
+
+          {showFundModal && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
+              <div className="bg-white w-full max-w-[380px] rounded-xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] overflow-y-auto">
+                {fundStep === "form" && (
+                  <div className="p-6 space-y-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img src={fund} alt="fund" className="w-8 h-8 shrink-0" />
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-sm text-black">
+                            Fund Wallet
+                          </h3>
+                          <p className="text-xs text-[#535353] mt-0.5">
+                            Add money to your wallet securely
                           </p>
                         </div>
                       </div>
 
-                      <div className="bg-[#EEF7FF] rounded-md p-4 text-sm flex justify-between gap-4">
-                        <span className="text-[#535353]">Transaction Amount</span>
-                        <span className="font-semibold text-black text-right">
-                          ₦{Number(fundAmount || 0).toLocaleString()}
-                        </span>
-                      </div>
-
                       <button
-                        onClick={verifyFundWallet}
-                        disabled={loading}
-                        className={`w-full py-2.5 rounded-md text-sm font-medium transition ${loading
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white"
-                          }`}
+                        onClick={() => setShowFundModal(false)}
+                        className="text-[#535353] hover:text-gray-600 transition cursor-pointer shrink-0"
                       >
-                        {loading ? "Verifying..." : "Complete Payment"}
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-[#535353]">
+                      <span className="flex items-center gap-2 text-[#3E83C4]">
+                        <span className="w-2 h-2 bg-[#3E83C4] rounded-full"></span>
+                        Amount
+                      </span>
+                      <span>Verify</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-sm text-[#535353]">Enter Amount</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={fundAmount}
+                        onChange={(e) => setFundAmount(e.target.value)}
+                        placeholder="₦ 0"
+                        className="w-full border border-[#87AACB] rounded-md px-4 py-3 text-sm outline-none focus:border-[#3E83C4]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      {["₦1,000", "₦2,500", "₦5,000", "₦10,000"].map((amt) => (
+                        <button
+                          key={amt}
+                          onClick={() => setFundAmount(amt.replace(/[₦,]/g, ""))}
+                          className="bg-[#EEF6FF] text-[#3E83C4] py-2 rounded-md hover:bg-[#E2EFFF] transition"
+                        >
+                          {amt}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-3 bg-[#EEF7FF] border border-[#CFE3F8] p-3 rounded-md text-xs text-gray-600">
+                      <img src={secure} alt="secure" className="w-8 h-8 shrink-0" />
+                      <p>
+                        <span className="font-medium text-black">Secure Payment</span>
+                        <br />
+                        Your payment will be processed securely through our payment
+                        gateway.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleFundWallet}
+                      disabled={loading || !fundAmount}
+                      className={`w-full py-2.5 rounded-md text-sm font-medium transition ${loading || !fundAmount
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white cursor-pointer"
+                        }`}
+                    >
+                      {loading ? "Processing..." : "Continue"}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowFundModal(false);
+                        setFundStep("form");
+                        setFundAmount("");
+                        setFundReference(null);
+                      }}
+                      className="w-full text-sm text-[#3E83C4] hover:underline cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                {fundStep === "processing" && (
+                  <div className="p-6 space-y-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <button
+                        onClick={() => setFundStep("form")}
+                        className="text-sm text-[#3E83C4] flex items-center gap-1"
+                      >
+                        ← Back
                       </button>
 
                       <button
                         onClick={() => setShowFundModal(false)}
-                        className="w-full text-sm text-[#3E83C4] hover:underline cursor-pointer"
+                        className="text-[#535353] hover:text-gray-600"
                       >
-                        Cancel
+                        ✕
                       </button>
                     </div>
-                  )}
 
-                  {fundStep === "success" && (
-                    <div className="p-8 text-center space-y-4">
-                      <img src={success} className="w-14 mx-auto" alt="" />
-                      <h3 className="font-semibold text-black">Payment Successful</h3>
-                      <p className="text-sm text-[#535353]">
-                        Your wallet has been successfully funded.
-                      </p>
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={shieldBlue}
+                        className="w-10 h-10 shrink-0"
+                        alt=""
+                      />
+                      <div>
+                        <h3 className="font-semibold text-base text-black">
+                          Payment Verification
+                        </h3>
+                        <p className="text-xs text-[#535353] leading-relaxed mt-0.5">
+                          If you completed payment in the Paystack page, you can verify
+                          here (fallback).
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </div>
+
+                    <div className="bg-[#EEF7FF] rounded-md p-4 text-sm flex justify-between gap-4">
+                      <span className="text-[#535353]">Transaction Amount</span>
+                      <span className="font-semibold text-black text-right">
+                        ₦{Number(fundAmount || 0).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={verifyFundWallet}
+                      disabled={loading}
+                      className={`w-full py-2.5 rounded-md text-sm font-medium transition ${loading
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white"
+                        }`}
+                    >
+                      {loading ? "Verifying..." : "Complete Payment"}
+                    </button>
+
+                    <button
+                      onClick={() => setShowFundModal(false)}
+                      className="w-full text-sm text-[#3E83C4] hover:underline cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                {fundStep === "success" && (
+                  <div className="p-8 text-center space-y-4">
+                    <img src={success} className="w-14 mx-auto" alt="" />
+                    <h3 className="font-semibold text-black">Payment Successful</h3>
+                    <p className="text-sm text-[#535353]">
+                      Your wallet has been successfully funded.
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          )}
 
-            {showWithdrawModal && <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" />}
+          {showWithdrawModal && (
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" />
+          )}
 
-            {showWithdrawModal && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
-                <div className="bg-white w-full max-w-[380px] rounded-xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] overflow-y-auto">
-                  {withdrawStep === "form" && (
-                    <div className="p-6 space-y-8">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <img src={icon} className="w-8 shrink-0" alt="" />
-                          <div className="min-w-0">
-                            <h3 className="text-sm font-semibold text-black">Withdraw Funds</h3>
-                            <p className="text-xs text-[#535353] leading-tight">
-                              Withdraw money securely
-                            </p>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => setShowWithdrawModal(false)}
-                          className="text-[#535353] hover:text-black transition cursor-pointer shrink-0"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs text-[#535353]">
-                        <div className="flex items-center gap-2 text-[#3E83C4]">
-                          <span className="w-2 h-2 bg-[#3E83C4] rounded-full" />
-                          <span>Account Details</span>
-                        </div>
-                        <span>Withdraw</span>
-                      </div>
-
-                      <div className="flex items-center justify-between bg-[#EEF7FF] border border-[#CFE3F8] rounded-lg px-4 py-3 text-sm gap-4">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <img src={current} className="w-8 shrink-0" alt="" />
-                          <span className="text-[#535353]">Current Balance</span>
-                        </div>
-                        <span className="font-semibold text-black text-right">
-                          ₦{Number(wallet.balance || 0).toLocaleString()}
-                        </span>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm text-[#535353] flex items-center gap-2 mb-1">
-                            <img src={bank} className="w-8" alt="" />
-                            Bank
-                          </label>
-
-                          <select
-                            value={selectedBank}
-                            onChange={(e) => {
-                              setSelectedBank(e.target.value);
-                              setWithdrawData({ ...withdrawData, bankCode: e.target.value });
-                            }}
-                            className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none cursor-pointer"
-                          >
-                            <option value="">Select Bank</option>
-                            {banks.map((b) => (
-                              <option key={`${b.code}-${b.name}`} value={b.code}>
-                                {b.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="text-sm text-[#535353] flex items-center gap-2 mb-1">
-                            <img src={card} className="w-8" alt="" />
-                            Account Number
-                          </label>
-
-                          <input
-  type="text"
-  inputMode="numeric"
-  maxLength={10}
-  value={withdrawData.accountNumber}
-  onChange={(e) =>
-    setWithdrawData({
-      ...withdrawData,
-      accountNumber: e.target.value.replace(/\D/g, ""),
-    })
-  }
-  placeholder="Enter Account Number"
-  className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none"
-/>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          if (!withdrawData.bankCode) return alert("Please select a bank");
-                          if (!withdrawData.accountNumber)
-                            return alert("Please enter account number");
-                          setWithdrawStep("amount");
-                        }}
-                        className="w-full bg-[#3E83C4] hover:bg-[#2D75B8] text-white py-2.5 rounded-md text-sm font-medium transition cursor-pointer"
-                      >
-                        Verify & Continue
-                      </button>
-
-                      <button
-                        onClick={() => setShowWithdrawModal(false)}
-                        className="w-full text-sm text-[#3E83C4] hover:underline cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  )}
-
-                  {withdrawStep === "amount" && (
-                    <div className="px-6 pt-5 pb-7">
-                      <div className="flex items-center justify-between mb-6 gap-4">
-                        <button
-                          onClick={() => setWithdrawStep("form")}
-                          className="flex items-center gap-1 text-sm text-[#3E83C4] hover:underline cursor-pointer"
-                        >
-                          ← Back
-                        </button>
-
-                        <button
-                          onClick={() => setShowWithdrawModal(false)}
-                          className="text-[#535353] hover:text-black transition cursor-pointer"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-3 mb-4">
-                        <img src={icon} className="w-8 h-8 shrink-0" alt="" />
-                        <div>
-                          <h3 className="text-sm font-semibold text-black leading-tight">
-                            Enter Amount
+          {showWithdrawModal && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
+              <div className="bg-white w-full max-w-[380px] rounded-xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] overflow-y-auto">
+                {withdrawStep === "form" && (
+                  <div className="p-6 space-y-8">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img src={icon} className="w-8 shrink-0" alt="" />
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-semibold text-black">
+                            Withdraw Funds
                           </h3>
                           <p className="text-xs text-[#535353] leading-tight">
                             Withdraw money securely
@@ -1149,201 +1595,238 @@ useEffect(() => {
                         </div>
                       </div>
 
-                      <div className="mb-4">
-                        <label className="block text-sm text-[#535353] mb-1">
-                          Enter Amount
+                      <button
+                        onClick={() => setShowWithdrawModal(false)}
+                        className="text-[#535353] hover:text-black transition cursor-pointer shrink-0"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-[#535353]">
+                      <div className="flex items-center gap-2 text-[#3E83C4]">
+                        <span className="w-2 h-2 bg-[#3E83C4] rounded-full" />
+                        <span>Account Details</span>
+                      </div>
+                      <span>Withdraw</span>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-[#EEF7FF] border border-[#CFE3F8] rounded-lg px-4 py-3 text-sm gap-4">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img src={current} className="w-8 shrink-0" alt="" />
+                        <span className="text-[#535353]">Current Balance</span>
+                      </div>
+                      <span className="font-semibold text-black text-right">
+                        ₦{Number(wallet.available || 0).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm text-[#535353] flex items-center gap-2 mb-1">
+                          <img src={bank} className="w-8" alt="" />
+                          Bank
+                        </label>
+
+                        <select
+                          value={selectedBank}
+                          onChange={(e) => {
+                            setSelectedBank(e.target.value);
+                            setWithdrawData({
+                              ...withdrawData,
+                              bankCode: e.target.value,
+                            });
+                          }}
+                          className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none cursor-pointer"
+                        >
+                          <option value="">Select Bank</option>
+                          {banks.map((b) => (
+                            <option key={`${b.code}-${b.name}`} value={b.code}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-[#535353] flex items-center gap-2 mb-1">
+                          <img src={card} className="w-8" alt="" />
+                          Account Number
                         </label>
 
                         <input
-  type="number"
-  min="1"
-  value={withdrawData.amount}
-  onChange={(e) =>
-    setWithdrawData({ ...withdrawData, amount: e.target.value })
-  }
-  placeholder="₦ 0"
-  className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none"
-/>
-
-                        <input
-  type="password"
-  inputMode="numeric"
-  maxLength={4}
-  value={withdrawData.pin}
-  onChange={(e) =>
-    setWithdrawData({
-      ...withdrawData,
-      pin: e.target.value.replace(/\D/g, ""),
-    })
-  }
-  placeholder="Enter Transaction PIN"
-  className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none mt-3"
-/>
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-10 text-xs">
-                        {["₦1,000", "₦2,500", "₦5,000", "₦10,000"].map((amt) => (
-                          <button
-                            key={amt}
-                            onClick={() =>
-                              setWithdrawData({
-                                ...withdrawData,
-                                amount: amt.replace(/[₦,]/g, ""),
-                              })
-                            }
-                            className="bg-[#EEF6FF] text-[#3E83C4] py-2 rounded-md hover:bg-[#E2EFFF] transition cursor-pointer"
-                          >
-                            {amt}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="flex justify-center mb-3">
-                        <button
-                          onClick={handleWithdraw}
-                          disabled={loading}
-                          className={`w-full sm:w-56 py-2.5 rounded-md text-sm font-medium transition ${loading
-                              ? "bg-gray-400 cursor-not-allowed"
-                              : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white"
-                            }`}
-                        >
-                          {loading ? "Processing..." : "Withdraw"}
-                        </button>
-                      </div>
-
-                      <div className="text-center">
-                        <button
-                          onClick={() => setShowWithdrawModal(false)}
-                          className="text-sm text-[#3E83C4] hover:underline cursor-pointer"
-                        >
-                          Cancel
-                        </button>
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={10}
+                          value={withdrawData.accountNumber}
+                          onChange={(e) =>
+                            setWithdrawData({
+                              ...withdrawData,
+                              accountNumber: e.target.value.replace(/\D/g, ""),
+                            })
+                          }
+                          placeholder="Enter Account Number"
+                          className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none"
+                        />
                       </div>
                     </div>
-                  )}
 
-                  {withdrawStep === "success" && (
-                    <div className="p-8 text-center space-y-4">
-                      <img src={success} className="w-14 mx-auto" alt="" />
-                      <h3 className="font-semibold text-black">Withdraw Successful</h3>
-                      <p className="text-sm text-[#535353]">
-                        Your funds have been successfully transferred to your bank
-                        account.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+                    <button
+                      onClick={() => {
+                        if (!withdrawData.bankCode)
+                          return alert("Please select a bank");
+                        if (!withdrawData.accountNumber)
+                          return alert("Please enter account number");
+                        setWithdrawStep("amount");
+                      }}
+                      className="w-full bg-[#3E83C4] hover:bg-[#2D75B8] text-white py-2.5 rounded-md text-sm font-medium transition cursor-pointer"
+                    >
+                      Verify & Continue
+                    </button>
 
-      <section className="w-full overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_2fr] gap-8">
-            {/* LEFT — Contact Info */}
-            <div className="border border-[#3E83C4] rounded-xl p-5 sm:p-6 bg-[#F6FBFF]">
-              <h3 className="font-semibold text-black text-lg sm:text-xl mb-4">Contact Info</h3>
-
-              <div className="bg-white rounded-lg shadow-lg p-4 space-y-4 text-gray-600">
-                <div className="flex items-start gap-2">
-                  <img src={email} alt="" className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span className="text-sm break-words">{profileUser?.email || "—"}</span>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <img src={locationBlue} alt="" className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span className="text-sm break-words">{addressText}</span>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <img src={phone} alt="" className="w-5 h-5 mt-0.5 shrink-0" />
-                  <span className="text-sm break-words">{profileUser?.phoneNumber || "—"}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT — Items Uploaded */}
-            <div className="border border-[#3E83C4] rounded-xl bg-[#F6FBFF] p-5 sm:p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-black text-lg sm:text-xl flex items-center gap-2">
-                  <img src={item} alt="" className="w-9 h-8" />
-                  Items Uploaded
-                </h3>
-
-                <button
-                  onClick={() => navigate("/client/upload-item")}
-                  className="border border-[#3E83C4] text-[#3E83C4] px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer hover:bg-[#3E83C4] hover:text-white transition"
-                >
-                  + Upload Item
-                </button>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm p-4 space-y-4 max-h-[400px] sm:max-h-[230px] overflow-y-auto">
-                {uploadedProducts.length === 0 && (
-                  <p className="text-sm text-gray-500">No items uploaded yet.</p>
+                    <button
+                      onClick={() => setShowWithdrawModal(false)}
+                      className="w-full text-sm text-[#3E83C4] hover:underline cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 )}
 
-                {sortedUploads.map((product, index) => {
-                  const id = product._id || product.id;
-                  const isDeleting = deletingId === id;
+                {withdrawStep === "amount" && (
+                  <div className="px-6 pt-5 pb-7">
+                    <div className="flex items-center justify-between mb-6 gap-4">
+                      <button
+                        onClick={() => setWithdrawStep("form")}
+                        className="flex items-center gap-1 text-sm text-[#3E83C4] hover:underline cursor-pointer"
+                      >
+                        ← Back
+                      </button>
 
-                  return (
-                    <div
-                      key={id || index}
-                      className={`flex flex-col sm:flex-row gap-4 border-b border-[#C1DAF3] pb-4 ${index === 0 ? "pt-1" : ""
-                        }`}
-                    >
-                      <img
-                        src={product.imageUrl || product.image}
-                        alt={product.objectName}
-                        className="w-full sm:w-28 h-40 sm:h-28 rounded-md object-cover shrink-0"
-                      />
+                      <button
+                        onClick={() => setShowWithdrawModal(false)}
+                        className="text-[#535353] hover:text-black transition cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h4 className="font-medium text-black break-words">
-                              {product.objectName || "—"}
-                              {index === 0 && (
-                                <span className="ml-2 inline-block text-xs bg-[#EEF6FF] text-[#3E83C4] px-2 py-1 rounded-full">
-                                  Latest
-                                </span>
-                              )}
-                            </h4>
-
-                            <p className="text-[#535353] text-sm mt-1 leading-relaxed break-words">
-                              {product.description || "—"}
-                            </p>
-
-                            <p className="text-xs text-gray-400 mt-2">
-                              {formatUploadedTime(product.uploadedAt)}
-                            </p>
-                          </div>
-
-                          <button
-                            onClick={() => handleDeleteUpload(product)}
-                            disabled={isDeleting}
-                            className={`text-xs px-3 py-1 rounded-md border transition cursor-pointer shrink-0 ${isDeleting
-                                ? "opacity-60 cursor-not-allowed border-gray-300 text-gray-500"
-                                : "border-red-500 text-red-600 hover:bg-red-50"
-                              }`}
-                          >
-                            {isDeleting ? "Deleting..." : "Delete"}
-                          </button>
-                        </div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <img src={icon} className="w-8 h-8 shrink-0" alt="" />
+                      <div>
+                        <h3 className="text-sm font-semibold text-black leading-tight">
+                          Enter Amount
+                        </h3>
+                        <p className="text-xs text-[#535353] leading-tight">
+                          Withdraw money securely
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
+
+                    <div className="mb-4">
+                      <label className="block text-sm text-[#535353] mb-1">
+                        Enter Amount
+                      </label>
+
+                      <input
+                        type="number"
+                        min="1"
+                        value={withdrawData.amount}
+                        onChange={(e) =>
+                          setWithdrawData({
+                            ...withdrawData,
+                            amount: e.target.value,
+                          })
+                        }
+                        placeholder="₦ 0"
+                        className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none"
+                      />
+
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={4}
+                        value={withdrawData.pin}
+                        onChange={(e) =>
+                          setWithdrawData({
+                            ...withdrawData,
+                            pin: e.target.value.replace(/\D/g, ""),
+                          })
+                        }
+                        placeholder="Enter Transaction PIN"
+                        className="w-full border border-[#87AACB] rounded-md px-3 py-2 text-sm outline-none mt-3"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-10 text-xs">
+                      {["₦1,000", "₦2,500", "₦5,000", "₦10,000"].map((amt) => (
+                        <button
+                          key={amt}
+                          onClick={() =>
+                            setWithdrawData({
+                              ...withdrawData,
+                              amount: amt.replace(/[₦,]/g, ""),
+                            })
+                          }
+                          className="bg-[#EEF6FF] text-[#3E83C4] py-2 rounded-md hover:bg-[#E2EFFF] transition cursor-pointer"
+                        >
+                          {amt}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-center mb-3">
+                      <button
+                        onClick={handleWithdraw}
+                        disabled={loading}
+                        className={`w-full sm:w-56 py-2.5 rounded-md text-sm font-medium transition ${loading
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-[#3E83C4] hover:bg-[#2D75B8] text-white"
+                          }`}
+                      >
+                        {loading ? "Processing..." : "Withdraw"}
+                      </button>
+                    </div>
+
+                    <div className="text-center">
+                      <button
+                        onClick={() => setShowWithdrawModal(false)}
+                        className="text-sm text-[#3E83C4] hover:underline cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {withdrawStep === "success" && (
+                  <div className="p-8 text-center space-y-4">
+                    <img src={success} className="w-14 mx-auto" alt="" />
+                    <h3 className="font-semibold text-black">Withdraw Successful</h3>
+                    <p className="text-sm text-[#535353]">
+                      Your funds have been successfully transferred to your bank
+                      account.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
+        <div className="mt-10 flex">
+               <button
+                 onClick={logout}
+                 className="flex items-center gap-2 bg-[#ED3528] text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition cursor-pointer"
+               >
+                 <img src={logOut} alt="logout" className="w-4 h-4" />
+                 Log Out
+               </button>
+             </div>
+        </div>
+        
       </section>
 
-      <section className="w-full py-8 overflow-hidden">
+      {/* <section className="w-full py-8 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="border border-[#5F8EBA] rounded-xl p-4 sm:p-6 bg-white">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
@@ -1362,7 +1845,7 @@ useEffect(() => {
               </button>
             </div>
 
-            {/* Desktop table */}
+            
             <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-sm lg:text-base">
                 <thead>
@@ -1398,7 +1881,7 @@ useEffect(() => {
                   ) : (
                     bookingHistory.slice(0, 5).map((row, i) => {
                       const color =
-                        row.status === "Paid"
+                        row.status === "Successful"
                           ? "bg-[#C9E8CA] text-[#43A047]"
                           : row.status === "Pending"
                             ? "bg-[#FFF0D9] text-[#F99F10]"
@@ -1419,7 +1902,9 @@ useEffect(() => {
                             </span>
                           </td>
 
-                          <td className="py-4 px-4 font-semibold break-words">{row.cost}</td>
+                          <td className="py-4 px-4 font-semibold break-words">
+                            {row.cost}
+                          </td>
                           <td className="py-4 px-4 break-words">{row.progress}</td>
                         </tr>
                       );
@@ -1428,19 +1913,20 @@ useEffect(() => {
                 </tbody>
               </table>
             </div>
+         
 
-            {/* Mobile cards */}
+           
             <div className="md:hidden space-y-4">
               {bookingLoading ? (
-                <div className="py-5 text-sm text-gray-500">Loading booking history...</div>
+                <p className="text-sm text-gray-500">Loading booking history...</p>
               ) : bookingError ? (
-                <div className="py-5 text-sm text-red-600">{bookingError}</div>
+                <p className="text-sm text-red-600">{bookingError}</p>
               ) : bookingHistory.length === 0 ? (
-                <div className="py-5 text-sm text-gray-500">No booking history found.</div>
+                <p className="text-sm text-gray-500">No booking history found.</p>
               ) : (
                 bookingHistory.slice(0, 5).map((row, i) => {
                   const color =
-                    row.status === "Paid"
+                    row.status === "Successful"
                       ? "bg-[#C9E8CA] text-[#43A047]"
                       : row.status === "Pending"
                         ? "bg-[#FFF0D9] text-[#F99F10]"
@@ -1449,14 +1935,12 @@ useEffect(() => {
                   return (
                     <div
                       key={`${row.id}-${i}`}
-                      className="border border-[#E5EEF8] rounded-xl p-4"
+                      className="border border-[#D9E7F5] rounded-xl p-4 bg-[#FAFCFF] space-y-3"
                     >
-                      <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-xs text-[#656565] mb-1">Booking ID</p>
-                          <p className="text-sm font-medium text-black break-words">
-                            {row.id}
-                          </p>
+                          <p className="text-xs text-[#656565]">Booking ID</p>
+                          <p className="font-medium text-black break-words">{row.id}</p>
                         </div>
 
                         <span
@@ -1467,25 +1951,29 @@ useEffect(() => {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-[#656565]">Device</p>
+                        <p className="text-sm text-black break-words">{row.device}</p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-[#656565]">Technician</p>
+                        <p className="text-sm text-black break-words">{row.tech}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <p className="text-xs text-[#656565] mb-1">Device</p>
-                          <p className="break-words">{row.device}</p>
+                          <p className="text-xs text-[#656565]">Cost</p>
+                          <p className="text-sm font-semibold text-black break-words">
+                            {row.cost}
+                          </p>
                         </div>
 
                         <div>
-                          <p className="text-xs text-[#656565] mb-1">Technician</p>
-                          <p className="break-words">{row.tech}</p>
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-[#656565] mb-1">Cost</p>
-                          <p className="font-semibold break-words">{row.cost}</p>
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-[#656565] mb-1">Progress</p>
-                          <p className="break-words">{row.progress}</p>
+                          <p className="text-xs text-[#656565]">Progress</p>
+                          <p className="text-sm text-black break-words">
+                            {row.progress}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1494,18 +1982,10 @@ useEffect(() => {
               )}
             </div>
           </div>
-
-          <div className="mt-10 flex">
-            <button
-              onClick={logout}
-              className="flex items-center gap-2 bg-[#ED3528] text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition cursor-pointer"
-            >
-              <img src={logOut} alt="logout" className="w-4 h-4" />
-              Log Out
-            </button>
-          </div>
+                          
         </div>
-      </section>
+        
+      </section> */}
     </div>
   );
 };
