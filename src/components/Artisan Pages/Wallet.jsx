@@ -412,7 +412,7 @@ useEffect(() => {
                   <p className="text-sm text-gray-500">Daily Earnings Streak</p>
                   <div className="relative inline-block my-2">
                     <span className="text-4xl sm:text-5xl font-bold text-blue-600">
-                      7
+                      0
                     </span>
                     <span className="absolute bottom-1 left-full ml-1 text-sm text-gray-400">
                       days!

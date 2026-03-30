@@ -261,7 +261,18 @@ const handleWalletPayment = async () => {
   } catch (err) {
     console.error(err);
     setActiveModal(MODAL.WALLET);
-    setSubmitError(err?.message || "Something went wrong");
+    // setSubmitError(err?.message || "Something went wrong");
+    const msg = String(err?.message || "").toLowerCase();
+
+if (msg.includes("failed to fetch") || msg.includes("network")) {
+  setSubmitError("Network error. Please check your connection and try again.");
+} else if (msg.includes("401")) {
+  setSubmitError("Session expired. Please login again.");
+} else if (msg.includes("500")) {
+  setSubmitError("Server error. Please try again later.");
+} else {
+  setSubmitError("Unable to complete payment. Please try again.");
+}
   } finally {
     setIsSubmitting(false);
   }

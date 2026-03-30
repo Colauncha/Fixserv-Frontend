@@ -1,80 +1,28 @@
-import axios from "axios";
+import { createApiClient } from "./createApiClient";
 
-const ORDER_API = axios.create({
-  baseURL: "/api/orders",
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
-  timeout: 30000,
+const ORDER_API_BASE_URL = import.meta.env.DEV
+  ? "/api/orders"
+  : import.meta.env.VITE_ORDER_API_BASE_URL ||
+    "https://dev-order-api.fixserv.co/api/orders";
+
+const ORDER_SERVICE_API_BASE_URL = import.meta.env.DEV
+  ? "/api/order-service"
+  : import.meta.env.VITE_ORDER_SERVICE_API_BASE_URL ||
+    "https://dev-order-api.fixserv.co/api/order-service";
+
+const ORDER_API = createApiClient({
+  baseURL: ORDER_API_BASE_URL,
+  requestLabel: "ORDER AXIOS REQUEST =>",
+  responseLabel: "ORDER AXIOS RESPONSE =>",
+  errorLabel: "ORDER AXIOS ERROR =>",
 });
 
-const ORDER_SERVICE_API = axios.create({
-  baseURL: "/api/order-service",
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
-  timeout: 30000,
+const ORDER_SERVICE_API = createApiClient({
+  baseURL: ORDER_SERVICE_API_BASE_URL,
+  requestLabel: "ORDER SERVICE AXIOS REQUEST =>",
+  responseLabel: "ORDER SERVICE AXIOS RESPONSE =>",
+  errorLabel: "ORDER SERVICE AXIOS ERROR =>",
 });
-
-const attachAuth = (config) => {
-  const token = localStorage.getItem("fixserv_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-};
-
-ORDER_API.interceptors.request.use((config) => {
-  const next = attachAuth(config);
-
-  console.log(
-    "ORDER AXIOS REQUEST =>",
-    next.method?.toUpperCase(),
-    `${next.baseURL || ""}${next.url || ""}`,
-    next.params || next.data || ""
-  );
-
-  return next;
-});
-
-ORDER_SERVICE_API.interceptors.request.use((config) => {
-  const next = attachAuth(config);
-
-  console.log(
-    "ORDER SERVICE AXIOS REQUEST =>",
-    next.method?.toUpperCase(),
-    `${next.baseURL || ""}${next.url || ""}`,
-    next.params || next.data || ""
-  );
-
-  return next;
-});
-
-const handleResponse = (response) => {
-  console.log(
-    "ORDER AXIOS RESPONSE =>",
-    response.status,
-    response.config.url,
-    response.data
-  );
-  return response;
-};
-
-const handleError = (error) => {
-  console.log(
-    "ORDER AXIOS ERROR =>",
-    error?.response?.status,
-    error?.config?.url,
-    error?.response?.data || error?.message
-  );
-  return Promise.reject(error);
-};
-
-ORDER_API.interceptors.response.use(handleResponse, handleError);
-ORDER_SERVICE_API.interceptors.response.use(handleResponse, handleError);
 
 function normalizeOrderResponse(data) {
   const payload = data?.data || data?.order || data;
@@ -88,8 +36,6 @@ function extractArray(payload, keys = []) {
   }
   return null;
 }
-
-
 
 export const createDraftOrder = async (payload) => {
   const res = await ORDER_API.post("/draft", payload);
@@ -137,25 +83,29 @@ export const createOrder = async (payload) => {
 export const startWorkOnOrder = async (orderId) => {
   if (!orderId) throw new Error("orderId is required");
 
-  await ORDER_API.patch(`/${orderId}/start-work`);
+  const res = await ORDER_API.patch(`/${orderId}/start-work`);
+  return res?.data;
 };
 
 export const completeWorkOnOrder = async (orderId) => {
   if (!orderId) throw new Error("orderId is required");
 
-  await ORDER_API.patch(`/${orderId}/complete-work`);
+  const res = await ORDER_API.patch(`/${orderId}/complete-work`);
+  return res?.data;
 };
 
 export const acceptOrder = async (orderId) => {
   if (!orderId) throw new Error("orderId is required");
 
-  await ORDER_API.post(`/${orderId}/accept`);
+  const res = await ORDER_API.post(`/${orderId}/accept`);
+  return res?.data;
 };
 
 export const rejectOrder = async (orderId) => {
   if (!orderId) throw new Error("orderId is required");
 
-  await ORDER_API.post(`/${orderId}/reject`);
+  const res = await ORDER_API.post(`/${orderId}/reject`);
+  return res?.data;
 };
 
 export const releasePaymentToArtisan = async (orderId) => {
@@ -172,9 +122,11 @@ export const deleteOrder = async (orderId) => {
   return res?.data;
 };
 
-export const cancelOrderByClient = async (orderId, payload) => {
+export const cancelOrderByClient = async (orderId, payload = {}) => {
   if (!orderId) throw new Error("orderId is required");
 
   const res = await ORDER_API.patch(`/${orderId}/cancel`, payload);
   return res?.data;
 };
+
+export { ORDER_API, ORDER_SERVICE_API };

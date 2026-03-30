@@ -23,160 +23,252 @@ const ArtisanLogIn = () => {
   const [error, setError] = useState("");
 
   // NORMAL EMAIL/PASSWORD LOGIN
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     setError("");
 
-    const newErrors = { email: "", password: "" };
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    if (!formData.password) newErrors.password = "Password is required";
+//     const newErrors = { email: "", password: "" };
+//     if (!formData.email.trim()) newErrors.email = "Email is required";
+//     if (!formData.password) newErrors.password = "Password is required";
 
-    if (Object.values(newErrors).some(Boolean)) {
-      setFieldErrors(newErrors);
+//     if (Object.values(newErrors).some(Boolean)) {
+//       setFieldErrors(newErrors);
+//       return;
+//     }
+
+//     setFieldErrors({ email: "", password: "" });
+//     const email = formData.email.trim().toLowerCase();
+
+//     try {
+//       setLoading(true);
+
+//       const res = await loginUser({ email, password: formData.password }, { timeout: 60000 });
+//       const inner = res?.data?.data; // { response, BearerToken }
+//       const token = inner?.BearerToken;
+//       const user = inner?.response;
+
+//       if (!token || !user) {
+//         setError("Invalid server response (missing token/user).");
+//         return;
+//       }
+
+//       if (user.role !== "ARTISAN") {
+//         setError("This account is not an artisan account.");
+//         return;
+//       }
+
+//       // Persist token/role
+//       localStorage.setItem("fixserv_token", token);
+//       localStorage.setItem("fixserv_role", user.role);
+
+//       // Optionally fetch fresh profile if backend supports it
+//       let normalizedUser = user;
+//       /*
+//       try {
+//         const adminId = user?._id || user?.id || user?.artisanId;
+//         if (adminId) {
+//           const profRes = await fetchAdminById(adminId);
+//           const fresh = profRes?.data?.data || profRes?.data || user;
+//           normalizedUser = {
+//             ...fresh,
+//             id: fresh?._id || fresh?.id || adminId,
+//             skills: fresh?.skills || fresh?.skillSet || [],
+//             phone: fresh?.phone || fresh?.phoneNumber || "",
+//           };
+//         }
+//       } catch (e) {
+//         console.warn("Could not refresh profile, using login user.", e);
+//       }
+//       */
+
+//       // Save full user
+//       localStorage.setItem("fixserv_user", JSON.stringify(normalizedUser));
+
+//       // Call AuthContext
+//       login?.(token, normalizedUser);
+
+//       navigate("/artisan");
+//     } catch (err) {
+
+//   console.error("Artisan login error =>", err);
+
+//   if (err?.code === "ECONNABORTED") {
+//     setError("Server is taking too long to respond. Please try again.");
+//     return;
+//   }
+
+//   if (!err?.response) {
+//     setError("Network error. Please check your internet connection.");
+//     return;
+//   }
+
+//   const status = err?.response?.status;
+//   const apiData = err?.response?.data;
+
+//   const rawMessage =
+//     apiData?.errors?.[0]?.message ||
+//     apiData?.message ||
+//     err?.message ||
+//     "";
+
+//   const msg = String(rawMessage).toLowerCase();
+
+
+
+//   /* EMAIL NOT FOUND */
+
+// if (
+//   msg.includes("user not found") ||
+//   msg.includes("email not found") ||
+//   msg.includes("account not found") ||
+//   msg.includes("no user with that email") ||
+//   msg.includes("user does not exist") ||
+//   msg.includes("email does not exist") ||
+//   msg.includes("email not registered")
+// ) {
+//   setFieldErrors({
+//     email: "No artisan account found with this email.",
+//     password: "",
+//   });
+//   return;
+// }
+
+
+
+
+//   /* INCORRECT PASSWORD */
+
+//   if (
+//     msg.includes("invalid credentials") ||
+//     msg.includes("incorrect password") ||
+//     msg.includes("password incorrect")
+//   ) {
+//     setFieldErrors({
+//       email: "",
+//       password: "Incorrect password. Please try again.",
+//     });
+//     return;
+//   }
+
+
+
+//   /* UNAUTHORIZED */
+
+//   if (status === 401) {
+//     setError("Invalid email or password.");
+//     return;
+//   }
+
+
+
+//   /* SERVER ERROR */
+
+//   if (status >= 500) {
+//     setError("Server error. Please try again later.");
+//     return;
+//   }
+
+
+
+//   setError("Unable to log in. Please try again.");
+
+// }
+//  finally {
+//       setLoading(false);
+//     }
+//   };
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setFieldErrors({ email: "", password: "" });
+
+  const newErrors = { email: "", password: "" };
+
+  if (!formData.email.trim()) newErrors.email = "Email is required";
+  if (!formData.password) newErrors.password = "Password is required";
+
+  if (Object.values(newErrors).some(Boolean)) {
+    setFieldErrors(newErrors);
+    return;
+  }
+
+  const email = formData.email.trim().toLowerCase();
+
+  try {
+    setLoading(true);
+
+    const res = await loginUser(
+      { email, password: formData.password },
+      { timeout: 60000 }
+    );
+
+    const inner = res?.data?.data;
+    const token = inner?.BearerToken;
+    const user = inner?.response;
+
+    if (!token || !user) {
+      setError("Invalid server response.");
       return;
     }
 
-    setFieldErrors({ email: "", password: "" });
-    const email = formData.email.trim().toLowerCase();
-
-    try {
-      setLoading(true);
-
-      const res = await loginUser({ email, password: formData.password }, { timeout: 60000 });
-      const inner = res?.data?.data; // { response, BearerToken }
-      const token = inner?.BearerToken;
-      const user = inner?.response;
-
-      if (!token || !user) {
-        setError("Invalid server response (missing token/user).");
-        return;
-      }
-
-      if (user.role !== "ARTISAN") {
-        setError("This account is not an artisan account.");
-        return;
-      }
-
-      // Persist token/role
-      localStorage.setItem("fixserv_token", token);
-      localStorage.setItem("fixserv_role", user.role);
-
-      // Optionally fetch fresh profile if backend supports it
-      let normalizedUser = user;
-      /*
-      try {
-        const adminId = user?._id || user?.id || user?.artisanId;
-        if (adminId) {
-          const profRes = await fetchAdminById(adminId);
-          const fresh = profRes?.data?.data || profRes?.data || user;
-          normalizedUser = {
-            ...fresh,
-            id: fresh?._id || fresh?.id || adminId,
-            skills: fresh?.skills || fresh?.skillSet || [],
-            phone: fresh?.phone || fresh?.phoneNumber || "",
-          };
-        }
-      } catch (e) {
-        console.warn("Could not refresh profile, using login user.", e);
-      }
-      */
-
-      // Save full user
-      localStorage.setItem("fixserv_user", JSON.stringify(normalizedUser));
-
-      // Call AuthContext
-      login?.(token, normalizedUser);
-
-      navigate("/artisan");
-    } catch (err) {
-
-  console.error("Artisan login error =>", err);
-
-  if (err?.code === "ECONNABORTED") {
-    setError("Server is taking too long to respond. Please try again.");
-    return;
-  }
-
-  if (!err?.response) {
-    setError("Network error. Please check your internet connection.");
-    return;
-  }
-
-  const status = err?.response?.status;
-  const apiData = err?.response?.data;
-
-  const rawMessage =
-    apiData?.errors?.[0]?.message ||
-    apiData?.message ||
-    err?.message ||
-    "";
-
-  const msg = String(rawMessage).toLowerCase();
-
-
-
-  /* EMAIL NOT FOUND */
-
-if (
-  msg.includes("user not found") ||
-  msg.includes("email not found") ||
-  msg.includes("account not found") ||
-  msg.includes("no user with that email") ||
-  msg.includes("user does not exist") ||
-  msg.includes("email does not exist") ||
-  msg.includes("email not registered")
-) {
-  setFieldErrors({
-    email: "No artisan account found with this email.",
-    password: "",
-  });
-  return;
-}
-
-
-
-
-  /* INCORRECT PASSWORD */
-
-  if (
-    msg.includes("invalid credentials") ||
-    msg.includes("incorrect password") ||
-    msg.includes("password incorrect")
-  ) {
-    setFieldErrors({
-      email: "",
-      password: "Incorrect password. Please try again.",
-    });
-    return;
-  }
-
-
-
-  /* UNAUTHORIZED */
-
-  if (status === 401) {
-    setError("Invalid email or password.");
-    return;
-  }
-
-
-
-  /* SERVER ERROR */
-
-  if (status >= 500) {
-    setError("Server error. Please try again later.");
-    return;
-  }
-
-
-
-  setError("Unable to log in. Please try again.");
-
-}
- finally {
-      setLoading(false);
+    if (user.role !== "ARTISAN") {
+      setError("This account is not an artisan account.");
+      return;
     }
-  };
+
+    localStorage.setItem("fixserv_token", token);
+    localStorage.setItem("fixserv_role", user.role);
+
+    const normalizedUser = {
+      ...user,
+      id: user?._id || user?.id || user?.artisanId,
+      skills: user?.skills || user?.skillSet || [],
+      phone: user?.phone || user?.phoneNumber || "",
+    };
+
+    localStorage.setItem("fixserv_user", JSON.stringify(normalizedUser));
+    login?.(token, normalizedUser);
+
+    navigate("/artisan");
+  } catch (err) {
+    console.error("Artisan login error =>", err);
+
+    const msg = String(err?.backendMessage || err?.message || "").toLowerCase();
+
+    if (
+      msg.includes("user not found") ||
+      msg.includes("email not found") ||
+      msg.includes("account not found") ||
+      msg.includes("no user with that email") ||
+      msg.includes("user does not exist") ||
+      msg.includes("email does not exist") ||
+      msg.includes("email not registered")
+    ) {
+      setFieldErrors({
+        email: "No artisan account found with this email.",
+        password: "",
+      });
+      return;
+    }
+
+    if (
+      msg.includes("invalid credentials") ||
+      msg.includes("incorrect password") ||
+      msg.includes("password incorrect")
+    ) {
+      setFieldErrors({
+        email: "",
+        password: "Incorrect password. Please try again.",
+      });
+      return;
+    }
+
+    setError(err.message || "Unable to log in. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // GOOGLE LOGIN
   const googleLogin = useGoogleLogin({

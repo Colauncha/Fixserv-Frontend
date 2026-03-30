@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from "react";
 import ArtisanHeader from "../Artisan Pages/ArtisanHeader";
 import { useAuth } from "../../context/AuthContext";
@@ -13,6 +12,44 @@ const STATUS_ORDER = {
   APPROVED: 1,
   PENDING: 2,
   REJECTED: 3,
+};
+
+const getUserFriendlyError = (err, fallback = "Something went wrong. Please try again.") => {
+  const msg = String(err?.message || "").toLowerCase();
+
+  if (msg.includes("failed to fetch") || msg.includes("network")) {
+    return "Network error. Please check your internet connection and try again.";
+  }
+
+  if (msg.includes("401") || msg.includes("unauthorized")) {
+    return "Session expired. Please login again.";
+  }
+
+  if (msg.includes("403")) {
+    return "You do not have permission to perform this action.";
+  }
+
+  if (msg.includes("404")) {
+    return "Requested certificate was not found.";
+  }
+
+  if (msg.includes("405")) {
+    return "This action is not allowed right now.";
+  }
+
+  if (msg.includes("413")) {
+    return "This file is too large.";
+  }
+
+  if (msg.includes("500") || msg.includes("server")) {
+    return "Server error. Please try again later.";
+  }
+
+  if (msg.includes("timeout")) {
+    return "The request took too long. Please try again.";
+  }
+
+  return fallback;
 };
 
 const timeAgo = (date) => {
@@ -44,14 +81,19 @@ const ArtisanCertificates = () => {
   const [activeTab, setActiveTab] = useState("ALL");
   const [preview, setPreview] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-const [confirmDelete, setConfirmDelete] = useState(null);
-
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
     if (!user) return;
 
     const fetchCertificates = async () => {
       try {
+        setLoading(true);
+        setError("");
+        setSuccessMsg("");
+
         const token = localStorage.getItem("fixserv_token");
 
         const res = await fetch(
@@ -63,11 +105,29 @@ const [confirmDelete, setConfirmDelete] = useState(null);
           }
         );
 
-        const json = await res.json();
+        let json = null;
+        try {
+          json = await res.json();
+        } catch {
+          json = null;
+        }
 
-        if (json?.success) setData(json);
+        if (!res.ok) {
+          throw new Error(
+            json?.message ||
+              json?.error ||
+              `Failed to load certificates (HTTP ${res.status})`
+          );
+        }
+
+        if (json?.success) {
+          setData(json);
+        } else {
+          throw new Error(json?.message || "Unable to load certificates.");
+        }
       } catch (err) {
         console.log("CERT ERROR:", err);
+        setError(getUserFriendlyError(err, "Unable to load certificates."));
       } finally {
         setLoading(false);
       }
@@ -76,18 +136,15 @@ const [confirmDelete, setConfirmDelete] = useState(null);
     fetchCertificates();
   }, [user]);
 
-
   const filteredCertificates = useMemo(() => {
     if (!data?.certificates) return [];
 
     let list = [...data.certificates];
 
-    // Filter
     if (activeTab !== "ALL") {
       list = list.filter((c) => c.status === activeTab);
     }
 
-    // Sort (status priority + latest first)
     list.sort((a, b) => {
       const statusDiff =
         (STATUS_ORDER[a.status] || 99) -
@@ -101,66 +158,93 @@ const [confirmDelete, setConfirmDelete] = useState(null);
     return list;
   }, [data, activeTab]);
 
-
   const handleDownload = async (url, name) => {
     try {
+      setError("");
+      setSuccessMsg("");
+
       const res = await fetch(url);
+
+      if (!res.ok) {
+        throw new Error(`Download failed (HTTP ${res.status})`);
+      }
+
       const blob = await res.blob();
 
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = name || "certificate";
       link.click();
+
+      setSuccessMsg("Certificate downloaded successfully.");
     } catch (err) {
       console.log("DOWNLOAD ERROR:", err);
+      setError(getUserFriendlyError(err, "Unable to download certificate."));
     }
   };
 
   const handleDelete = async (cert) => {
-  try {
-    setDeletingId(cert.id);
+    try {
+      setDeletingId(cert.id);
+      setError("");
+      setSuccessMsg("");
 
-    const token = localStorage.getItem("fixserv_token");
+      const token = localStorage.getItem("fixserv_token");
 
-    const res = await fetch(
-      `https://dev-user-api.fixserv.co/api/certificate/${user.id}/certificates/${cert.id}`,
-      {
-        method: "DELETE",
-        headers: token
-          ? { Authorization: `Bearer ${token}` }
-          : {},
+      const res = await fetch(
+        `https://dev-user-api.fixserv.co/api/certificate/${user.id}/certificates/${cert.id}`,
+        {
+          method: "DELETE",
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : {},
+        }
+      );
+
+      let result = null;
+      try {
+        result = await res.json();
+      } catch {
+        result = null;
       }
-    );
 
-    const result = await res.json();
-
-    if (result?.success) {
-      // Optimistic update
-      setData((prev) => {
-        const updatedCertificates = prev.certificates.filter(
-          (c) => c.id !== cert.id
+      if (!res.ok) {
+        throw new Error(
+          result?.message ||
+            result?.error ||
+            `Delete failed (HTTP ${res.status})`
         );
+      }
 
-        return {
-          ...prev,
-          certificates: updatedCertificates,
-          totalCertificates: updatedCertificates.length,
-          pendingCount: updatedCertificates.filter(c => c.status === "PENDING").length,
-          approvedCount: updatedCertificates.filter(c => c.status === "APPROVED").length,
-          rejectedCount: updatedCertificates.filter(c => c.status === "REJECTED").length,
-        };
-      });
+      if (result?.success) {
+        setData((prev) => {
+          const updatedCertificates = prev.certificates.filter(
+            (c) => c.id !== cert.id
+          );
+
+          return {
+            ...prev,
+            certificates: updatedCertificates,
+            totalCertificates: updatedCertificates.length,
+            pendingCount: updatedCertificates.filter((c) => c.status === "PENDING").length,
+            approvedCount: updatedCertificates.filter((c) => c.status === "APPROVED").length,
+            rejectedCount: updatedCertificates.filter((c) => c.status === "REJECTED").length,
+          };
+        });
+
+        setSuccessMsg("Certificate deleted successfully.");
+      } else {
+        throw new Error(result?.message || "Unable to delete certificate.");
+      }
+    } catch (err) {
+      console.log("DELETE ERROR:", err);
+      setError(getUserFriendlyError(err, "Unable to delete certificate."));
+    } finally {
+      setDeletingId(null);
+      setConfirmDelete(null);
     }
-  } catch (err) {
-    console.log("DELETE ERROR:", err);
-  } finally {
-    setDeletingId(null);
-    setConfirmDelete(null);
-  }
-};
+  };
 
-
-  /* ================= SKELETON ================= */
   if (loading) {
     return (
       <div className="p-6 space-y-4 animate-pulse">
@@ -183,9 +267,19 @@ const [confirmDelete, setConfirmDelete] = useState(null);
     <div className="w-full min-h-screen px-4 sm:px-6 lg:px-8 py-6">
       <ArtisanHeader title="Certificates" />
 
-      {/* ================= CLICKABLE STATS ================= */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {error ? (
+        <div className="mt-4 p-3 rounded-md bg-red-50 text-red-700 text-sm">
+          {error}
+        </div>
+      ) : null}
 
+      {successMsg ? (
+        <div className="mt-4 p-3 rounded-md bg-green-50 text-green-700 text-sm">
+          {successMsg}
+        </div>
+      ) : null}
+
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div
           onClick={() => setActiveTab("ALL")}
           className={`cursor-pointer rounded-xl p-4 transition ${
@@ -235,7 +329,6 @@ const [confirmDelete, setConfirmDelete] = useState(null);
         </div>
       </div>
 
-      {/* ================= LIST ================= */}
       <div className="mt-8 bg-white rounded-2xl p-6 shadow-md border border-gray-100">
         {filteredCertificates.length === 0 ? (
           <p className="text-gray-400">No certificates found.</p>
@@ -246,7 +339,6 @@ const [confirmDelete, setConfirmDelete] = useState(null);
                 key={cert.id}
                 className="flex flex-col md:flex-row justify-between border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-300"
               >
-                {/* LEFT */}
                 <div className="flex gap-4 items-center">
                   {cert.fileType === "IMAGE" ? (
                     <img
@@ -273,7 +365,6 @@ const [confirmDelete, setConfirmDelete] = useState(null);
                   </div>
                 </div>
 
-                {/* RIGHT */}
                 <div className="flex flex-col items-start md:items-end gap-2 mt-4 md:mt-0">
                   <span
                     className={`text-xs px-3 py-1 rounded-full ${
@@ -284,47 +375,41 @@ const [confirmDelete, setConfirmDelete] = useState(null);
                   </span>
 
                   <div className="flex gap-3 text-sm">
-  <button
-    onClick={() => setPreview(cert)}
-    className="text-blue-600 hover:underline"
-  >
-    Preview
-  </button>
+                    <button
+                      onClick={() => setPreview(cert)}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Preview
+                    </button>
 
-  <button
-    onClick={() =>
-      handleDownload(cert.fileUrl, cert.name)
-    }
-    className="text-green-600 hover:underline"
-  >
-    Download
-  </button>
+                    <button
+                      onClick={() => handleDownload(cert.fileUrl, cert.name)}
+                      className="text-green-600 hover:underline"
+                    >
+                      Download
+                    </button>
 
-  {/* DELETE */}
-  {cert.status === "PENDING" && (
-    <button
-      onClick={() => setConfirmDelete(cert)}
-      className="text-red-600 hover:underline"
-    >
-      {deletingId === cert.id ? "Deleting..." : "Delete"}
-    </button>
-  )}
-</div>
-
-
-                  {cert.status === "REJECTED" &&
-                    cert.rejectionReason && (
-                      <p className="text-xs text-red-500 max-w-xs">
-                        {cert.rejectionReason}
-                      </p>
+                    {cert.status === "PENDING" && (
+                      <button
+                        onClick={() => setConfirmDelete(cert)}
+                        className="text-red-600 hover:underline"
+                      >
+                        {deletingId === cert.id ? "Deleting..." : "Delete"}
+                      </button>
                     )}
+                  </div>
+
+                  {cert.status === "REJECTED" && cert.rejectionReason && (
+                    <p className="text-xs text-red-500 max-w-xs">
+                      {cert.rejectionReason}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-
 
       {preview && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -353,42 +438,39 @@ const [confirmDelete, setConfirmDelete] = useState(null);
         </div>
       )}
 
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Delete Certificate
+            </h3>
 
-{confirmDelete && (
-  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-    <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-      
-      <h3 className="text-lg font-semibold text-gray-800">
-        Delete Certificate
-      </h3>
+            <p className="text-sm text-gray-500 mt-2">
+              Are you sure you want to delete{" "}
+              <span className="font-medium text-gray-700">
+                {confirmDelete.name}
+              </span>
+              ? This action cannot be undone.
+            </p>
 
-      <p className="text-sm text-gray-500 mt-2">
-        Are you sure you want to delete{" "}
-        <span className="font-medium text-gray-700">
-          {confirmDelete.name}
-        </span>
-        ? This action cannot be undone.
-      </p>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"
+              >
+                Cancel
+              </button>
 
-      <div className="flex justify-end gap-3 mt-6">
-        <button
-          onClick={() => setConfirmDelete(null)}
-          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"
-        >
-          Cancel
-        </button>
-
-        <button
-          onClick={() => handleDelete(confirmDelete)}
-          className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
-        >
-          Confirm Delete
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+              <button
+                onClick={() => handleDelete(confirmDelete)}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

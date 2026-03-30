@@ -24,6 +24,17 @@ const stepDescriptions = [
   "Repair is complete and awaiting pick-up",
 ];
 
+const rejectedStepsData = [
+  "Request Received",
+  "Request Rejected",
+];
+
+const rejectedStepDescriptions = [
+  "Your repair request has been received",
+  "Your request was rejected by the technician",
+];
+
+
 const formatDateTimeParts = (value) => {
   if (!value) return null;
 
@@ -250,37 +261,51 @@ const ViewTrackRepair = () => {
   }, [repair, raw, rawUploadedProduct]);
 
   const backendStatus = useMemo(() => {
-    return pickValue(
-      repair?.orderStatus,
-      raw?.status,
-      raw?.orderStatus,
-      repair?.progress
-    );
-  }, [repair, raw]);
+  return pickValue(
+    repair?.orderStatus,
+    raw?.status,
+    raw?.orderStatus,
+    repair?.progress
+  );
+}, [repair, raw]);
 
-  const currentStatus = useMemo(() => {
-    if (repair?.progress && repair.progress !== "—") return repair.progress;
-    return normalizeProgressText(backendStatus);
-  }, [repair, backendStatus]);
+const normalizedBackendStatus = String(backendStatus || "")
+  .toUpperCase()
+  .trim();
 
-  const completedStep = useMemo(() => {
-    return getStepIndexFromStatus(backendStatus);
-  }, [backendStatus]);
+const isRejected = normalizedBackendStatus === "REJECTED";
 
-  const timestamps = useMemo(() => {
-    const createdAt = booking.createdAt || null;
-    const updatedAt =
-      booking.updatedAt ||
-      booking.artisanResponseDeadline ||
-      booking.createdAt ||
-      null;
+const currentStatus = useMemo(() => {
+  if (repair?.progress && repair.progress !== "—") return repair.progress;
+  return normalizeProgressText(backendStatus);
+}, [repair, backendStatus]);
 
-    return stepsData.map((_, index) => {
-      if (index === 0) return formatDateTimeParts(createdAt);
-      if (index <= completedStep) return formatDateTimeParts(updatedAt);
-      return null;
-    });
-  }, [booking, completedStep]);
+const activeSteps = isRejected ? rejectedStepsData : stepsData;
+const activeDescriptions = isRejected
+  ? rejectedStepDescriptions
+  : stepDescriptions;
+
+const completedStep = useMemo(() => {
+  if (isRejected) return 1;
+  return getStepIndexFromStatus(backendStatus);
+}, [backendStatus, isRejected]);
+
+
+const timestamps = useMemo(() => {
+  const createdAt = booking.createdAt || null;
+  const updatedAt =
+    booking.updatedAt ||
+    booking.artisanResponseDeadline ||
+    booking.createdAt ||
+    null;
+
+  return activeSteps.map((_, index) => {
+    if (index === 0) return formatDateTimeParts(createdAt);
+    if (index <= completedStep) return formatDateTimeParts(updatedAt);
+    return null;
+  });
+}, [booking, completedStep, activeSteps]);
+
 
   const repairTitle = useMemo(() => {
     return (
@@ -301,9 +326,9 @@ const ViewTrackRepair = () => {
     );
   }, [booking]);
 
-  const normalizedBackendStatus = String(backendStatus || "")
-    .toUpperCase()
-    .trim();
+  // const normalizedBackendStatus = String(backendStatus || "")
+  //   .toUpperCase()
+  //   .trim();
 
   const canCancelOrder = ["PENDING_ARTISAN_RESPONSE", "ACCEPTED"].includes(
     normalizedBackendStatus
@@ -760,14 +785,14 @@ navigate("/client", {
             Last Updated: {formatLastUpdated(lastUpdated)}
           </p>
 
-          <div className="mt-3 text-center">
+          {/* <div className="mt-3 text-center">
             <p className="text-xs text-[#7A7A7A]">
               Backend Status: {backendStatus || "—"}
             </p>
-          </div>
+          </div> */}
 
           <div className="mt-10">
-            {stepsData.map((step, index) => {
+            {activeSteps.map((step, index) => {
               const isCompleted = index <= completedStep;
               const timestamp = timestamps[index];
 
@@ -785,7 +810,7 @@ navigate("/client", {
                       )}
                     </span>
 
-                    {index !== stepsData.length - 1 && (
+                    {index !== activeSteps.length - 1 && (
                       <span
                         className={`w-px h-[72px] absolute top-7 ${
                           index < completedStep ? "bg-blue-300" : "bg-gray-300"
@@ -804,7 +829,7 @@ navigate("/client", {
                     </p>
 
                     <p className="text-xs text-[#656565] mt-1">
-                      {stepDescriptions[index]}
+                     {activeDescriptions[index]}
                     </p>
                   </div>
 

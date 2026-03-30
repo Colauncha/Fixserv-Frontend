@@ -46,14 +46,41 @@ gap-y-10">
         </div>
 
         {/* Resources */}
-        <div className="min-w-0">
+        {/* <div className="min-w-0">
           <h4 className="font-semibold mb-6 whitespace-nowrap">Resources</h4>
           <ul className="space-y-5 text-sm whitespace-nowrap">
             <li className="cursor-pointer hover:opacity-80">Help & Support</li>
             <li className="cursor-pointer hover:opacity-80">Terms & Conditions</li>
             <li className="cursor-pointer hover:opacity-80">Privacy Policy</li>
           </ul>
-        </div>
+        </div> */}
+        {/* Resources */}
+<div className="min-w-0">
+  <h4 className="font-semibold mb-6 whitespace-nowrap">Resources</h4>
+  <ul className="space-y-5 text-sm whitespace-nowrap">
+    <li
+      onClick={() => navigate("/helpsupport")}
+      className="cursor-pointer hover:opacity-80"
+    >
+      Help & Support
+    </li>
+
+    <li
+      onClick={() => navigate("/terms")}
+      className="cursor-pointer hover:opacity-80"
+    >
+      Terms & Conditions
+    </li>
+
+    <li
+      onClick={() => navigate("/privacy")}
+      className="cursor-pointer hover:opacity-80"
+    >
+      Privacy Policy
+    </li>
+  </ul>
+</div>
+
 
         <div>
           <h4 className="font-semibold mb-3">Newsletter Sign-Up</h4>

@@ -195,6 +195,12 @@ const filteredJobs = useMemo(() => {
     return true;
   });
 
+  // sort latest → oldest
+result.sort((a, b) => {
+  return new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0);
+});
+
+
   //  SEARCH (only in total mode)
 
 if (searchTerm.trim()) {
@@ -301,17 +307,25 @@ const stats = useMemo(() => {
     }
   };
 
-  const handleReject = async (orderId) => {
-    try {
-      setActioningId(orderId);
-      await rejectOrder(orderId);
-      await fetchJobs();
-    } catch (error) {
-      console.error("Failed to reject order", error);
-    } finally {
-      setActioningId(null);
-    }
-  };
+const handleReject = async (orderId) => {
+  const confirmed = window.confirm(
+    "Are you sure you want to reject this order? The client will be refunded."
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setActioningId(orderId);
+await rejectOrder(orderId);
+window.dispatchEvent(new Event("fixserv-notifications-updated"));
+await fetchJobs();
+  } catch (error) {
+    console.error("Failed to reject order", error);
+  } finally {
+    setActioningId(null);
+  }
+};
+
 
   const handleStart = async (orderId) => {
     try {
@@ -405,20 +419,30 @@ const renderActions = (job) => {
   const rawStatus = String(job?.status || "").toUpperCase();
   const isBusy = actioningId === orderId;
 
-  if (status === "REQUESTED") {
-    return (
-      <div className="flex flex-wrap gap-3 mt-5">
-        <button
-          type="button"
-          onClick={() => handleAccept(orderId)}
-          disabled={isBusy}
-          className="px-4 py-2 rounded-md bg-green-600 text-white text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isBusy ? "Please wait..." : "Accept"}
-        </button>
-      </div>
-    );
-  }
+if (status === "REQUESTED") {
+  return (
+    <div className="flex flex-wrap gap-3 mt-5">
+      <button
+        type="button"
+        onClick={() => handleAccept(orderId)}
+        disabled={isBusy}
+        className="px-4 py-2 rounded-md bg-green-600 text-white text-sm"
+      >
+        {isBusy ? "Please wait..." : "Accept"}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleReject(orderId)}
+        disabled={isBusy}
+        className="px-4 py-2 rounded-md bg-red-600 text-white text-sm"
+      >
+        {isBusy ? "Please wait..." : "Reject"}
+      </button>
+    </div>
+  );
+}
+
 
   if (status === "PENDING") {
     return (

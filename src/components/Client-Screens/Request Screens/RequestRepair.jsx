@@ -3,7 +3,33 @@ import { useNavigate } from "react-router-dom";
 import upload from "../../../assets/client images/client-home/referal part/upload.png";
 
 const DRAFT_ENDPOINT = "https://dev-order-api.fixserv.co/api/orders/draft";
-const CONFIRM_ENDPOINT = "https://dev-order-api.fixserv.co/api/orders/confirm";
+// const CONFIRM_ENDPOINT = "https://dev-order-api.fixserv.co/api/orders/confirm";
+
+    const getUserFriendlyError = (err, fallback = "Something went wrong. Please try again.") => {
+  const msg = String(err?.message || "").toLowerCase();
+
+  if (msg.includes("timed out") || msg.includes("timeout")) {
+    return "We could not complete this step right now. Please try again.";
+  }
+
+  if (msg.includes("failed to fetch") || msg.includes("network")) {
+    return "Network error. Please check your internet connection and try again.";
+  }
+
+  if (msg.includes("401") || msg.includes("unauthorized")) {
+    return "Session expired. Please login again.";
+  }
+
+  if (msg.includes("400")) {
+    return "We could not process your request. Please check your details and try again.";
+  }
+
+  if (msg.includes("500") || msg.includes("server")) {
+    return "Server error. Please try again later.";
+  }
+
+  return fallback;
+};
 
 const RequestRepair = () => {
   const navigate = useNavigate();
@@ -139,155 +165,136 @@ const RequestRepair = () => {
     return parsed.json ?? {};
   };
 
-const confirmDraft = async ({ token, draftOrderId }) => {
-  const payload = {
-    draftOrderId,
-    orderId: draftOrderId,
-  };
+// const confirmDraft = async ({ token, draftOrderId }) => {
+//   const payload = {
+//     draftOrderId,
+//     orderId: draftOrderId,
+//   };
 
-  console.log("CONFIRM PAYLOAD =>", payload);
+//   console.log("CONFIRM PAYLOAD =>", payload);
 
-  const res = await fetch(CONFIRM_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
+//   const res = await fetch(CONFIRM_ENDPOINT, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//       Authorization: `Bearer ${token}`,
+//     },
+//     body: JSON.stringify(payload),
+//   });
 
-  const parsed = await safeParse(res);
+//   const parsed = await safeParse(res);
 
-  console.log("CONFIRM RESPONSE META =>", {
-    status: parsed.status,
-    contentType: parsed.contentType,
-    raw: parsed.raw,
-    json: parsed.json,
-  });
+//   console.log("CONFIRM RESPONSE META =>", {
+//     status: parsed.status,
+//     contentType: parsed.contentType,
+//     raw: parsed.raw,
+//     json: parsed.json,
+//   });
 
-  if (!parsed.ok) {
-    const msg =
-      parsed?.json?.message ||
-      parsed?.json?.error ||
-      parsed?.raw ||
-      `Confirm failed (${parsed.status})`;
-    throw new Error(msg);
+//   if (!parsed.ok) {
+//     const msg =
+//       parsed?.json?.message ||
+//       parsed?.json?.error ||
+//       parsed?.raw ||
+//       `Confirm failed (${parsed.status})`;
+//     throw new Error(msg);
+//   }
+
+//   return parsed.json ?? {};
+// };
+
+ const handleSubmit = async () => {
+  setError("");
+
+  const token = localStorage.getItem("fixserv_token");
+  if (!token) {
+    setError("Unauthorized: Please login again.");
+    return;
   }
 
-  return parsed.json ?? {};
-};
+  const storedUser = localStorage.getItem("fixserv_user");
+  const userObj = storedUser ? JSON.parse(storedUser) : null;
+  const userId = userObj?.id || userObj?._id;
 
-  const handleSubmit = async () => {
-    setError("");
+  if (!userId) {
+    setError("User not found. Please login again.");
+    return;
+  }
 
-    const token = localStorage.getItem("fixserv_token");
-    if (!token) {
-      setError("Unauthorized: Please login again.");
-      return;
+  const {
+    deviceType,
+    deviceBrand,
+    deviceModel,
+    serviceRequired,
+    objectName,
+    description,
+  } = formData;
+
+  if (!deviceType || !deviceBrand || !deviceModel) {
+    setError("Device type, device brand, and device model are required.");
+    return;
+  }
+
+  if (!serviceRequired.trim()) {
+    setError("Please enter the service you want.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const uploadedProductId = await uploadProduct({ token, userId });
+
+    const draftPayload = {
+      uploadedProductId,
+      deviceType: deviceType.trim(),
+      deviceBrand: deviceBrand.trim(),
+      deviceModel: deviceModel.trim(),
+      serviceRequired: serviceRequired.trim(),
+    };
+
+    const draftRes = await createDraft({ token, payload: draftPayload });
+    console.log("DRAFT RESPONSE JSON =>", draftRes);
+
+    const draftData = draftRes?.data || draftRes;
+    const draftOrderId =
+      draftData?.orderId || draftData?.draftOrderId || draftData?.id;
+
+    console.log("DRAFT ID USED =>", draftOrderId);
+
+    if (!draftOrderId) {
+      throw new Error("Draft created but draftOrderId/orderId was not returned.");
     }
 
-    const storedUser = localStorage.getItem("fixserv_user");
-    const userObj = storedUser ? JSON.parse(storedUser) : null;
-    const userId = userObj?.id || userObj?._id;
+    const draftOrderIdStr = String(draftOrderId || "").trim();
 
-    if (!userId) {
-      setError("User not found. Please login again.");
-      return;
+    if (!draftOrderIdStr) {
+      throw new Error("draftOrderId missing after draft creation.");
     }
 
-    const {
-      deviceType,
-      deviceBrand,
-      deviceModel,
-      serviceRequired,
-      objectName,
-      description,
-    } = formData;
+    const confirmRes = null;
+    const artisans = [];
 
-    if (!deviceType || !deviceBrand || !deviceModel) {
-      setError("deviceType, deviceBrand, and deviceModel are required.");
-      return;
-    }
-
-    if (!serviceRequired.trim()) {
-      setError("Please enter the service you want.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const uploadedProductId = await uploadProduct({ token, userId });
-
-      const draftPayload = {
+    navigate("/client/technician", {
+      state: {
+        draftOrderId: draftOrderIdStr,
         uploadedProductId,
-        deviceType: deviceType.trim(),
+        deviceType: draftData?.deviceType || deviceType,
         deviceBrand: deviceBrand.trim(),
         deviceModel: deviceModel.trim(),
         serviceRequired: serviceRequired.trim(),
-      };
-
-      const draftRes = await createDraft({ token, payload: draftPayload });
-      console.log("DRAFT RESPONSE JSON =>", draftRes);
-
-      const draftData = draftRes?.data || draftRes;
-      const draftOrderId =
-        draftData?.orderId || draftData?.draftOrderId || draftData?.id;
-
-      console.log("DRAFT ID USED =>", draftOrderId);
-
-      if (!draftOrderId) {
-        throw new Error("Draft created but draftOrderId/orderId was not returned.");
-      }
-
-      const draftOrderIdStr = String(draftOrderId || "").trim();
-
-      if (!draftOrderIdStr) {
-        throw new Error("draftOrderId missing after draft creation.");
-      }
-
-let confirmRes = null;
-let artisans = [];
-
-try {
-  confirmRes = await confirmDraft({
-    token,
-    draftOrderId: draftOrderIdStr,
-  });
-
-  const confirmData = confirmRes?.data || confirmRes;
-  artisans =
-    confirmData?.artisans ||
-    confirmData?.matchedArtisans ||
-    confirmData?.data?.artisans ||
-    confirmData?.data?.matchedArtisans ||
-    [];
-} catch (confirmErr) {
-  console.error("CONFIRM FAILED, FALLING BACK TO LOCAL MATCH =>", confirmErr?.message);
-  confirmRes = null;
-  artisans = [];
-}
-
-navigate("/client/technician", {
-  state: {
-    draftOrderId: draftOrderIdStr,
-    uploadedProductId,
-    deviceType: draftData?.deviceType || deviceType,
-    deviceBrand: deviceBrand.trim(),
-    deviceModel: deviceModel.trim(),
-    serviceRequired: serviceRequired.trim(),
-    description: description.trim(),
-    objectName: objectName.trim(),
-    artisans,
-    rawConfirm: confirmRes,
-  },
-});
-    } catch (err) {
-      setError(err?.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
+        description: description.trim(),
+        objectName: objectName.trim(),
+        artisans,
+        rawConfirm: confirmRes,
+      },
+    });
+  } catch (err) {
+    setError(getUserFriendlyError(err, "Unable to create request. Please try again."));
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="w-full">
