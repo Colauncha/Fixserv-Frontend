@@ -10,7 +10,7 @@ import wallet from "../../assets/Artisan Images/wallet.png";
 import accept from "../../assets/Artisan Images/accept.png";
 import profile from "../../assets/Artisan Images/profile.png";
 import veri from "../../assets/Artisan Images/verification.png";
-import adebayoImg from "../../assets/Artisan Images/adebayo.png";
+import adebayoImg from "../../assets/Artisan Images/profileImg.jpg";
 import log from "../../assets/Artisan Images/log.png";
 import cert from "../../assets/Artisan Images/cert.png"
 // import cert from "../../assets/Artisan Images/certs.png"

@@ -23,6 +23,12 @@ const stepsData = [
   "Ready for Pick-up",
 ];
 
+const rejectedStepsData = [
+  "Request Received",
+  "Request Rejected",
+];
+
+
 const statusToStep = (status) => {
   const s = String(status || "").toUpperCase();
 
@@ -158,18 +164,21 @@ const [cancellingOrder, setCancellingOrder] = useState(false);
     return null;
   }
 
-  const statusToStepIndex = (status) => {
-    const s = String(status || "").toUpperCase();
+const statusToStepIndex = (status) => {
+  const s = String(status || "").toUpperCase();
 
-    if (["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(s))
-      return 0;
-    if (["ACCEPTED", "DEVICE_DROPPED_OFF"].includes(s)) return 1;
-    if (["IN_PROGRESS", "ONGOING"].includes(s)) return 2;
-    if (["WORK_COMPLETED", "READY_FOR_PICKUP"].includes(s)) return 3;
-    if (["COMPLETED", "DONE"].includes(s)) return 4;
+  if (["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(s))
+    return 0;
 
-    return null;
-  };
+  if (["REJECTED"].includes(s)) return 1;
+
+  if (["ACCEPTED", "DEVICE_DROPPED_OFF"].includes(s)) return 1;
+  if (["IN_PROGRESS", "ONGOING"].includes(s)) return 2;
+  if (["WORK_COMPLETED", "READY_FOR_PICKUP"].includes(s)) return 3;
+  if (["COMPLETED", "DONE"].includes(s)) return 4;
+
+  return null;
+};
 
   const shouldFetchLiveOrder = true;
 
@@ -265,7 +274,10 @@ useEffect(() => {
         (a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0)
       );
 
+      // const timeline = Array(stepsData.length).fill(null);
+
       const timeline = Array(stepsData.length).fill(null);
+let durations = Array(stepsData.length).fill(null);
 
       sortedHistory.forEach((entry) => {
         const stepIndex = statusToStepIndex(entry.status);
@@ -290,7 +302,7 @@ useEffect(() => {
         return { date: t.date, time: t.time };
       });
 
-      let durations = Array(stepsData.length).fill(null);
+      // let durations = Array(activeSteps.length).fill(null);
 
       sortedHistory.forEach((entry, index) => {
         if (index === 0) return;
@@ -375,7 +387,10 @@ useEffect(() => {
   }, [order, bookingFromState, orderId]);
 
   const displayStatus = booking?.status || "PENDING_ARTISAN_RESPONSE";
-  const normalizedStatus = String(displayStatus || "").toUpperCase();
+const normalizedStatus = String(displayStatus || "").toUpperCase();
+const isRejected = normalizedStatus === "REJECTED";
+
+const activeSteps = isRejected ? rejectedStepsData : stepsData;
 
   const backendPaymentReleased =
     order?.paymentReleased ||
@@ -659,57 +674,66 @@ const handleSubmitCancel = async () => {
             <div className="mb-10 flex justify-center"></div>
           )}
 
-          {stepsData.map((step, index) => {
-            const activeStep = order ? completedStep : booking.currentStep;
-            const isCompleted = index <= activeStep;
-            const timestamp = booking.timeline?.[index];
+{/* const activeSteps = isRejected ? rejectedStepsData : stepsData; */}
 
-            return (
-              <div
-                key={index}
-                className="flex items-start gap-8 mb-8 p-3 rounded-lg"
-              >
-                <div className="relative flex flex-col items-center">
-                  <span className="z-10 bg-white p-0.5 rounded-full">
-                    {isCompleted ? (
-                      <CheckCircle2 className="text-[#3E83C4] w-6 h-6" />
-                    ) : (
-                      <Circle className="text-[#656565] w-6 h-6" />
-                    )}
-                  </span>
+{activeSteps.map((step, index) => {
+  let activeStep;
 
-                  {index !== stepsData.length - 1 && (
-                    <span className="w-px h-[72px] bg-blue-300 absolute top-7" />
-                  )}
-                </div>
+  if (isRejected) {
+    activeStep = 1;
+  } else {
+    activeStep = order ? completedStep : booking.currentStep;
+  }
 
-                <div className="flex-1">
-                  <p
-                    className={`font-medium ${
-                      isCompleted ? "text-[#3E83C4]" : "text-gray-600"
-                    }`}
-                  >
-                    {step}
-                  </p>
-                </div>
+  const isCompleted = index <= activeStep;
+  // const timestamp = isRejected ? null : booking.timeline?.[index];
 
-                <div className="w-32 text-[11px] text-gray-400 text-right pt-1">
-                  {timestamp?.date && timestamp?.time && (
-                    <>
-                      <p>{timestamp.date}</p>
-                      <p>{timestamp.time}</p>
+  const timestamp = booking.timeline?.[index];
 
-                      {booking.durations?.[index] && (
-                        <p className="text-[10px] text-blue-500 mt-1">
-                          +{booking.durations[index]}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+  return (
+    <div key={index} className="flex items-start gap-8 mb-8 p-3 rounded-lg">
+      <div className="relative flex flex-col items-center">
+        <span className="z-10 bg-white p-0.5 rounded-full">
+          {isCompleted ? (
+            <CheckCircle2 className="text-[#3E83C4] w-6 h-6" />
+          ) : (
+            <Circle className="text-[#656565] w-6 h-6" />
+          )}
+        </span>
+
+        {index !== activeSteps.length - 1 && (
+          <span className="w-px h-[72px] bg-blue-300 absolute top-7" />
+        )}
+      </div>
+
+      <div className="flex-1">
+        <p
+          className={`font-medium ${
+            isCompleted ? "text-[#3E83C4]" : "text-gray-600"
+          }`}
+        >
+          {step}
+        </p>
+      </div>
+
+      <div className="w-32 text-[11px] text-gray-400 text-right pt-1">
+        {timestamp?.date && timestamp?.time && (
+          <>
+            <p>{timestamp.date}</p>
+            <p>{timestamp.time}</p>
+
+            {booking.durations?.[index] && (
+              <p className="text-[10px] text-blue-500 mt-1">
+                +{booking.durations[index]}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+})}
+
         </div>
 
         {(canCancelOrder || isCompletedStageOrAfter || showNewRequestBtn) && (

@@ -14,6 +14,48 @@ import {
   updateArtisanService,
 } from "../../api/artisan.api";
 
+const getUserFriendlyError = (err, fallback = "Something went wrong. Please try again.") => {
+  const msg = String(err?.message || "").toLowerCase();
+
+  // 🌐 Network issues
+  if (msg.includes("failed to fetch") || msg.includes("network error")) {
+    return "Network error. Please check your internet connection.";
+  }
+
+  // 🔐 Auth issues
+  if (msg.includes("unauthorized") || msg.includes("401")) {
+    return "Session expired. Please login again.";
+  }
+
+  // 🚫 Forbidden
+  if (msg.includes("403")) {
+    return "You don’t have permission to perform this action.";
+  }
+
+  // ❌ Not found
+  if (msg.includes("404")) {
+    return "Requested data not found.";
+  }
+
+  if (msg.includes("400") || msg.includes("invalid")) {
+    return "Invalid input. Please check your details and try again.";
+  }
+
+  if (msg.includes("timeout")) {
+  return "The request took too long. Please try again.";
+}
+
+  if (msg.includes("500") || msg.includes("server")) {
+    return "Server error. Please try again later.";
+  }
+
+  if (msg.includes("upload")) {
+    return "Image upload failed. Please try again.";
+  }
+
+  return fallback;
+};
+
 const DAYS = [
   "monday",
   "tuesday",
@@ -146,6 +188,7 @@ const Profile = () => {
     fullName: "",
     businessName: "",
     location: "",
+    phoneNumber: "",
     skillsText: "",
     bio: "",
     businessHours: normalizeHours(defaultBusinessHours),
@@ -237,6 +280,7 @@ const Profile = () => {
           fullName: normalizedUser.fullName || "",
           businessName: normalizedUser.businessName || "",
           location: normalizedUser.location || "",
+          phoneNumber: normalizedUser.phoneNumber || normalizedUser.phone || "",
           skillsText: (normalizedUser.skillSet || normalizedUser.skills || []).join(", "),
           bio: normalizedUser?.bio || "",
           businessHours: hours,
@@ -248,7 +292,7 @@ const Profile = () => {
         localStorage.setItem("fixserv_user", JSON.stringify(normalizedUser));
       } catch (err) {
         console.error("Failed to load profile", err);
-        setError(err?.message || "Failed to load profile");
+        setError(getUserFriendlyError(err, "Unable to load profile."));
       } finally {
         setLoading(false);
       }
@@ -460,6 +504,7 @@ const artisanPayload = {
   fullName: formData.fullName.trim(),
   businessName: formData.businessName.trim(),
   location: formData.location.trim(),
+  phoneNumber: formData.phoneNumber.trim(),
   skillSet: cleanedSkills,
   bio: formData.bio.trim(),
   businessHours: strictHours,
@@ -565,6 +610,14 @@ const updatePayload = {
         id: artisanResponse?.id || artisan?.id || artisanId,
         profileImage:
           normalizeProfileImage(artisanResponse) || normalizeProfileImage(artisan),
+          phoneNumber:
+  artisanResponse?.phoneNumber ||
+  artisanResponse?.phone ||
+  formData.phoneNumber.trim(),
+phone:
+  artisanResponse?.phone ||
+  artisanResponse?.phoneNumber ||
+  formData.phoneNumber.trim(),
         skills: Array.isArray(artisanResponse?.skills)
           ? artisanResponse.skills
           : Array.isArray(artisanResponse?.skillSet)
@@ -592,6 +645,7 @@ const updatePayload = {
         fullName: updatedUser.fullName || "",
         businessName: updatedUser.businessName || "",
         location: updatedUser.location || "",
+        phoneNumber: updatedUser.phoneNumber || updatedUser.phone || "",
         skillsText: (updatedUser.skillSet || updatedUser.skills || []).join(", "),
         bio: updatedUser?.bio || "",
         businessHours: nextHours,
@@ -603,7 +657,8 @@ const updatePayload = {
       setSuccessMsg("Profile updated successfully.");
     } catch (err) {
       console.error("Failed to update profile", err);
-      setError(err?.message || "Failed to update profile");
+      // setError(err?.message || "Failed to update profile");
+      setError(getUserFriendlyError(err, "Failed to update profile."));
     } finally {
       setSaving(false);
     }
@@ -708,11 +763,13 @@ if (!res.ok) {
       if (fileRef.current) fileRef.current.value = "";
     } catch (err) {
       console.error("Upload profile picture failed", err);
-      setError(
-  typeof err?.message === "string" && err.message.trim() !== ""
-    ? err.message
-    : "Image upload failed. Please try again."
-);
+//       setError(
+//   typeof err?.message === "string" && err.message.trim() !== ""
+//     ? err.message
+//     : "Image upload failed. Please try again."
+// );
+
+setError(getUserFriendlyError(err, "Image upload failed. Please try again."));
 
     } finally {
       setUploadingImg(false);
@@ -849,7 +906,7 @@ if (!res.ok) {
                   name="location"
                   value={formData.location}
                   onChange={handleChange}
-                  placeholder="Location"
+                  placeholder="Location (Location should be in Lagos.)"
                   className="w-full max-w-xl px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3E83C4] focus:border-[#3E83C4] outline-none transition"
                 />
               ) : (
@@ -1160,10 +1217,26 @@ if (!res.ok) {
           <h3 className="text-lg font-semibold">Contact info</h3>
 
           <div className="space-y-4 text-sm text-gray-500">
-            <p className="break-words">
+            {/* <p className="break-words">
               <span className="font-medium text-gray-700">Phone :</span>{" "}
               {artisan.phone || artisan.phoneNumber || "—"}
-            </p>
+            </p> */}
+
+            <div className="break-words">
+  <span className="font-medium text-gray-700">Phone :</span>{" "}
+  {isEditing ? (
+    <input
+      type="text"
+      name="phoneNumber"
+      value={formData.phoneNumber}
+      onChange={handleChange}
+      placeholder="Phone number"
+      className="mt-2 w-full max-w-xl px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3E83C4] focus:border-[#3E83C4] outline-none transition"
+    />
+  ) : (
+    <span>{artisan.phone || artisan.phoneNumber || "—"}</span>
+  )}
+</div>
 
             <p className="break-words">
               <span className="font-medium text-gray-700">Email :</span>{" "}

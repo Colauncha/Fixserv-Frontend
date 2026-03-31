@@ -1,5 +1,5 @@
-
 import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   getNotifications,
@@ -16,25 +16,51 @@ import {
   getOrderById,
 } from "../../api/order.api";
 
-
 const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
+  const navigate = useNavigate();
+
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [actioningId, setActioningId] = useState(null);
 
+  const normalizeNotificationList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.notifications)) return payload.notifications;
+    if (Array.isArray(payload?.data?.notifications))
+      return payload.data.notifications;
+    return [];
+  };
+
+  const getOrderId = (item) => {
+    return (
+      item?.data?.orderId ||
+      item?.data?.requestId ||
+      item?.data?.jobId ||
+      item?.orderId ||
+      item?.data?.id ||
+      null
+    );
+  };
+
+  const isHandledNotification = (item) => {
+    const orderId = getOrderId(item);
+    return orderId ? isOrderNotificationSeen(orderId) : false;
+  };
+
   const loadNotifications = useCallback(async (showLoader = true) => {
     try {
       if (showLoader) setLoading(true);
 
       const response = await getNotifications();
-      const list = Array.isArray(response?.data) ? response.data : [];
+      const list = normalizeNotificationList(response);
 
       setNotifications(list);
     } catch (error) {
-      console.error("Failed to load notifications:", error);
-      if (showLoader) setNotifications([]);
+      console.warn("Failed to load notifications:", error?.message);
+      setNotifications([]);
     } finally {
       if (showLoader) setLoading(false);
     }
@@ -59,8 +85,7 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
     if (!isOpen) return;
     if (notifications.length === 0) return;
 
- const hasUnread = notifications.some((item) => !item.readAt);
-
+    const hasUnread = notifications.some((item) => !item?.readAt);
     if (!hasUnread) return;
 
     const markAllRead = async () => {
@@ -70,13 +95,13 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
 
         setNotifications((prev) =>
           prev.map((item) =>
-            item.readAt ? item : { ...item, readAt: new Date().toISOString() }
+            item?.readAt ? item : { ...item, readAt: new Date().toISOString() }
           )
         );
 
-        if (onChanged) onChanged();
+        onChanged?.();
       } catch (error) {
-        console.error("Failed to mark all notifications as read:", error);
+        console.warn("Failed to mark all notifications as read:", error?.message);
       } finally {
         setMarkingAll(false);
       }
@@ -90,29 +115,66 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
       setDeletingId(id);
       await deleteNotification(id);
       setNotifications((prev) => prev.filter((item) => item.id !== id));
-      if (onChanged) onChanged();
+      onChanged?.();
     } catch (error) {
-      console.error("Failed to delete notification:", error);
+      console.warn("Failed to delete notification:", error?.message);
     } finally {
       setDeletingId(null);
     }
   };
 
-  const getOrderId = (item) => {
-    return (
-      item?.data?.orderId ||
-      item?.data?.requestId ||
-      item?.data?.jobId ||
-      item?.orderId ||
-      item?.data?.id ||
-      null
-    );
-  };
+  const handleNotificationClick = (item) => {
+    const orderId = getOrderId(item);
+    const type = String(item?.type || "").toUpperCase();
+    const status = String(item?.data?.status || item?.status || "").toUpperCase();
+    const title = String(item?.title || "").toUpperCase();
+    const message = String(item?.message || "").toUpperCase();
 
-  const isHandledNotification = (item) => {
-  const orderId = getOrderId(item);
-  return orderId ? isOrderNotificationSeen(orderId) : false;
-};
+    if (userRole === "ARTISAN") {
+      if (
+        orderId &&
+        (type.includes("ORDER") ||
+          type.includes("REQUEST") ||
+          status ||
+          title.includes("REQUEST") ||
+          message.includes("REQUEST") ||
+          title.includes("JOB") ||
+          message.includes("JOB"))
+      ) {
+        navigate("/artisan/jobs");
+        onClose?.();
+        return;
+      }
+
+      navigate("/artisan");
+      onClose?.();
+      return;
+    }
+
+    if (userRole === "CLIENT") {
+      if (orderId) {
+        navigate(`/client/track-repair/${orderId}`, {
+          state: { orderId },
+        });
+        onClose?.();
+        return;
+      }
+
+      if (
+        type.includes("ORDER") ||
+        type.includes("REQUEST") ||
+        title.includes("REQUEST") ||
+        message.includes("REQUEST")
+      ) {
+        navigate("/client/repair");
+        onClose?.();
+        return;
+      }
+
+      navigate("/client");
+      onClose?.();
+    }
+  };
 
   const handleAccept = async (item) => {
     const orderId = getOrderId(item);
@@ -131,15 +193,15 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
         latestStatus !== "PENDING_ARTISAN_RESPONSE"
       ) {
         await loadNotifications(false);
-        if (onChanged) onChanged();
+        onChanged?.();
         return;
       }
 
       await acceptOrder(orderId);
       await loadNotifications(false);
-      if (onChanged) onChanged();
+      onChanged?.();
     } catch (error) {
-      console.error("Failed to accept order:", error);
+      console.warn("Failed to accept order:", error?.message);
     } finally {
       setActioningId(null);
     }
@@ -162,15 +224,15 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
         latestStatus !== "PENDING_ARTISAN_RESPONSE"
       ) {
         await loadNotifications(false);
-        if (onChanged) onChanged();
+        onChanged?.();
         return;
       }
 
       await rejectOrder(orderId);
       await loadNotifications(false);
-      if (onChanged) onChanged();
+      onChanged?.();
     } catch (error) {
-      console.error("Failed to reject order:", error);
+      console.warn("Failed to reject order:", error?.message);
     } finally {
       setActioningId(null);
     }
@@ -184,9 +246,9 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
       setActioningId(item.id);
       await startWorkOnOrder(orderId);
       await loadNotifications(false);
-      if (onChanged) onChanged();
+      onChanged?.();
     } catch (error) {
-      console.error("Failed to start work:", error);
+      console.warn("Failed to start work:", error?.message);
     } finally {
       setActioningId(null);
     }
@@ -200,9 +262,9 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
       setActioningId(item.id);
       await completeWorkOnOrder(orderId);
       await loadNotifications(false);
-      if (onChanged) onChanged();
+      onChanged?.();
     } catch (error) {
-      console.error("Failed to complete work:", error);
+      console.warn("Failed to complete work:", error?.message);
     } finally {
       setActioningId(null);
     }
@@ -226,7 +288,10 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
         <div className="flex gap-2 mt-3">
           <button
             type="button"
-            onClick={() => handleAccept(item)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAccept(item);
+            }}
             disabled={actioningId === item.id}
             className="px-3 py-1 rounded bg-green-600 text-white text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -235,7 +300,10 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
 
           <button
             type="button"
-            onClick={() => handleReject(item)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleReject(item);
+            }}
             disabled={actioningId === item.id}
             className="px-3 py-1 rounded bg-red-600 text-white text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -250,7 +318,10 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
         <div className="flex gap-2 mt-3">
           <button
             type="button"
-            onClick={() => handleStartWork(item)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStartWork(item);
+            }}
             disabled={actioningId === item.id}
             className="px-3 py-1 rounded bg-blue-600 text-white text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -265,7 +336,10 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
         <div className="flex gap-2 mt-3">
           <button
             type="button"
-            onClick={() => handleCompleteWork(item)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCompleteWork(item);
+            }}
             disabled={actioningId === item.id}
             className="px-3 py-1 rounded bg-purple-600 text-white text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -280,7 +354,9 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
 
   if (!isOpen) return null;
 
-  const visibleNotifications = notifications.filter((item) => !isHandledNotification(item));
+  const visibleNotifications = notifications.filter(
+    (item) => !isHandledNotification(item)
+  );
 
   return (
     <div
@@ -299,59 +375,67 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
         )}
       </div>
 
-<ul className="max-h-80 overflow-y-auto">
-  {loading ? (
-    <li className="p-4 text-sm text-gray-500">Loading notifications...</li>
-  ) : visibleNotifications.length === 0 ? (
-    <li className="p-4 text-sm text-gray-500">No notifications</li>
-  ) : (
-    visibleNotifications.map((item) => {
-      const isRead = Boolean(item?.readAt);
+      <ul className="max-h-80 overflow-y-auto">
+        {loading ? (
+          <li className="p-4 text-sm text-gray-500">Loading notifications...</li>
+        ) : visibleNotifications.length === 0 ? (
+          <li className="p-4 text-sm text-gray-500">No notifications</li>
+        ) : (
+          visibleNotifications.map((item) => {
+            const isRead = Boolean(item?.readAt);
 
-      return (
-        <li
-          key={item.id}
-          className={`p-4 border-b last:border-b-0 hover:bg-gray-50 ${
-            !isRead ? "bg-blue-50" : "bg-white"
-          }`}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-gray-800">
-                {item.title || "Notification"}
-              </p>
+            return (
+              <li
+                key={item.id}
+                className={`p-4 border-b last:border-b-0 hover:bg-gray-50 ${
+                  !isRead ? "bg-blue-50" : "bg-white"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleNotificationClick(item)}
+                    className="flex-1 min-w-0 text-left cursor-pointer"
+                  >
+                    <p className="font-semibold text-sm text-gray-800">
+                      {item.title || "Notification"}
+                    </p>
 
-              <p className="text-sm text-gray-600 mt-1 break-words">
-                {item.message || "No message"}
-              </p>
+                    <p className="text-sm text-gray-600 mt-1 break-words">
+                      {item.message || "No message"}
+                    </p>
 
-              <p className="text-[11px] text-gray-400 mt-2">
-                {item.createdAt
-                  ? new Date(item.createdAt).toLocaleString()
-                  : ""}
-              </p>
+                    <p className="text-[11px] text-gray-400 mt-2">
+                      {item.createdAt
+                        ? new Date(item.createdAt).toLocaleString()
+                        : ""}
+                    </p>
 
-              {renderActions(item)}
-            </div>
+                    {renderActions(item)}
+                  </button>
 
-            <div className="flex flex-col items-end gap-2 shrink-0">
-  <button
-    type="button"
-    onClick={() => handleDelete(item.id)}
-    disabled={deletingId === item.id || actioningId === item.id}
-    className="text-[#3E83C4] text-xs shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-    aria-label="Seen notification"
-    title="Seen notification"
-  >
-    {deletingId === item.id ? "..." : "Seen"}
-  </button>
-</div>
-          </div>
-        </li>
-      );
-    })
-  )}
-</ul>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item.id);
+                      }}
+                      disabled={deletingId === item.id || actioningId === item.id}
+                      className="text-[#3E83C4] text-xs shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label="Seen notification"
+                      title="Seen notification"
+                    >
+                      {deletingId === item.id ? "..." : "Delete"}
+                    </button>
+                  </div>
+                </div>
+              </li>
+            );
+          })
+        )}
+      </ul>
+
       <div className="p-3 border-t text-center">
         <button
           type="button"

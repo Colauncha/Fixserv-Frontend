@@ -68,13 +68,6 @@ const [detailsLoading, setDetailsLoading] = useState(false);
   
 const platformFee = 1000;
 
-const raw = orderDetails || repair?.raw || {};
-const uploadedProduct = Array.isArray(raw?.uploadedProducts)
-  ? raw.uploadedProducts[0]
-  : raw?.uploadedProduct || null;
-
-const parsedDetails = extractJobDetails(orderDetails || repair?.raw || {});
-
   useEffect(() => {
   let mounted = true;
 
@@ -113,9 +106,11 @@ const extractJobDetails = (job) => {
   const description = product.description || "—";
 
   const rawName = product.objectName || "";
-  const cleaned = rawName.replace("Damaged Device - ", "").trim();
+const cleaned = rawName
+  .replace(/damaged device\s*-\s*/i, "")
+  .trim();
 
-  const parts = cleaned.split(" ").filter(Boolean);
+const parts = cleaned.split(/\s+/).filter(Boolean);
 
   return {
     description,
@@ -125,164 +120,189 @@ const extractJobDetails = (job) => {
   };
 };
 
+  const raw = orderDetails || repair?.raw || {};
 
-const booking = useMemo(() => {
-  return {
-    id:
-      orderDetails?.id ||
-      repair?.id ||
-      raw?.id ||
-      raw?._id ||
-      raw?.orderId ||
-      "—",
+  const uploadedProduct = Array.isArray(raw?.uploadedProducts)
+    ? raw.uploadedProducts[0]
+    : raw?.uploadedProduct || null;
 
-    deviceType: parsedDetails.deviceType,
+  const parsedDetails = useMemo(
+    () => extractJobDetails(raw),
+    [raw]
+  );
 
-    brand: parsedDetails.deviceBrand,
+  const booking = useMemo(() => {
+    return {
+      id:
+        orderDetails?.id ||
+        repair?.id ||
+        raw?.id ||
+        raw?._id ||
+        raw?.orderId ||
+        "—",
 
-    model: parsedDetails.deviceModel,
+      deviceType:
+        parsedDetails.deviceType ||
+        orderDetails?.deviceType ||
+        repair?.deviceType ||
+        raw?.deviceType ||
+        "—",
 
+      brand:
+        parsedDetails.deviceBrand ||
+        orderDetails?.deviceBrand ||
+        repair?.deviceBrand ||
+        raw?.deviceBrand ||
+        "—",
 
-    serviceRequired:
-      orderDetails?.serviceRequired ||
-      repair?.serviceRequired ||
-      raw?.serviceRequired ||
-      raw?.service?.title ||
-      uploadedProduct?.objectName ||
-      "—",
+      model:
+        parsedDetails.deviceModel ||
+        orderDetails?.deviceModel ||
+        repair?.deviceModel ||
+        raw?.deviceModel ||
+        "—",
 
-    paymentReference:
-      orderDetails?.paymentReference ||
-      repair?.paymentReference ||
-      raw?.paymentReference ||
-      "—",
+      issueDescription:
+        orderDetails?.issueDescription ||
+        repair?.issueDescription ||
+        parsedDetails.description,
 
-    issueDescription:
-  orderDetails?.issueDescription ||
-  repair?.issueDescription ||
-  parsedDetails.description,
+      serviceRequired:
+        orderDetails?.serviceRequired ||
+        repair?.serviceRequired ||
+        raw?.serviceRequired ||
+        raw?.service?.title ||
+        uploadedProduct?.objectName ||
+        "—",
 
+      paymentReference:
+        orderDetails?.paymentReference ||
+        repair?.paymentReference ||
+        raw?.paymentReference ||
+        "—",
 
-    objectName:
-      orderDetails?.objectName ||
-      repair?.objectName ||
-      raw?.objectName ||
-      uploadedProduct?.objectName ||
-      "—",
+      objectName:
+        orderDetails?.objectName ||
+        repair?.objectName ||
+        raw?.objectName ||
+        uploadedProduct?.objectName ||
+        "—",
 
-    location:
-      repair?.location ||
-      (raw?.clientAddress
-        ? [
-            raw.clientAddress.street,
-            raw.clientAddress.city,
-            raw.clientAddress.state,
-            raw.clientAddress.country,
-          ]
-            .filter(Boolean)
-            .join(", ")
-        : "") ||
-      raw?.location ||
-      "—",
+      location:
+        repair?.location ||
+        (raw?.clientAddress
+          ? [
+              raw.clientAddress.street,
+              raw.clientAddress.city,
+              raw.clientAddress.state,
+              raw.clientAddress.country,
+            ]
+              .filter(Boolean)
+              .join(", ")
+          : "") ||
+        raw?.location ||
+        "—",
 
-    createdAt:
-      orderDetails?.createdAt ||
-      repair?.createdAt ||
-      raw?.createdAt ||
-      "",
+      createdAt:
+        orderDetails?.createdAt ||
+        repair?.createdAt ||
+        raw?.createdAt ||
+        "",
 
-    uploadedAt:
-      repair?.uploadedAt ||
-      raw?.uploadedAt ||
-      uploadedProduct?.uploadedAt ||
-      uploadedProduct?.createdAt ||
-      "",
+      uploadedAt:
+        repair?.uploadedAt ||
+        raw?.uploadedAt ||
+        uploadedProduct?.uploadedAt ||
+        uploadedProduct?.createdAt ||
+        "",
 
-    artisanResponseDeadline:
-      orderDetails?.artisanResponseDeadline ||
-      repair?.artisanResponseDeadline ||
-      raw?.artisanResponseDeadline ||
-      "",
+      artisanResponseDeadline:
+        orderDetails?.artisanResponseDeadline ||
+        repair?.artisanResponseDeadline ||
+        raw?.artisanResponseDeadline ||
+        "",
 
-    artisanId:
-      orderDetails?.artisanId ||
-      repair?.artisanId ||
-      raw?.artisanId ||
-      "—",
+      artisanId:
+        orderDetails?.artisanId ||
+        repair?.artisanId ||
+        raw?.artisanId ||
+        "—",
 
-    serviceId:
-      orderDetails?.serviceId ||
-      repair?.serviceId ||
-      raw?.serviceId ||
-      "—",
+      serviceId:
+        orderDetails?.serviceId ||
+        repair?.serviceId ||
+        raw?.serviceId ||
+        "—",
 
-    escrowStatus:
-      orderDetails?.escrowStatus ||
-      repair?.escrowStatus ||
-      raw?.escrowStatus ||
-      "—",
+      escrowStatus:
+        orderDetails?.escrowStatus ||
+        repair?.escrowStatus ||
+        raw?.escrowStatus ||
+        "—",
 
-    progress:
-      repair?.progress ||
-      repair?.orderStatus ||
-      raw?.status ||
-      raw?.orderStatus ||
-      "—",
+      progress:
+        repair?.progress ||
+        repair?.orderStatus ||
+        raw?.status ||
+        raw?.orderStatus ||
+        "—",
 
-    status:
-      repair?.status ||
-      repair?.paymentStatus ||
-      raw?.paymentStatus ||
-      raw?.status ||
-      "—",
+      status:
+        repair?.status ||
+        repair?.paymentStatus ||
+        raw?.paymentStatus ||
+        raw?.status ||
+        "—",
 
-    cost:
-      orderDetails?.price ||
-      repair?.priceRaw ||
-      repair?.cost ||
-      repair?.price ||
-      raw?.price ||
-      raw?.cost ||
-      0,
+      cost:
+        orderDetails?.price ||
+        repair?.priceRaw ||
+        repair?.cost ||
+        repair?.price ||
+        raw?.price ||
+        raw?.cost ||
+        0,
 
-    artisanName:
-      repair?.artisanName ||
-      repair?.tech ||
-      raw?.artisanName ||
-      "Unknown Technician",
+      artisanName:
+        repair?.artisanName ||
+        repair?.tech ||
+        raw?.artisanName ||
+        "Unknown Technician",
 
-    artisanCategory:
-      repair?.artisanCategory ||
-      "Repair Technician",
+      artisanCategory:
+        repair?.artisanCategory ||
+        "Repair Technician",
 
-    artisanRating:
-      repair?.artisanRating ?? "—",
+      artisanRating:
+        repair?.artisanRating ?? "—",
 
-    artisanReviews:
-      repair?.artisanReviews ?? "—",
+      artisanReviews:
+        repair?.artisanReviews ?? "—",
 
-    artisanExperience:
-      repair?.artisanExperience ||
-      "—",
+      artisanExperience:
+        repair?.artisanExperience ||
+        "—",
 
-    artisanLocation:
-      repair?.artisanLocation ||
-      "—",
+      artisanLocation:
+        repair?.artisanLocation ||
+        "—",
 
-    artisanImage:
-      repair?.artisanImage ||
-      profileImage,
+      artisanImage:
+        repair?.artisanImage ||
+        profileImage,
 
-    uploadedImage:
-      repair?.uploadedImage ||
-      uploadedProduct?.imageUrl ||
-      uploadedProduct?.url ||
-      "",
+      uploadedImage:
+        repair?.uploadedImage ||
+        uploadedProduct?.imageUrl ||
+        uploadedProduct?.url ||
+        "",
 
-    artisanSkills:
-      Array.isArray(repair?.artisanSkills) ? repair.artisanSkills : [],
-  };
-}, [repair, raw, uploadedProduct, orderDetails]);
+      artisanSkills:
+        Array.isArray(repair?.artisanSkills)
+          ? repair.artisanSkills
+          : [],
+    };
+  }, [orderDetails, repair, raw, uploadedProduct, parsedDetails]);
 
 const totalFee =
   Number(booking.cost || 0) + Number(platformFee || 0);

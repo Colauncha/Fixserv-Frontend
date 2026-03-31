@@ -1,53 +1,79 @@
-import axios from "axios";
+import { createApiClient } from "./createApiClient";
 
-const NOTIFICATION_API = axios.create({
-  baseURL: "https://dev-notifications-api.fixserv.co/api/notifications",
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
-  timeout: 30000,
+const NOTIFICATION_API = createApiClient({
+  baseURL: import.meta.env.DEV
+    ? "/api/notifications"
+    : import.meta.env.VITE_NOTIFICATION_API_BASE_URL ||
+      "https://dev-notifications-api.fixserv.co/api/notifications",
+  requestLabel: "NOTIFICATION AXIOS REQUEST =>",
+  responseLabel: "NOTIFICATION AXIOS RESPONSE =>",
+  errorLabel: "NOTIFICATION AXIOS ERROR =>",
 });
 
-NOTIFICATION_API.interceptors.request.use((config) => {
-  const token =
-    localStorage.getItem("fixserv_token") ||
-    localStorage.getItem("token") ||
-    localStorage.getItem("authToken");
+const isNotificationServiceUnavailable = (error) => {
+  const message = String(
+    error?.backendMessage || error?.message || ""
+  ).toLowerCase();
 
-  if (!token) {
-    return Promise.reject(new Error("No auth token found for notifications"));
-  }
-
-  config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-NOTIFICATION_API.interceptors.response.use(
-  (response) => response,
-  (error) => Promise.reject(error)
-);
+  return (
+    message.includes("not found") ||
+    message.includes("enotfound") ||
+    message.includes("network") ||
+    message.includes("unable to connect") ||
+    message.includes("requested resource was not found")
+  );
+};
 
 export const getNotifications = async () => {
-  const response = await NOTIFICATION_API.get("");
-  return response.data;
+  try {
+    const response = await NOTIFICATION_API.get("");
+    return response?.data || [];
+  } catch (error) {
+    console.warn("Notifications unavailable:", error?.message);
+    if (isNotificationServiceUnavailable(error)) return [];
+    throw error;
+  }
 };
 
 export const getUnreadNotificationCount = async () => {
-  const response = await NOTIFICATION_API.get("/unread-count");
-  return response.data;
+  try {
+    const response = await NOTIFICATION_API.get("/unread-count");
+    return response?.data || { count: 0, unreadCount: 0 };
+  } catch (error) {
+    console.warn("Unread notification count unavailable:", error?.message);
+    if (isNotificationServiceUnavailable(error)) {
+      return { count: 0, unreadCount: 0 };
+    }
+    throw error;
+  }
 };
 
 export const markAllNotificationsAsRead = async () => {
-  const response = await NOTIFICATION_API.patch("/mark-all-read");
-  return response.data;
+  try {
+    const response = await NOTIFICATION_API.patch("/mark-all-read");
+    return response?.data || { success: true };
+  } catch (error) {
+    console.warn("Mark-all-read unavailable:", error?.message);
+    if (isNotificationServiceUnavailable(error)) {
+      return { success: false, message: "Notification service unavailable" };
+    }
+    throw error;
+  }
 };
 
 export const deleteNotification = async (notificationId) => {
   if (!notificationId) throw new Error("notificationId is required");
 
-  const response = await NOTIFICATION_API.delete(`/${notificationId}`);
-  return response.data;
+  try {
+    const response = await NOTIFICATION_API.delete(`/${notificationId}`);
+    return response?.data || { success: true };
+  } catch (error) {
+    console.warn("Delete notification unavailable:", error?.message);
+    if (isNotificationServiceUnavailable(error)) {
+      return { success: false, message: "Notification service unavailable" };
+    }
+    throw error;
+  }
 };
 
 const SEEN_ORDER_IDS_KEY = "fixserv_seen_order_notification_ids";

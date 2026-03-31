@@ -1,45 +1,32 @@
-import axios from "axios";
 import { getAuthToken } from "../utils/auth";
+import { createApiClient } from "./createApiClient";
 
-const CATEGORY_API = axios.create({
-  baseURL: "https://dev-user-api.fixserv.co/api",
-  timeout: 30000,
+const CATEGORY_API = createApiClient({
+  baseURL: import.meta.env.DEV
+    ? "/api"
+    : import.meta.env.VITE_USER_API_BASE_URL ||
+      import.meta.env.VITE_GENERAL_API_BASE_URL ||
+      "https://dev-user-api.fixserv.co/api",
+  requestLabel: "CATEGORY AXIOS REQUEST =>",
+  responseLabel: "CATEGORY AXIOS RESPONSE =>",
+  errorLabel: "CATEGORY AXIOS ERROR =>",
 });
 
 CATEGORY_API.interceptors.request.use((config) => {
   const token = getAuthToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
 
   console.log(
     "CATEGORY AXIOS REQUEST =>",
     config.method?.toUpperCase(),
-    (config.baseURL || "") + (config.url || ""),
+    `${config.baseURL || ""}${config.url || ""}`,
     config.params || ""
   );
 
   return config;
 });
-
-CATEGORY_API.interceptors.response.use(
-  (res) => {
-    console.log(
-      "CATEGORY AXIOS RESPONSE =>",
-      res.status,
-      res.config.url,
-      res.data
-    );
-    return res;
-  },
-  (err) => {
-    console.log(
-      "CATEGORY AXIOS ERROR =>",
-      err?.response?.status,
-      err?.config?.url,
-      err?.response?.data || err?.message
-    );
-    return Promise.reject(err);
-  }
-);
 
 export const getAllCategories = () => {
   return CATEGORY_API.get("/category/categories").then((r) => r.data);

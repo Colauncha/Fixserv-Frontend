@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import logo from "../../assets/navbar logo/Navbar logo.png";
@@ -29,6 +28,15 @@ const ClientNavbar = () => {
     );
   };
 
+  const normalizeNotificationList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.notifications)) return payload.notifications;
+    if (Array.isArray(payload?.data?.notifications))
+      return payload.data.notifications;
+    return [];
+  };
+
   const loadUnreadCount = useCallback(async () => {
     const token =
       localStorage.getItem("fixserv_token") ||
@@ -42,7 +50,7 @@ const ClientNavbar = () => {
 
     try {
       const response = await getNotifications();
-      const list = Array.isArray(response?.data) ? response.data : [];
+      const list = normalizeNotificationList(response);
 
       const count = list.filter((item) => {
         const orderId = getOrderIdFromNotification(item);
@@ -53,7 +61,7 @@ const ClientNavbar = () => {
 
       setNotificationCount(count);
     } catch (error) {
-      console.error("Failed to load unread notification count:", error);
+      console.warn("Failed to load unread notification count:", error?.message);
       setNotificationCount(0);
     }
   }, []);

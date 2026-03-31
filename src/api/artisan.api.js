@@ -1,5 +1,13 @@
-const USER_BASE_URL = "https://dev-user-api.fixserv.co/api";
-const SERVICE_BASE_URL = "https://dev-service-api.fixserv.co/api/service";
+const USER_BASE_URL = import.meta.env.DEV
+  ? "/api"
+  : (import.meta.env.VITE_USER_API_BASE_URL ||
+      import.meta.env.VITE_GENERAL_API_BASE_URL ||
+      "https://dev-user-api.fixserv.co/api");
+
+const SERVICE_BASE_URL = import.meta.env.DEV
+  ? "/api/service"
+  : (import.meta.env.VITE_SERVICE_API_BASE_URL ||
+      "https://dev-service-api.fixserv.co/api/service");
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("fixserv_token");
@@ -30,7 +38,10 @@ const getSavedBio = (artisanId) => {
 
 const setSavedBio = (artisanId, bio) => {
   if (!artisanId) return;
-  localStorage.setItem(`fixserv_artisan_bio_${artisanId}`, typeof bio === "string" ? bio : "");
+  localStorage.setItem(
+    `fixserv_artisan_bio_${artisanId}`,
+    typeof bio === "string" ? bio : ""
+  );
 };
 
 const firstNonEmptyText = (...values) => {
@@ -68,7 +79,6 @@ export const getArtisanById = async (artisanId) => {
 
   const json = await safeJson(res);
 
-  // ✅ silently ignore missing/bad artisan records
   if (!res.ok) {
     const message = json?.message || "Failed to fetch artisan";
 
@@ -83,13 +93,7 @@ export const getArtisanById = async (artisanId) => {
     throw new Error(message);
   }
 
-  const raw = json?.data || json?.user || json;
-  const hydrated = hydrateArtisanBio(raw);
-
-  console.log("GET ARTISAN BY ID RESPONSE =>", res.status, json);
-  console.log("GET ARTISAN BY ID HYDRATED =>", hydrated);
-
-  return hydrated;
+  return hydrateArtisanBio(json?.data || json?.user || json);
 };
 
 export const getAllArtisans = async () => {
@@ -104,14 +108,9 @@ export const getAllArtisans = async () => {
   }
 
   const rawList = json?.users || json?.data || [];
-  const hydratedList = Array.isArray(rawList)
+  return Array.isArray(rawList)
     ? rawList.map((item) => hydrateArtisanBio(item))
     : [];
-
-  console.log("GET ALL ARTISANS RESPONSE =>", res.status, json);
-  console.log("GET ALL ARTISANS HYDRATED =>", hydratedList);
-
-  return hydratedList;
 };
 
 export const updateArtisanData = async (artisanId, payload) => {
@@ -154,9 +153,6 @@ export const updateArtisanData = async (artisanId, payload) => {
 
   const json = await safeJson(res);
 
-  console.log("UPDATE ARTISAN PAYLOAD =>", finalPayload);
-  console.log("UPDATE ARTISAN RESPONSE =>", res.status, json);
-
   if (!res.ok) {
     throw new Error(
       json?.message ||
@@ -185,7 +181,9 @@ export const getArtisanServices = async (artisanId) => {
   const json = await safeJson(res);
 
   if (!res.ok) {
-    throw new Error(json?.message || `Failed to fetch artisan services (${res.status})`);
+    throw new Error(
+      json?.message || `Failed to fetch artisan services (${res.status})`
+    );
   }
 
   if (Array.isArray(json)) return json;
@@ -206,7 +204,9 @@ export const createArtisanService = async (payload) => {
   const json = await safeJson(res);
 
   if (!res.ok) {
-    throw new Error(json?.message || `Failed to create service (${res.status})`);
+    throw new Error(
+      json?.message || `Failed to create service (${res.status})`
+    );
   }
 
   return json?.data || json?.service || json;
@@ -222,7 +222,9 @@ export const updateArtisanService = async (serviceId, payload) => {
   const json = await safeJson(res);
 
   if (!res.ok) {
-    throw new Error(json?.message || `Failed to update service (${res.status})`);
+    throw new Error(
+      json?.message || `Failed to update service (${res.status})`
+    );
   }
 
   return json?.data || json?.service || json;

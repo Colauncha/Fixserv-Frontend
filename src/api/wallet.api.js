@@ -1,104 +1,29 @@
-import axios from "axios";
 
-const WALLET_BASE_URL =
-  import.meta.env.VITE_WALLET_API_BASE_URL || "https://dev-wallet-api.fixserv.co/api/wallet";
+import { createApiClient } from "./createApiClient";
 
-const GENERAL_BASE_URL =
-  import.meta.env.VITE_GENERAL_API_BASE_URL || "https://dev-wallet-api.fixserv.co/api";
+const WALLET_BASE_URL = import.meta.env.DEV
+  ? "/api/wallet"
+  : import.meta.env.VITE_WALLET_API_BASE_URL ||
+    "https://dev-wallet-api.fixserv.co/api/wallet";
 
-const WALLET_API = axios.create({
+const GENERAL_BASE_URL = import.meta.env.DEV
+  ? "/api"
+  : import.meta.env.VITE_GENERAL_API_BASE_URL ||
+    "https://dev-user-api.fixserv.co/api";
+
+const WALLET_API = createApiClient({
   baseURL: WALLET_BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000,
+  requestLabel: "WALLET AXIOS REQUEST =>",
+  responseLabel: "WALLET AXIOS RESPONSE =>",
+  errorLabel: "WALLET AXIOS ERROR =>",
 });
 
-WALLET_API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("fixserv_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  console.log(
-    "WALLET AXIOS REQUEST =>",
-    config.method?.toUpperCase(),
-    (config.baseURL || "") + (config.url || ""),
-    {
-      params: config.params || null,
-      data: config.data || null,
-      hasToken: !!token,
-    }
-  );
-
-  return config;
-});
-
-WALLET_API.interceptors.response.use(
-  (response) => {
-    console.log(
-      "WALLET AXIOS RESPONSE =>",
-      response.status,
-      response.config.url,
-      response.data
-    );
-    return response;
-  },
-  (error) => {
-    console.log(
-      "WALLET AXIOS ERROR =>",
-      error?.response?.status,
-      error?.config?.url,
-      error?.response?.data || error?.message
-    );
-    return Promise.reject(error);
-  }
-);
-
-const GENERAL_API = axios.create({
+const GENERAL_API = createApiClient({
   baseURL: GENERAL_BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000,
+  requestLabel: "GENERAL AXIOS REQUEST =>",
+  responseLabel: "GENERAL AXIOS RESPONSE =>",
+  errorLabel: "GENERAL AXIOS ERROR =>",
 });
-
-GENERAL_API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("fixserv_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  console.log(
-    "GENERAL AXIOS REQUEST =>",
-    config.method?.toUpperCase(),
-    (config.baseURL || "") + (config.url || ""),
-    {
-      params: config.params || null,
-      data: config.data || null,
-      hasToken: !!token,
-    }
-  );
-
-  return config;
-});
-
-GENERAL_API.interceptors.response.use(
-  (response) => {
-    console.log(
-      "GENERAL AXIOS RESPONSE =>",
-      response.status,
-      response.config.url,
-      response.data
-    );
-    return response;
-  },
-  (error) => {
-    console.log(
-      "GENERAL AXIOS ERROR =>",
-      error?.response?.status,
-      error?.config?.url,
-      error?.response?.data || error?.message
-    );
-    return Promise.reject(error);
-  }
-);
 
 /* ================= WALLET ENDPOINTS ================= */
 
@@ -129,7 +54,10 @@ export const getWithdrawalHistory = (walletId, page = 1, limit = 10) =>
   });
 
 export const resolveAccount = ({ accountNumber, bankCode }) =>
-  WALLET_API.post("/withdrawal/resolve-account", { accountNumber, bankCode });
+  WALLET_API.post("/withdrawal/resolve-account", {
+    accountNumber,
+    bankCode,
+  });
 
 export const getFixpointsBalance = (userId) =>
   GENERAL_API.get(`/wallet/fixpoints/balance/${userId}`);
@@ -150,3 +78,5 @@ export const unlockFunds = ({ userId, amount, password }) =>
 
 export const getLockedBalanceBreakdown = (userId) =>
   WALLET_API.get(`/locked-breakdown/${userId}`);
+
+export { WALLET_API, GENERAL_API };

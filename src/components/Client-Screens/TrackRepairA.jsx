@@ -22,6 +22,11 @@ const stepsData = [
   "Ready for Pick-up",
 ];
 
+const rejectedStepsData = [
+  "Request Received",
+  "Request Rejected",
+];
+
 const statusToStep = (status) => {
   const s = String(status || "").toUpperCase();
 
@@ -33,6 +38,22 @@ const statusToStep = (status) => {
   if (["COMPLETED", "DONE"].includes(s)) return 4;
 
   return 0;
+};
+
+const statusToStepIndex = (status) => {
+  const s = String(status || "").toUpperCase();
+
+  if (["PENDING_ARTISAN_RESPONSE", "PENDING", "REQUESTED", "NEW"].includes(s))
+    return 0;
+
+  if (["REJECTED"].includes(s)) return 1;
+
+  if (["ACCEPTED", "DEVICE_DROPPED_OFF"].includes(s)) return 1;
+  if (["IN_PROGRESS", "ONGOING"].includes(s)) return 2;
+  if (["WORK_COMPLETED", "READY_FOR_PICKUP"].includes(s)) return 3;
+  if (["COMPLETED", "DONE"].includes(s)) return 4;
+
+  return null;
 };
 
 const formatStatusLabel = (status) => {
@@ -210,55 +231,110 @@ useEffect(() => {
   }
 }, [showCancelSuccess, navigate]);
 
-  const booking = useMemo(() => {
-    if (!bookingFromState) return null;
+const displayStatus = bookingFromState?.status || order?.status || "PENDING_ARTISAN_RESPONSE";
+const normalizedStatus = String(displayStatus || "").toUpperCase();
 
-    const baseDate = new Date(order?.createdAt || new Date());
-    const activeStep = order
-      ? statusToStep(order.status)
-      : statusToStep("PENDING_ARTISAN_RESPONSE");
+const isRejected = normalizedStatus === "REJECTED";
+const activeSteps = isRejected ? rejectedStepsData : stepsData;
 
-    const timeline = stepsData.map((_, index) => {
-      if (index > activeStep) return null;
+  const getDuration = (start, end) => {
+  if (!start || !end) return null;
 
-      const stepDate = new Date(baseDate);
-      stepDate.setMinutes(stepDate.getMinutes() + index * 30);
+  const diffMs = new Date(end) - new Date(start);
+  if (diffMs <= 0) return null;
 
-      return formatDate(stepDate);
+  const minutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (hours > 0) return `${hours}h ${remainingMinutes}m`;
+  return `${minutes}m`;
+};
+
+const booking = useMemo(() => {
+  const fallbackImageUrl =
+    localStorage.getItem("fixserv_last_uploaded_image_url") || "";
+
+  if (order) {
+    const activeStep = statusToStep(order.status);
+
+    const sortedHistory = [...(order.statusHistory || [])].sort(
+      (a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0)
+    );
+
+    const steps = activeSteps;
+
+    const timeline = Array(steps.length).fill(null);
+    let durations = Array(steps.length).fill(null);
+
+
+  //   const steps = statusToStepIndex(order?.status) === 1 && String(order?.status).toUpperCase() === "REJECTED"
+  // ? rejectedStepsData
+  // : stepsData;
+
+
+    sortedHistory.forEach((entry) => {
+      const stepIndex = statusToStepIndex(entry.status);
+
+      if (stepIndex !== null) {
+        const existing = timeline[stepIndex];
+
+        if (
+          !existing ||
+          new Date(entry.timestamp) > new Date(existing.raw || 0)
+        ) {
+          timeline[stepIndex] = {
+            ...formatDate(entry.timestamp),
+            raw: entry.timestamp,
+          };
+        }
+      }
+    });
+
+    const cleanedTimeline = timeline.map((t) =>
+      t ? { date: t.date, time: t.time } : null
+    );
+
+    sortedHistory.forEach((entry, index) => {
+      if (index === 0) return;
+
+      const prev = sortedHistory[index - 1];
+      const current = entry;
+      const stepIndex = statusToStepIndex(current.status);
+
+      if (stepIndex !== null) {
+        durations[stepIndex] = getDuration(
+          prev.timestamp,
+          current.timestamp
+        );
+      }
     });
 
     return {
-      id:
-        bookingFromState.id ||
-        bookingFromState.orderId ||
-        bookingFromState.draftOrderId ||
-        orderId,
-      orderId:
-        bookingFromState.orderId ||
-        bookingFromState.id ||
-        bookingFromState.draftOrderId ||
-        orderId,
-      status:
-        order?.status ||
-        bookingFromState?.status ||
-        "PENDING_ARTISAN_RESPONSE",
+      ...bookingFromState,
+      id: order.id || order._id || order.orderId || orderId,
+      orderId: order.id || order._id || order.orderId || orderId,
+      status: order.status || "PENDING_ARTISAN_RESPONSE",
       currentStep: activeStep,
-      timeline,
-
-      brand: bookingFromState.brand || bookingFromState.deviceBrand || "",
-      model: bookingFromState.model || bookingFromState.deviceModel || "",
-      damagedDeviceImageUrl: bookingFromState.damagedDeviceImageUrl || "",
-      paymentReleased:
-        order?.paymentReleased ||
-        order?.isPaymentReleased ||
-        bookingFromState?.paymentReleased ||
-        bookingFromState?.isPaymentReleased ||
-        false,
+      timeline: cleanedTimeline,
+      durations,
+      brand: order.deviceBrand || bookingFromState?.brand || "",
+      model: order.deviceModel || bookingFromState?.model || "",
+      damagedDeviceImageUrl:
+        order.damagedDeviceImageUrl ||
+        bookingFromState?.damagedDeviceImageUrl ||
+        fallbackImageUrl,
     };
-  }, [order, bookingFromState, orderId]);
+  }
 
-  const displayStatus = booking?.status || "PENDING_ARTISAN_RESPONSE";
-  const normalizedStatus = String(displayStatus || "").toUpperCase();
+  return bookingFromState || null;
+}, [order, bookingFromState, orderId]);
+
+// const displayStatus = booking?.status || "PENDING_ARTISAN_RESPONSE";
+// const normalizedStatus = String(displayStatus || "").toUpperCase();
+
+// const isRejected = normalizedStatus === "REJECTED";
+// const activeSteps = isRejected ? rejectedStepsData : stepsData;
 
   const backendPaymentReleased =
     order?.paymentReleased ||
@@ -388,9 +464,10 @@ useEffect(() => {
   //   }
   // };
 
-  const handleConfirmContinue = () => {
-    handleReleasePayment();
-  };
+const handleConfirmContinue = () => {
+  setShowConfirmModal(false);
+  handleReleasePayment();
+};
 
   const handleCancelModal = () => {
     setShowConfirmModal(false);
@@ -539,17 +616,18 @@ const handleSubmitCancel = async () => {
         <div className="mt-10">
           {booking.damagedDeviceImageUrl && (
             <div className="mb-10 flex justify-center">
-              <img
+              {/* <img
                 src={booking.damagedDeviceImageUrl}
                 alt="Damaged device"
                 className="w-56 h-56 object-cover rounded-xl border"
-              />
+              /> */}
             </div>
           )}
 
-          {stepsData.map((step, index) => {
-            const activeStep = order ? completedStep : booking.currentStep;
-            const isCompleted = index <= activeStep;
+          {activeSteps.map((step, index) => {
+            const activeStep = statusToStepIndex(normalizedStatus);
+const isCompleted = index <= activeStep;
+            // const isCompleted = index <= activeStep;
             const timestamp = booking.timeline?.[index];
 
             return (
@@ -566,7 +644,7 @@ const handleSubmitCancel = async () => {
                     )}
                   </span>
 
-                  {index !== stepsData.length - 1 && (
+                  {index !== activeSteps.length - 1 && (
                     <span className="w-px h-[72px] bg-blue-300 absolute top-7" />
                   )}
                 </div>

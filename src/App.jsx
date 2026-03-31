@@ -18,6 +18,9 @@ import ArtisanLayout from "./layout/ArtisanLayout";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import ContactUs from "./pages/Contact";
+import HelpSupport from "./pages/HelpSupport";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 // Auth
 import SignUp from "./components/Sign-Auth/SignUp";
@@ -42,6 +45,8 @@ import AdminConfirmSignUp from "./components/Admin-Auth/AdminConfirmSignUp";
 import ClientHome from "./components/Client-Screens/ClientHome";
 import ClientRequest from "./components/Client-Screens/ClientRequest";
 import ClientHistory from "./components/Client-Screens/ClientHistory";
+import TrackRepairA from "./components/Client-Screens/TrackRepairA";
+import RateService from "./components/Client-Screens/RateService";
 
 // Artisan Dashboard Screens
 import Dashboard from "./components/Artisan Pages/Dashboard";
@@ -54,6 +59,8 @@ import VerifyArtisanEmail from "./components/Artisan-Auth/VerifyArtisanEmail";
 import Verification from "./components/Artisan Pages/Verification";
 import Help from "./components/Artisan Pages/Help";
 import AcceptRequest from "./components/Artisan Pages/AcceptRequest";
+import ArtisanCertificates from "./components/Artisan Pages/ArtisanCertificates";
+import ArtisanProfile from "./components/Client-Screens/ArtisanProfile";
 
 // Misc
 import Notfound from "./components/Notfound";
@@ -95,10 +102,8 @@ import AdminClients from "./components/Admin-Auth/AdminClients";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicOnlyRoute from "./routes/PublicOnlyRoute";
 import VerifyEmail from "./components/Sign-Auth/VerifyEmail";
-import ArtisanProfile from "./components/Client-Screens/ArtisanProfile";
-import TrackRepairA from "./components/Client-Screens/TrackRepairA";
-import RateService from "./components/Client-Screens/RateService";
-import ArtisanCertificates from "./components/Artisan Pages/ArtisanCertificates";
+import GlobalErrorAlert from "./components/Common/GlobalErrorAlert";
+
 
 const App = () => {
   const router = createBrowserRouter(
@@ -109,6 +114,9 @@ const App = () => {
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
           <Route path="contactUs" element={<ContactUs />} />
+          <Route path="helpsupport" element={<HelpSupport />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="privacy" element={<Privacy />} />
           <Route path="*" element={<Notfound />} />
         </Route>
 
@@ -236,7 +244,15 @@ const App = () => {
     )
   );
 
-  return <RouterProvider router={router} />;
+  //   return <RouterProvider router={router} />;
+// };
+
+  return (
+    <>
+      <RouterProvider router={router} />
+      <GlobalErrorAlert />
+    </>
+  );
 };
 
 export default App;
