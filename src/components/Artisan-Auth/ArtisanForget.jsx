@@ -7,7 +7,10 @@ import { useNavigate } from "react-router-dom";
 const ArtisanForget = () => {
   const navigate = useNavigate();
 
-  const BASE_URL = (import.meta.env.VITE_USER_API || "").replace(/\/+$/, "");
+const BASE_URL = (
+  import.meta.env.VITE_USER_API_BASE_URL ||
+  "https://dev-user-api.fixserv.co/api"
+).replace(/\/+$/, "");
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,9 +37,7 @@ const ArtisanForget = () => {
     try {
       setLoading(true);
 
-      const endpoint = BASE_URL.endsWith("/api")
-        ? `${BASE_URL}/admin/forgot-password`
-        : `${BASE_URL}/api/admin/forgot-password`;
+const endpoint = `${BASE_URL}/admin/forgot-password`;
 
       const res = await fetch(endpoint, {
         method: "POST",

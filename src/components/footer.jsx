@@ -113,8 +113,8 @@ gap-y-10">
 
       {/* Bottom */}
       <p className="text-center text-sm mt-6">
-        © 2025 Fixserv. All Rights Reserved.
-      </p>
+  © 2024 - {new Date().getFullYear()} Fixserv. All Rights Reserved.
+</p>
     </footer>
   );
 };
