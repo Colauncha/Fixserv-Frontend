@@ -174,7 +174,7 @@ const HelpSupport = () => {
         <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-4">
   {[
     { icon: "📧", text: "fixserv8@gmail.com" },
-    { icon: "📞", text: "+234 708 XXX XXXX" },
+    { icon: "📞", text: "+234 808 289 5378" },
     // { icon: "💬", text: "Live chat available" },
   ].map((item, i) => (
     <div

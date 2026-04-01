@@ -1579,7 +1579,7 @@ if (
 
 
 
-          <button
+          {/* <button
             type="button"
             onClick={() => googleSignUp()}
             disabled={loading}
@@ -1587,25 +1587,25 @@ if (
           >
             <img src={googleLogo} className="w-5 h-5" />
             Sign up with Google
-          </button>
+          </button> */}
 
 
 
-          <button
+          {/* <button
             type="button"
             className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-6"
           >
             <img src={appleLogo} className="w-5 h-5" />
             Sign up with Apple
-          </button>
+          </button> */}
 
 
 
-          <div className="flex items-center justify-center gap-4 mb-6">
+          {/* <div className="flex items-center justify-center gap-4 mb-6">
             <div className="w-6 h-px bg-[#B3B3B3]" />
             <span className="text-sm text-[#B3B3B3]">Or</span>
             <div className="w-6 h-px bg-[#B3B3B3]" />
-          </div>
+          </div> */}
 
 
 

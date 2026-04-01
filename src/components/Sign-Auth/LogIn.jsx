@@ -783,13 +783,13 @@ const LogIn = () => {
           </p>
 
 
-          <button
+          {/* <button
             onClick={() => googleLoginHandler()}
             className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4"
           >
             <img src={googleLogo} className="w-5 h-5" />
             Sign in with Google
-          </button>
+          </button> */}
 
 
           <form ref={formRef} className="space-y-5" onSubmit={handleSubmit}>

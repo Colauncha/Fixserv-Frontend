@@ -362,7 +362,7 @@ const handleSubmit = async (e) => {
               Enter your details to log in your Fixserv artisan account
             </p>
 
-            <button
+            {/* <button
               type="button"
               disabled={loading}
               onClick={() => googleLogin()}
@@ -370,13 +370,13 @@ const handleSubmit = async (e) => {
             >
               <img src={googleLogo} alt="Google" className="w-5 h-5" />
               Sign in with Google
-            </button>
+            </button> */}
 
-            <div className="flex items-center justify-center gap-4 mb-6">
+            {/* <div className="flex items-center justify-center gap-4 mb-6">
               <div className="w-6 h-px bg-[#B3B3B3]" />
               <span className="text-sm text-[#B3B3B3]">Or</span>
               <div className="w-6 h-px bg-[#B3B3B3]" />
-            </div>
+            </div> */}
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               <input
