@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+// import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import phone from "../assets/contact/phone.png";
 import email from "../assets/contact/mail.png";
 import location from "../assets/contact/location.png";
