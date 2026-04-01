@@ -130,26 +130,62 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
     const title = String(item?.title || "").toUpperCase();
     const message = String(item?.message || "").toUpperCase();
 
-    if (userRole === "ARTISAN") {
-      if (
-        orderId &&
-        (type.includes("ORDER") ||
-          type.includes("REQUEST") ||
-          status ||
-          title.includes("REQUEST") ||
-          message.includes("REQUEST") ||
-          title.includes("JOB") ||
-          message.includes("JOB"))
-      ) {
-        navigate("/artisan/jobs");
-        onClose?.();
-        return;
-      }
 
-      navigate("/artisan");
-      onClose?.();
-      return;
-    }
+    if (userRole === "ARTISAN") {
+  const paymentReleasedNotification =
+    title.includes("PAYMENT RELEASED") ||
+    message.includes("PAYMENT RELEASED") ||
+    message.includes("RELEASED TO YOUR WALLET") ||
+    message.includes("RELEASED TO WALLET") ||
+    message.includes("HAS BEEN RELEASED TO YOUR WALLET") ||
+    type.includes("PAYMENT");
+
+  if (paymentReleasedNotification) {
+    navigate("/artisan/wallet");
+    onClose?.();
+    return;
+  }
+
+  if (
+    orderId &&
+    (type.includes("ORDER") ||
+      type.includes("REQUEST") ||
+      status ||
+      title.includes("REQUEST") ||
+      message.includes("REQUEST") ||
+      title.includes("JOB") ||
+      message.includes("JOB"))
+  ) {
+    navigate("/artisan/jobs");
+    onClose?.();
+    return;
+  }
+
+  navigate("/artisan/dashboard");
+  onClose?.();
+  return;
+}
+
+    // if (userRole === "ARTISAN") {
+    //   if (
+    //     orderId &&
+    //     (type.includes("ORDER") ||
+    //       type.includes("REQUEST") ||
+    //       status ||
+    //       title.includes("REQUEST") ||
+    //       message.includes("REQUEST") ||
+    //       title.includes("JOB") ||
+    //       message.includes("JOB"))
+    //   ) {
+    //     navigate("/artisan/jobs");
+    //     onClose?.();
+    //     return;
+    //   }
+
+    //   navigate("/artisan");
+    //   onClose?.();
+    //   return;
+    // }
 
     if (userRole === "CLIENT") {
       if (orderId) {

@@ -160,9 +160,9 @@ const [cancellingOrder, setCancellingOrder] = useState(false);
     }
   }, [storedUser?.email]);
 
-  if (paymentReleased) {
-    return null;
-  }
+  // if (paymentReleased) {
+  //   return null;
+  // }
 
 const statusToStepIndex = (status) => {
   const s = String(status || "").toUpperCase();
@@ -392,23 +392,48 @@ const isRejected = normalizedStatus === "REJECTED";
 
 const activeSteps = isRejected ? rejectedStepsData : stepsData;
 
-  const backendPaymentReleased =
-    order?.paymentReleased ||
-    order?.isPaymentReleased ||
-    order?.released ||
-    order?.paymentStatus === "RELEASED" ||
-    booking?.paymentReleased ||
-    booking?.isPaymentReleased;
+const backendPaymentReleased =
+  order?.paymentReleased === true ||
+  order?.isPaymentReleased === true ||
+  order?.released === true ||
+  order?.paymentStatus === "RELEASED" ||
+  order?.escrowStatus === "RELEASED" ||
+  order?.escrowStatus === "RELEASED_TO_ARTISAN" ||
+  Boolean(order?.releasedAt) ||
+  Boolean(order?.paymentReleasedAt) ||
+  Boolean(order?.releasedToArtisanAt) ||
+  booking?.paymentReleased === true ||
+  booking?.isPaymentReleased === true;
 
-  const isCompletedStageOrAfter = [
-    "WORK_COMPLETED",
-    "READY_FOR_PICKUP",
-    "COMPLETED",
-    "DONE",
-  ].includes(normalizedStatus);
+const isCompletedStageOrAfter = [
+  "WORK_COMPLETED",
+  "READY_FOR_PICKUP",
+  "COMPLETED",
+  "DONE",
+].includes(normalizedStatus);
 
-  const canReleasePayment =
-    isCompletedStageOrAfter && !backendPaymentReleased && !paymentReleased;
+const isPaymentReleasedState = backendPaymentReleased || paymentReleased;
+
+const canReleasePayment =
+  isCompletedStageOrAfter && !isPaymentReleasedState;
+
+  // const backendPaymentReleased =
+  //   order?.paymentReleased ||
+  //   order?.isPaymentReleased ||
+  //   order?.released ||
+  //   order?.paymentStatus === "RELEASED" ||
+  //   booking?.paymentReleased ||
+  //   booking?.isPaymentReleased;
+
+  // const isCompletedStageOrAfter = [
+  //   "WORK_COMPLETED",
+  //   "READY_FOR_PICKUP",
+  //   "COMPLETED",
+  //   "DONE",
+  // ].includes(normalizedStatus);
+
+  // const canReleasePayment =
+  //   isCompletedStageOrAfter && !backendPaymentReleased && !paymentReleased;
 
   const canCancelOrder = ["PENDING_ARTISAN_RESPONSE", "ACCEPTED"].includes(
     normalizedStatus
@@ -747,7 +772,28 @@ const handleSubmitCancel = async () => {
   </button>
 )}
 
-            {isCompletedStageOrAfter && (
+{isCompletedStageOrAfter && (
+  <button
+    onClick={() => {
+      if (!canReleasePayment || releasingPayment) return;
+      setShowConfirmModal(true);
+    }}
+    disabled={!canReleasePayment || releasingPayment}
+    className={`px-6 py-3 rounded-lg text-sm font-medium transition ${
+      canReleasePayment && !releasingPayment
+        ? "bg-[#3E83C4] text-white hover:bg-[#2f6fa5] cursor-pointer"
+        : "bg-gray-300 text-gray-600 cursor-not-allowed"
+    }`}
+  >
+    {isPaymentReleasedState
+      ? "Payment Released"
+      : releasingPayment
+      ? "Releasing Payment..."
+      : "Release Payment"}
+  </button>
+)}
+
+            {/* {isCompletedStageOrAfter && (
               <button
                 onClick={() => setShowConfirmModal(true)}
                 disabled={!canReleasePayment || releasingPayment}
@@ -763,7 +809,7 @@ const handleSubmitCancel = async () => {
                   ? "Releasing Payment..."
                   : "Release Payment"}
               </button>
-            )}
+            )} */}
 
             {showNewRequestBtn && (
               <button
