@@ -775,7 +775,7 @@ const LogIn = () => {
         <div className="w-full max-w-xl">
 
           <h2 className="text-2xl font-semibold text-black text-center">
-            Log In
+            Welcome Back Client
           </h2>
 
           <p className="text-sm text-[#656565] text-center mt-2 mb-8">

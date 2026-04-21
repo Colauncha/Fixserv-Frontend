@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import master from "../../assets/client images/client-home/master.png";
@@ -26,6 +26,8 @@ const MODAL = {
 const BookingSummaryA = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const submitLockRef = useRef(false);
 
   const [activeModal, setActiveModal] = useState(null);
   const [finalBooking, setFinalBooking] = useState(null);
@@ -199,12 +201,18 @@ const serviceCost = useMemo(() => {
       : null;
 
 const handleWalletPayment = async () => {
+  if (submitLockRef.current || isSubmitting) return;
+
   try {
+    submitLockRef.current = true;
     setSubmitError("");
     setIsSubmitting(true);
     setActiveModal(MODAL.PROCESSING);
 
-    if (!artisan) throw new Error("Selected artisan not found.");
+    if (!artisan) {
+      throw new Error("Selected artisan not found.");
+    }
+
     if (!booking?.uploadedProductId) {
       throw new Error("Uploaded product not found. Please start again.");
     }
@@ -259,20 +267,32 @@ const handleWalletPayment = async () => {
     setFinalBooking(finalData);
     setActiveModal(MODAL.SUCCESS);
   } catch (err) {
-    console.error(err);
-    setActiveModal(MODAL.WALLET);
-    // setSubmitError(err?.message || "Something went wrong");
-    const msg = String(err?.message || "").toLowerCase();
+    console.error("BOOKING SUMMARY A ERROR =>", err);
 
-if (msg.includes("failed to fetch") || msg.includes("network")) {
-  setSubmitError("Network error. Please check your connection and try again.");
-} else if (msg.includes("401")) {
-  setSubmitError("Session expired. Please login again.");
-} else if (msg.includes("500")) {
-  setSubmitError("Server error. Please try again later.");
-} else {
-  setSubmitError("Unable to complete payment. Please try again.");
-}
+    const rawMsg =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.message ||
+      "";
+
+    const msg = String(rawMsg).toLowerCase();
+
+    if (msg.includes("failed to fetch") || msg.includes("network")) {
+      setSubmitError("Network error. Please check your connection and try again.");
+    } else if (msg.includes("401") || msg.includes("unauthorized")) {
+      setSubmitError("Session expired. Please login again.");
+    } else if (msg.includes("403")) {
+      setSubmitError("You do not have permission to perform this action.");
+    } else if (msg.includes("404")) {
+      setSubmitError("Required booking data was not found. Please start again.");
+    } else if (msg.includes("500") || msg.includes("server")) {
+      setSubmitError("Server error. Please try again later.");
+    } else {
+      setSubmitError(rawMsg || "Unable to complete payment. Please try again.");
+    }
+
+    setActiveModal(MODAL.WALLET);
+    submitLockRef.current = false;
   } finally {
     setIsSubmitting(false);
   }
@@ -295,6 +315,12 @@ if (msg.includes("failed to fetch") || msg.includes("network")) {
     setLoadingServices(false);
   }
 }, [artisan]);
+
+useEffect(() => {
+  if (!activeModal) {
+    submitLockRef.current = false;
+  }
+}, [activeModal]);
 
   if (!artisan || (!booking?.draftOrderId && !booking?.orderId)) {
     return (
@@ -448,14 +474,16 @@ if (msg.includes("failed to fetch") || msg.includes("network")) {
                         </div>
 
                         <button
-                          disabled={isSubmitting}
-                          onClick={handleWalletPayment}
-                          className={`w-full bg-blue-600 text-white py-2 rounded-md ${
-                            isSubmitting ? "opacity-60 cursor-not-allowed" : ""
-                          }`}
-                        >
-                          {isSubmitting ? "Processing..." : "Make Payment"}
-                        </button>
+  disabled={isSubmitting || loadingServices || !selectedServiceFromArtisan}
+  onClick={handleWalletPayment}
+  className={`w-full bg-blue-600 text-white py-2 rounded-md ${
+    isSubmitting || loadingServices || !selectedServiceFromArtisan
+      ? "opacity-60 cursor-not-allowed"
+      : ""
+  }`}
+>
+  {isSubmitting ? "Processing..." : "Make Payment"}
+</button>
 
                         {submitError && (
                           <p className="text-sm text-red-500 mt-3">{submitError}</p>

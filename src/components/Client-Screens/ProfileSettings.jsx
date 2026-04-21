@@ -20,6 +20,11 @@ import {
   unlockFunds,
   getLockedBalanceBreakdown,
 } from "../../api/wallet.api";
+import {
+  uploadProfilePictureFile,
+  validateProfileImageFile,
+  getProfileUploadFriendlyError,
+} from "../../api/profile-upload.api";
 
 const ProfileSettings = () => {
   const [profileImage, setProfileImage] = useState(PraiseImg);
@@ -66,6 +71,8 @@ const ProfileSettings = () => {
   const [lockPassword, setLockPassword] = useState("");
   const [unlockAmount, setUnlockAmount] = useState("");
   const [unlockPassword, setUnlockPassword] = useState("");
+  const [error, setError] = useState("");
+const [successMsg, setSuccessMsg] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -77,6 +84,8 @@ const ProfileSettings = () => {
     street: "",
     postalCode: "",
   });
+
+  const [localPreview, setLocalPreview] = useState("");
 
   const [lockingFunds, setLockingFunds] = useState(false);
   const [unlockingFunds, setUnlockingFunds] = useState(false);
@@ -119,46 +128,79 @@ const ProfileSettings = () => {
   const formatMoney = (amount) =>
     `₦${Number(amount || 0).toLocaleString()}`;
 
-  const handleProfileUpload = async (file) => {
+const handleProfileUpload = async (file) => {
+  const previousImage =
+    user?.profilePicture ||
+    user?.profileImage ||
+    PraiseImg;
+
+  try {
+    setError("");
+    setSuccessMsg("");
+
     if (!file) return;
-    if (file.size > 1024 * 1024) return alert("Image must not be more than 1MB");
-    if (!userId) return alert("User not found");
 
-    const uploadData = new FormData();
-    uploadData.append("profilePicture", file);
-
-    try {
-      setUploading(true);
-
-      const res = await fetch(
-        `https://dev-user-api.fixserv.co/api/upload/${userId}/profile-picture`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: uploadData,
-        }
-      );
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Upload failed");
-
-      const imageUrl =
-        data?.imageUrl ||
-        data?.data?.imageUrl ||
-        data?.data?.user?.profilePicture ||
-        data?.user?.profilePicture ||
-        data?.profilePicture;
-
-      if (imageUrl) {
-        setProfileImage(imageUrl);
-        login(token, { ...user, profilePicture: imageUrl });
-      }
-    } catch (err) {
-      alert(err.message || "Something went wrong");
-    } finally {
-      setUploading(false);
+    if (!userId) {
+      throw new Error("User not found");
     }
-  };
+
+    const validation = validateProfileImageFile(file);
+    if (!validation.valid) {
+      throw new Error(validation.message);
+    }
+
+    setUploading(true);
+
+    const data = await uploadProfilePictureFile({
+      userId,
+      file,
+    });
+
+    const imageUrl =
+      data?.imageUrl ||
+      data?.data?.imageUrl ||
+      data?.data?.user?.profilePicture ||
+      data?.user?.profilePicture ||
+      data?.user?.profileImage ||
+      data?.profilePicture ||
+      "";
+
+    if (!imageUrl) {
+      throw new Error("Profile image upload succeeded but no image URL was returned.");
+    }
+
+    if (localPreview) {
+      URL.revokeObjectURL(localPreview);
+      setLocalPreview("");
+    }
+
+    setProfileImage(imageUrl);
+
+    login(token, {
+      ...user,
+      ...(data?.user || {}),
+      profilePicture: imageUrl,
+      profileImage: imageUrl,
+    });
+
+    setSuccessMsg("Profile picture updated successfully.");
+  } catch (err) {
+    console.error("CLIENT PROFILE UPLOAD FAILED =>", err);
+
+    if (localPreview) {
+      URL.revokeObjectURL(localPreview);
+      setLocalPreview("");
+    }
+
+    setProfileImage(previousImage);
+
+    setError(
+      getProfileUploadFriendlyError(err, "Image upload failed. Please try again.")
+    );
+  } finally {
+    setUploading(false);
+  }
+};
 
   const handleProfileUpdate = async () => {
     if (!userId) return alert("User not found");
@@ -330,18 +372,35 @@ const ProfileSettings = () => {
     fetchBanks();
   }, [token]);
 
-  useEffect(() => {
-    if (!user) return;
-
-    const savedBank = user?.withdrawalBankDetails || {};
-
-    setBankForm({
-      accountName: savedBank?.accountName || "",
-      bankCode: savedBank?.bankCode || "",
-      bankName: savedBank?.bankName || "",
-      accountNumber: savedBank?.accountNumber || "",
+useEffect(() => {
+  if (user) {
+    setFormData({
+      fullName: user.fullName || "",
+      email: user.email || "",
+      phone: user.phoneNumber || "",
+      country: user.deliveryAddress?.country || "",
+      state: user.deliveryAddress?.state || "",
+      city: user.deliveryAddress?.city || "",
+      street: user.deliveryAddress?.street || "",
+      postalCode: user.deliveryAddress?.postalCode || "",
     });
-  }, [user]);
+
+    const savedProfileImage =
+      user.profilePicture ||
+      user.profileImage ||
+      PraiseImg;
+
+    setProfileImage(savedProfileImage);
+  }
+}, [user]);
+
+  useEffect(() => {
+  return () => {
+    if (localPreview) {
+      URL.revokeObjectURL(localPreview);
+    }
+  };
+}, [localPreview]);
 
   const handleBankFormChange = (e) => {
     const { name, value } = e.target;
@@ -481,8 +540,26 @@ const ProfileSettings = () => {
 
   return (
     <div className="w-full">
+     
       <section className="w-full py-14 overflow-hidden">
         <div className="max-w-7xl mx-auto px-2 md:px-6">
+
+           {error ? (
+  <div className="mx-auto max-w-7xl px-2 md:px-6 mt-4">
+    <div className="p-3 rounded-md bg-red-50 text-red-700 text-sm">
+      {error}
+    </div>
+  </div>
+) : null}
+
+{successMsg ? (
+  <div className="mx-auto max-w-7xl px-2 md:px-6 mt-4">
+    <div className="p-3 rounded-md bg-green-50 text-green-700 text-sm">
+      {successMsg}
+    </div>
+  </div>
+) : null}
+
           <button
             onClick={() => {
               if (window.history.length > 1) {
@@ -513,32 +590,50 @@ const ProfileSettings = () => {
 
                 <img src={camera} alt="Upload" className="w-12 h-12" />
                 <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
+  type="file"
+  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+  className="hidden"
+  onChange={async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-                    const previewUrl = URL.createObjectURL(file);
-                    setProfileImage(previewUrl);
-                    handleProfileUpload(file);
+    setError("");
+    setSuccessMsg("");
 
-                    setTimeout(() => URL.revokeObjectURL(previewUrl), 5000);
-                  }}
-                />
+    const validation = validateProfileImageFile(file);
+    if (!validation.valid) {
+      setError(validation.message);
+      e.target.value = "";
+      return;
+    }
+
+    if (localPreview) {
+      URL.revokeObjectURL(localPreview);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreview(previewUrl);
+    setProfileImage(previewUrl);
+
+    await handleProfileUpload(file);
+
+    e.target.value = "";
+  }}
+/>
               </label>
             </div>
 
             <h2 className="text-lg font-semibold">Profile Picture</h2>
-
+<p className="text-xs text-[#3E83C4]">
+  Accepted formats: JPG, JPEG, PNG, WEBP. Large images are automatically compressed before upload.
+</p>
             <p className="text-sm text-[#656565]">
               This will be displayed on your profile
             </p>
-
+{/* 
             <p className="text-xs text-[#3E83C4]">
               Image must not be more than 1 mb
-            </p>
+            </p> */}
           </div>
         </div>
       </section>

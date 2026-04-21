@@ -563,7 +563,16 @@ const sortedUploads = [...uploadedProducts].sort((a, b) => {
       if (!imageUrl) throw new Error("Upload succeeded but no image URL returned");
 
       setProfilePreview(imageUrl);
-      login(token, { ...user, profilePicture: imageUrl });
+      login(token, {
+  ...user,
+  data: {
+    ...user?.data,
+    user: {
+      ...profileUser,
+      profilePicture: imageUrl,
+    },
+  },
+});
     } catch (err) {
       alert(err?.message || "Failed to upload profile picture");
     } finally {
