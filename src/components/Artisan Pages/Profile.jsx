@@ -13,6 +13,11 @@ import {
   updateArtisanData,
   updateArtisanService,
 } from "../../api/artisan.api";
+import {
+  uploadProfilePictureFile,
+  validateProfileImageFile,
+  getProfileUploadFriendlyError,
+} from "../../api/profile-upload.api";
 
 const getUserFriendlyError = (err, fallback = "Something went wrong. Please try again.") => {
   const msg = String(err?.message || "").toLowerCase();
@@ -666,115 +671,94 @@ phone:
 
   const onPickImage = () => fileRef.current?.click();
 
-  const onFileSelected = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+const onFileSelected = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    const isImage = file.type.startsWith("image/");
-    if (!isImage) {
-      setError("Please select an image file.");
-      return;
-    }
+  const validation = validateProfileImageFile(file);
 
-    const maxMB = 5;
-    if (file.size > maxMB * 1024 * 1024) {
-      setError(`Image must be less than ${maxMB}MB.`);
-      return;
-    }
+  if (!validation.valid) {
+    setError(validation.message);
+    setSuccessMsg("");
+    if (fileRef.current) fileRef.current.value = "";
+    return;
+  }
 
+  setError("");
+  setSuccessMsg("");
+
+  if (imgPreview) {
+    URL.revokeObjectURL(imgPreview);
+  }
+
+  setImgFile(file);
+  setImgPreview(URL.createObjectURL(file));
+};
+
+const uploadProfilePicture = async () => {
+  try {
+    setUploadingImg(true);
     setError("");
     setSuccessMsg("");
-    setImgFile(file);
-    setImgPreview(URL.createObjectURL(file));
-  };
 
-  const uploadProfilePicture = async () => {
-    try {
-      setUploadingImg(true);
-      setError("");
-      setSuccessMsg("");
+    const userId = artisan?.id || artisan?._id || artisan?.artisanId;
+    if (!userId) throw new Error("Missing user id. Cannot upload image.");
+    if (!imgFile) throw new Error("Please select an image first.");
 
-      const token = getAuthToken();
-      if (!token) throw new Error("Missing auth token. Please login again.");
+    const data = await uploadProfilePictureFile({
+      userId,
+      file: imgFile,
+    });
 
-      const userId = artisan?.id || artisan?._id || artisan?.artisanId;
-      if (!userId) throw new Error("Missing user id. Cannot upload image.");
+    const imageUrl =
+      data?.imageUrl ||
+      data?.user?.profilePicture ||
+      data?.user?.profileImage ||
+      "";
 
-      if (!imgFile) throw new Error("Please select an image first.");
-
-      const fd = new FormData();
-      fd.append("profilePicture", imgFile);
-
-      const url = `https://dev-user-api.fixserv.co/api/upload/${userId}/profile-picture`;
-
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: fd,
-      });
-
-let data = null;
-let rawText = "";
-
-try {
-  data = await res.json();
-} catch {
-  try {
-    rawText = await res.text();
-  } catch {
-    rawText = "";
-  }
-}
-
-if (!res.ok) {
-  const apiError =
-    data?.message ||
-    data?.error ||
-    data?.detail ||
-    (Array.isArray(data?.errors) ? data.errors.join(", ") : null) ||
-    rawText ||
-    `Upload failed (HTTP ${res.status})`;
-
-  throw new Error(apiError);
-}
-
-
-      const imageUrl =
-        data?.imageUrl ||
+    const updatedUser = {
+      ...artisan,
+      ...(data?.user || {}),
+      profileImage:
+        imageUrl ||
         data?.user?.profilePicture ||
         data?.user?.profileImage ||
-        "";
+        artisan?.profileImage ||
+        artisan?.profilePicture ||
+        "",
+      profilePicture:
+        imageUrl ||
+        data?.user?.profilePicture ||
+        data?.user?.profileImage ||
+        artisan?.profilePicture ||
+        artisan?.profileImage ||
+        "",
+    };
 
-      const updatedUser = {
-        ...artisan,
-        ...(data?.user || {}),
-        profileImage: imageUrl || artisan?.profileImage || "",
-      };
+    setArtisan(updatedUser);
+    setUser(updatedUser);
+    localStorage.setItem("fixserv_user", JSON.stringify(updatedUser));
 
-      setArtisan(updatedUser);
-      setUser(updatedUser);
-      localStorage.setItem("fixserv_user", JSON.stringify(updatedUser));
-
-      setImgFile(null);
-      setImgPreview("");
-      setSuccessMsg("Profile picture updated successfully.");
-      if (fileRef.current) fileRef.current.value = "";
-    } catch (err) {
-      console.error("Upload profile picture failed", err);
-//       setError(
-//   typeof err?.message === "string" && err.message.trim() !== ""
-//     ? err.message
-//     : "Image upload failed. Please try again."
-// );
-
-setError(getUserFriendlyError(err, "Image upload failed. Please try again."));
-
-    } finally {
-      setUploadingImg(false);
+    if (imgPreview) {
+      URL.revokeObjectURL(imgPreview);
     }
-  };
+
+    setImgFile(null);
+    setImgPreview("");
+    setSuccessMsg("Profile picture updated successfully.");
+
+    if (fileRef.current) {
+      fileRef.current.value = "";
+    }
+  } catch (err) {
+    console.error("Upload profile picture failed", err);
+    setError(
+      getProfileUploadFriendlyError(err, "Image upload failed. Please try again.")
+    );
+  } finally {
+    setUploadingImg(false);
+  }
+};
 
   if (loading) {
     return (
@@ -831,12 +815,12 @@ setError(getUserFriendlyError(err, "Image upload failed. Please try again."));
               </div>
 
               <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                onChange={onFileSelected}
-                className="hidden"
-              />
+  ref={fileRef}
+  type="file"
+  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+  onChange={onFileSelected}
+  className="hidden"
+/>
 
               <button
                 type="button"
