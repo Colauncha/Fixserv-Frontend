@@ -23,9 +23,7 @@ jobs:
 
       # 3. Install dependencies
       - name: Install dependencies
-        run: |
-          corepack enable
-          pnpm install --frozen-lockfile
+        run: npm ci
 
       # 4. Build project
       - name: Build project
