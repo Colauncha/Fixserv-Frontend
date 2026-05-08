@@ -228,8 +228,10 @@ const sortedUploads = [...uploadedProducts].sort((a, b) => {
     setDeletingId(pid);
 
     try {
-      const res = await fetch(
-        `https://dev-user-api.fixserv.co/api/upload/${userId}/upload-products/${pid}`,
+      const BASE_URL = import.meta.env.VITE_USER_API_BASE_URL;
+
+const res = await fetch(
+  `${BASE_URL}/upload/${userId}/upload-products/${pid}`,
         {
           method: "DELETE",
           headers: {
@@ -542,7 +544,7 @@ const sortedUploads = [...uploadedProducts].sort((a, b) => {
       setProfileUploading(true);
 
       const res = await fetch(
-        `https://dev-user-api.fixserv.co/api/upload/${userId}/profile-picture`,
+  `${BASE_URL}/upload/${userId}/profile-picture`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -640,7 +642,7 @@ const sortedUploads = [...uploadedProducts].sort((a, b) => {
   const [bookingError, setBookingError] = useState("");
 
   const ORDER_HISTORY_ENDPOINT =
-    "https://dev-order-api.fixserv.co/api/orders/client-history";
+  `${import.meta.env.VITE_ORDER_API_BASE_URL}/client-history`;
 
   const formatNaira = (value) => {
     const num = Number(value);
@@ -651,16 +653,6 @@ const sortedUploads = [...uploadedProducts].sort((a, b) => {
       maximumFractionDigits: 0,
     }).format(num);
   };
-
-  // const normalizePaymentStatus = (escrowStatus) => {
-  //   const value = String(escrowStatus || "").toUpperCase().trim();
-
-  //   if (value === "PAID") return "Paid";
-  //   if (value === "NOT_PAID" || value === "UNPAID") return "Unpaid";
-  //   if (value.includes("CANCEL")) return "Cancelled";
-  //   return "Pending";
-  // };
-
   const normalizePaymentStatus = (item) => {
     const orderStatus = String(
       item?.status ||
@@ -1834,168 +1826,7 @@ const normalized = orders.map((item) =>
         </div>
         
       </section>
-
-      {/* <section className="w-full py-8 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="border border-[#5F8EBA] rounded-xl p-4 sm:p-6 bg-white">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-              <div className="flex items-center gap-2">
-                <img src={item} alt="item" className="w-9 h-8" />
-                <h3 className="font-semibold text-base sm:text-lg text-black">
-                  Booking History
-                </h3>
-              </div>
-
-              <button
-                onClick={() => navigate("/client/repair")}
-                className="text-[#3E83C4] text-sm sm:text-base lg:text-lg hover:underline cursor-pointer text-left sm:text-right"
-              >
-                View All History
-              </button>
-            </div>
-
-            
-            <div className="overflow-x-auto hidden md:block">
-              <table className="w-full text-sm lg:text-base">
-                <thead>
-                  <tr className="bg-[#ECF0F5] text-[#656565] text-left rounded-lg">
-                    <th className="py-3 px-4 font-medium">Booking ID</th>
-                    <th className="py-3 px-4 font-medium">Device</th>
-                    <th className="py-3 px-4 font-medium">Technician</th>
-                    <th className="py-3 px-4 font-medium">Payment Status</th>
-                    <th className="py-3 px-4 font-medium">Cost</th>
-                    <th className="py-3 px-4 font-medium">Progress</th>
-                  </tr>
-                </thead>
-
-                <tbody className="text-[#535353] text-sm lg:text-base">
-                  {bookingLoading ? (
-                    <tr>
-                      <td className="py-5 px-4 text-sm text-gray-500" colSpan={6}>
-                        Loading booking history...
-                      </td>
-                    </tr>
-                  ) : bookingError ? (
-                    <tr>
-                      <td className="py-5 px-4 text-sm text-red-600" colSpan={6}>
-                        {bookingError}
-                      </td>
-                    </tr>
-                  ) : bookingHistory.length === 0 ? (
-                    <tr>
-                      <td className="py-5 px-4 text-sm text-gray-500" colSpan={6}>
-                        No booking history found.
-                      </td>
-                    </tr>
-                  ) : (
-                    bookingHistory.slice(0, 5).map((row, i) => {
-                      const color =
-                        row.status === "Successful"
-                          ? "bg-[#C9E8CA] text-[#43A047]"
-                          : row.status === "Pending"
-                            ? "bg-[#FFF0D9] text-[#F99F10]"
-                            : "bg-red-100 text-red-600";
-
-                      return (
-                        <tr key={`${row.id}-${i}`}>
-                          <td className="py-4 px-4 break-words">{row.id}</td>
-                          <td className="py-4 px-4 break-words">{row.device}</td>
-                          <td className="py-4 px-4 break-words">{row.tech}</td>
-
-                          <td className="py-4 px-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 w-fit ${color}`}
-                            >
-                              <span className="w-2 h-2 rounded-full bg-current" />
-                              {row.status}
-                            </span>
-                          </td>
-
-                          <td className="py-4 px-4 font-semibold break-words">
-                            {row.cost}
-                          </td>
-                          <td className="py-4 px-4 break-words">{row.progress}</td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-         
-
-           
-            <div className="md:hidden space-y-4">
-              {bookingLoading ? (
-                <p className="text-sm text-gray-500">Loading booking history...</p>
-              ) : bookingError ? (
-                <p className="text-sm text-red-600">{bookingError}</p>
-              ) : bookingHistory.length === 0 ? (
-                <p className="text-sm text-gray-500">No booking history found.</p>
-              ) : (
-                bookingHistory.slice(0, 5).map((row, i) => {
-                  const color =
-                    row.status === "Successful"
-                      ? "bg-[#C9E8CA] text-[#43A047]"
-                      : row.status === "Pending"
-                        ? "bg-[#FFF0D9] text-[#F99F10]"
-                        : "bg-red-100 text-red-600";
-
-                  return (
-                    <div
-                      key={`${row.id}-${i}`}
-                      className="border border-[#D9E7F5] rounded-xl p-4 bg-[#FAFCFF] space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-xs text-[#656565]">Booking ID</p>
-                          <p className="font-medium text-black break-words">{row.id}</p>
-                        </div>
-
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 w-fit shrink-0 ${color}`}
-                        >
-                          <span className="w-2 h-2 rounded-full bg-current" />
-                          {row.status}
-                        </span>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-[#656565]">Device</p>
-                        <p className="text-sm text-black break-words">{row.device}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-[#656565]">Technician</p>
-                        <p className="text-sm text-black break-words">{row.tech}</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <p className="text-xs text-[#656565]">Cost</p>
-                          <p className="text-sm font-semibold text-black break-words">
-                            {row.cost}
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-[#656565]">Progress</p>
-                          <p className="text-sm text-black break-words">
-                            {row.progress}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-                          
-        </div>
-        
-      </section> */}
-    </div>
+   </div>
   );
 };
 

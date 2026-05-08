@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import search from "../../../assets/client images/client-home/referal part/search.png";
@@ -122,6 +122,8 @@ const Technican = () => {
   const uploadedProductId = requestState?.uploadedProductId || "";
   const rawConfirm = requestState?.rawConfirm || null;
 
+  const hasSearchedRef = useRef(false);
+
   const sorted = useMemo(() => {
     const arr = [...technicians];
     arr.sort((a, b) => {
@@ -139,39 +141,36 @@ const Technican = () => {
     if (page > totalPages) setPage(1);
   }, [totalPages, page]);
 
-  const handleSearch = async () => {
-    const q = searchTerm.trim();
-    if (!q) return;
+const handleSearch = async () => {
+  const q = searchTerm.trim();
+  if (!q || searching) return;
 
-    try {
-      setSearching(true);
-      setLoading(true);
-      setPage(1);
+  try {
+    setSearching(true);
+    setLoading(true);
+    setShowingFallback(false);
+    setPage(1);
 
-      const data = await searchServicesAndArtisans({
-        keyword: q,
-      });
+    const data = await searchServicesAndArtisans({ keyword: q });
 
-      if (!data?.success) {
-        throw new Error(data?.message || "Search failed");
-      }
+    console.log("SEARCH RESPONSE:", data);
 
-      const artisansFromSearch =
-        data?.data?.artisans?.data || data?.data?.artisans || [];
+    const artisansFromSearch =
+      data?.data?.artisans?.data || data?.data?.artisans || [];
 
-      const mapped = uniqueById(
-        (Array.isArray(artisansFromSearch) ? artisansFromSearch : []).map(normalizeArtisan)
-      );
+    const mapped = uniqueById(
+      artisansFromSearch.map(normalizeArtisan)
+    );
 
-      setTechnicians(mapped);
-    } catch (err) {
-      console.error("Search error:", err?.message);
-      setTechnicians([]);
-    } finally {
-      setLoading(false);
-      setSearching(false);
-    }
-  };
+    setTechnicians(mapped);
+  } catch (err) {
+    console.error("Search error:", err);
+    setTechnicians([]);
+  } finally {
+    setLoading(false);
+    setSearching(false);
+  }
+};
 
   const fetchAllArtisans = async () => {
     try {
@@ -232,6 +231,8 @@ const Technican = () => {
       setPage(1);
       return;
     }
+
+    if (hasSearchedRef.current) return;
 
     fetchAllArtisans();
     setPage(1);

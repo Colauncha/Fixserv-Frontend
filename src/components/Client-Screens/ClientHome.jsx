@@ -125,15 +125,14 @@ const ClientHome = () => {
     try {
       setLoadingArtisans(true);
 
-      const res = await fetch(
-        "https://dev-user-api.fixserv.co/api/admin/getAll?role=ARTISAN",
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+      const BASE_URL =
+  import.meta.env.VITE_USER_API_BASE_URL?.replace(/\/$/, "") ||
+  "https://user-api.fixserv.co/api";
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to fetch artisans");
+const res = await fetch(`${BASE_URL}/admin/getAll?role=ARTISAN`);
+
+const data = await res.json();
+if (!res.ok) throw new Error(data?.message || "Failed to fetch artisans");
 
       setApiArtisans(data.users || []);
     } catch (err) {
@@ -244,42 +243,57 @@ const ClientHome = () => {
     try {
       let artisansFromSearch = [];
 
-      if (q.length >= 2) {
-        const data = await searchServicesAndArtisans({ keyword: q });
+if (q.length >= 2) {
+  const data = await searchServicesAndArtisans({ keyword: q });
 
-        if (data?.success) {
-          artisansFromSearch = data?.data?.artisans?.data || [];
-        } else {
-          throw new Error(data?.message || "Search failed");
-        }
-      }
+if (data?.success) {
+  const artisans = data?.data?.artisans?.data || [];
+  const services = data?.data?.services?.data || [];
 
-      if (!artisansFromSearch.length) {
-        const keyword = q.toLowerCase();
+  const mappedServices = services.map((s) => ({
+    _id: s._id,
+    fullName: s.title, // fallback display
+    businessName: s.title,
+    rating: s.rating,
+    location: "Service",
+    skills: [s.description],
+    price: s.price,
+  }));
 
-        artisansFromSearch = (apiArtisans || []).filter((a) => {
-          const fullName = (a.fullName || "").toLowerCase();
-          const businessName = (a.businessName || "").toLowerCase();
-          const location = (a.location || a.city || a.state || "").toLowerCase();
+  artisansFromSearch = [...artisans, ...mappedServices];
+}
+}
 
-          const skillsArr = Array.isArray(a.skills)
-            ? a.skills
-            : Array.isArray(a.skillSet)
-            ? a.skillSet
-            : [];
+// fallback to local search
+if (!artisansFromSearch.length) {
+  const keyword = q.toLowerCase();
 
-          const skillsText = skillsArr.join(" ").toLowerCase();
+  artisansFromSearch = (apiArtisans || []).filter((a) => {
+    const fullName = (a.fullName || "").toLowerCase();
+    const businessName = (a.businessName || "").toLowerCase();
+    const location = (a.location || a.city || a.state || "").toLowerCase();
 
-          return (
-            fullName.includes(keyword) ||
-            businessName.includes(keyword) ||
-            location.includes(keyword) ||
-            skillsText.includes(keyword)
-          );
-        });
-      }
+    const skillsArr = Array.isArray(a.skills)
+      ? a.skills
+      : Array.isArray(a.skillSet)
+      ? a.skillSet
+      : [];
 
-      setSearchResults(artisansFromSearch);
+    const skillsText = skillsArr
+      .map((s) => (typeof s === "string" ? s : s?.name || ""))
+      .join(" ")
+      .toLowerCase();
+
+    return (
+      fullName.includes(keyword) ||
+      businessName.includes(keyword) ||
+      location.includes(keyword) ||
+      skillsText.includes(keyword)
+    );
+  });
+}
+
+setSearchResults(artisansFromSearch);
       setSearchError("");
     } catch (err) {
       const keyword = q.toLowerCase();
@@ -290,12 +304,16 @@ const ClientHome = () => {
         const location = (a.location || a.city || a.state || "").toLowerCase();
 
         const skillsArr = Array.isArray(a.skills)
-          ? a.skills
-          : Array.isArray(a.skillSet)
-          ? a.skillSet
-          : [];
+  ? a.skills
+  : Array.isArray(a.skillSet)
+  ? a.skillSet
+  : [];
 
-        const skillsText = skillsArr.join(" ").toLowerCase();
+const skillsText = skillsArr
+  .map((s) => (typeof s === "string" ? s : s?.name || ""))
+  .join(" ")
+  .toLowerCase();
+
 
         return (
           fullName.includes(keyword) ||
@@ -383,7 +401,7 @@ const ClientHome = () => {
 
       try {
         const res = await fetch(
-          `https://dev-wallet-api.fixserv.co/api/wallet/referral/info/${resolvedUserId}`,
+          `${import.meta.env.VITE_WALLET_GENERAL_API_BASE_URL}/wallet/referral/info/${resolvedUserId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

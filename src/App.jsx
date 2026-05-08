@@ -103,7 +103,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicOnlyRoute from "./routes/PublicOnlyRoute";
 import VerifyEmail from "./components/Sign-Auth/VerifyEmail";
 import GlobalErrorAlert from "./components/Common/GlobalErrorAlert";
-
+import FeedbackPage from "./components/Client-Screens/Feedback";
 
 const App = () => {
   const router = createBrowserRouter(
@@ -184,6 +184,7 @@ const App = () => {
             <Route path="request-repair" element={<RequestRepair />} />
             <Route path="technician" element={<Technican />} />
             <Route path="review-rating" element={<ReviewRating />} />
+            <Route path="feedback" element={<FeedbackPage />} />
 
             {/* CLIENT 404 */}
             <Route path="*" element={<Notfound />} />

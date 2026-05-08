@@ -1,8 +1,7 @@
 import { getAuthToken, getAuthUser } from "../utils/auth";
 
-const PRODUCT_UPLOAD_API_BASE = import.meta.env.DEV
-  ? "/api/upload"
-  : `${import.meta.env.VITE_USER_API_BASE_URL.replace(/\/$/, "")}/upload`;
+const PRODUCT_UPLOAD_API_BASE =
+  `${import.meta.env.VITE_USER_API_BASE_URL.replace(/\/$/, "")}/upload`;
 
 const ACCEPTED_PRODUCT_MIME_TYPES = [
   "image/jpeg",

@@ -10,6 +10,7 @@ import card from "../../assets/client images/client-home/blurCard.png";
 import success from "../../assets/client images/client-home/success.png";
 import fund from "../../assets/client images/client-home/fundlock.png";
 import lock from "../../assets/client images/client-home/lock.png";
+import { API_BASE } from "../../api/config";
 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -85,6 +86,15 @@ const [successMsg, setSuccessMsg] = useState("");
     postalCode: "",
   });
 
+  const isFormChanged =
+  formData.fullName !== user?.fullName ||
+  formData.phone !== user?.phoneNumber ||
+  formData.country !== user?.deliveryAddress?.country ||
+  formData.state !== user?.deliveryAddress?.state ||
+  formData.city !== user?.deliveryAddress?.city ||
+  formData.street !== user?.deliveryAddress?.street ||
+  formData.postalCode !== user?.deliveryAddress?.postalCode;
+
   const [localPreview, setLocalPreview] = useState("");
 
   const [lockingFunds, setLockingFunds] = useState(false);
@@ -94,6 +104,8 @@ const [successMsg, setSuccessMsg] = useState("");
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [showAddCard, setShowAddCard] = useState(false);
   const [showAddSuccess, setShowAddSuccess] = useState(false);
+
+  const [updating, setUpdating] = useState(false);
 
   const notifications = [
     {
@@ -128,130 +140,110 @@ const [successMsg, setSuccessMsg] = useState("");
   const formatMoney = (amount) =>
     `₦${Number(amount || 0).toLocaleString()}`;
 
-const handleProfileUpload = async (file) => {
-  const previousImage =
-    user?.profilePicture ||
-    user?.profileImage ||
-    PraiseImg;
+const handleProfileUpdate = async () => {
+  if (!userId) return setError("User not found");
 
   try {
+    setUpdating(true);
     setError("");
     setSuccessMsg("");
 
-    if (!file) return;
+    const payload = {
+      fullName: formData.fullName?.trim(),
+      phoneNumber: formData.phone?.trim(),
+      deliveryAddress: {
+        country: formData.country?.trim(),
+        state: formData.state?.trim(),
+        city: formData.city?.trim(),
+        street: formData.street?.trim(),
+        postalCode: formData.postalCode?.trim(),
+      },
+      servicePreferences: Array.isArray(user?.servicePreferences)
+        ? user.servicePreferences
+        : [],
+    };
 
-    if (!userId) {
-      throw new Error("User not found");
+    const res = await fetch(
+      `${API_BASE}/admin/${userId}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data?.message || "Update failed");
     }
 
-    const validation = validateProfileImageFile(file);
-    if (!validation.valid) {
-      throw new Error(validation.message);
-    }
+    const updatedUser =
+      data?.data?.user || data?.user || data?.data || data;
 
+    login(token, {
+      ...user,
+      fullName: updatedUser?.fullName ?? user.fullName,
+      phoneNumber: updatedUser?.phoneNumber ?? user.phoneNumber,
+      deliveryAddress: updatedUser?.deliveryAddress ?? user.deliveryAddress,
+      servicePreferences:
+        updatedUser?.servicePreferences ?? user.servicePreferences,
+    });
+
+    setSuccessMsg("Profile updated successfully");
+    navigate("/client/profile");
+  } catch (err) {
+    setError(err.message || "Something went wrong");
+  } finally {
+    setUpdating(false);
+  }
+};
+
+const handleProfileUpload = async (file) => {
+  if (!userId) {
+    setError("User not found");
+    return;
+  }
+
+  try {
     setUploading(true);
+    setError("");
+    setSuccessMsg("");
 
-    const data = await uploadProfilePictureFile({
+    const res = await uploadProfilePictureFile({
       userId,
       file,
     });
 
+    // console.log("FULL RESPONSE:", res);
+
+    // ✅ FIXED: match backend response
     const imageUrl =
-      data?.imageUrl ||
-      data?.data?.imageUrl ||
-      data?.data?.user?.profilePicture ||
-      data?.user?.profilePicture ||
-      data?.user?.profileImage ||
-      data?.profilePicture ||
-      "";
+      res?.imageUrl ||          // <-- THIS is your real field
+      res?.data?.imageUrl ||
+      res?.url;
 
     if (!imageUrl) {
-      throw new Error("Profile image upload succeeded but no image URL was returned.");
-    }
-
-    if (localPreview) {
-      URL.revokeObjectURL(localPreview);
-      setLocalPreview("");
+      throw new Error("Upload succeeded but no image URL returned");
     }
 
     setProfileImage(imageUrl);
 
     login(token, {
       ...user,
-      ...(data?.user || {}),
       profilePicture: imageUrl,
-      profileImage: imageUrl,
     });
 
-    setSuccessMsg("Profile picture updated successfully.");
+    setSuccessMsg("Profile picture updated successfully");
   } catch (err) {
-    console.error("CLIENT PROFILE UPLOAD FAILED =>", err);
-
-    if (localPreview) {
-      URL.revokeObjectURL(localPreview);
-      setLocalPreview("");
-    }
-
-    setProfileImage(previousImage);
-
-    setError(
-      getProfileUploadFriendlyError(err, "Image upload failed. Please try again.")
-    );
+    setError(getProfileUploadFriendlyError(err));
   } finally {
     setUploading(false);
   }
 };
-
-  const handleProfileUpdate = async () => {
-    if (!userId) return alert("User not found");
-
-    try {
-      const payload = {
-        fullName: formData.fullName?.trim(),
-        phoneNumber: formData.phone?.trim(),
-        deliveryAddress: {
-          country: formData.country?.trim(),
-          state: formData.state?.trim(),
-          city: formData.city?.trim(),
-          street: formData.street?.trim(),
-          postalCode: formData.postalCode?.trim(),
-        },
-        servicePreferences: user?.servicePreferences || [],
-      };
-
-      const res = await fetch(
-        `https://dev-user-api.fixserv.co/api/admin/${userId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data?.message || data?.error || "Update failed");
-      }
-
-      const updatedUser = data?.data?.user || data?.user || data?.data || data;
-
-      login(token, {
-        ...user,
-        ...updatedUser,
-        deliveryAddress: updatedUser?.deliveryAddress ?? user?.deliveryAddress,
-        phoneNumber: updatedUser?.phoneNumber ?? user?.phoneNumber,
-      });
-
-      alert("Profile updated successfully!");
-      navigate("/client/profile");
-    } catch (err) {
-      alert(err.message || "Something went wrong");
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -261,24 +253,6 @@ const handleProfileUpload = async (file) => {
     }));
   };
 
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        fullName: user.fullName || "",
-        email: user.email || "",
-        phone: user.phoneNumber || "",
-        country: user.deliveryAddress?.country || "",
-        state: user.deliveryAddress?.state || "",
-        city: user.deliveryAddress?.city || "",
-        street: user.deliveryAddress?.street || "",
-        postalCode: user.deliveryAddress?.postalCode || "",
-      });
-
-      if (user.profilePicture) {
-        setProfileImage(user.profilePicture);
-      }
-    }
-  }, [user]);
 
   const fetchWallet = async () => {
     if ((!walletIdentifier && !userId) || !token) return;
@@ -583,14 +557,16 @@ useEffect(() => {
 
               <label className="absolute bottom-0 right-0 p-2 cursor-pointer">
                 {uploading && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl text-white text-sm">
-                    Uploading...
-                  </div>
+                  <div className="flex flex-col items-center gap-2">
+  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+  <span>Uploading...</span>
+</div>
                 )}
 
                 <img src={camera} alt="Upload" className="w-12 h-12" />
                 <input
   type="file"
+  disabled={uploading}
   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
   className="hidden"
   onChange={async (e) => {
@@ -774,11 +750,14 @@ useEffect(() => {
 
           <div className="flex justify-end mt-6">
             <button
-              onClick={handleProfileUpdate}
-              className="bg-[#3E83C4] text-white text-sm px-6 py-2 rounded-md hover:bg-[#356bb3] cursor-pointer"
-            >
-              Update
-            </button>
+  onClick={handleProfileUpdate}
+  disabled={updating || !isFormChanged}
+  className="bg-[#3E83C4] text-white text-sm px-6 py-2 rounded-md 
+             hover:bg-[#356bb3] cursor-pointer
+             disabled:bg-gray-400 disabled:cursor-not-allowed"
+>
+  {updating ? "Updating..." : "Update"}
+</button>
           </div>
         </div>
       </section>
@@ -1379,9 +1358,15 @@ useEffect(() => {
           <hr className="border-[#C1DAF3] mt-2 mb-8" />
 
           <div className="flex justify-center">
-            <button className="bg-[#3E83C4] text-white text-sm px-6 py-2 rounded-md hover:bg-[#356bb3] cursor-pointer">
-              Save Changes
-            </button>
+            <button
+  onClick={handleProfileUpdate}
+  disabled={updating}
+  className="bg-[#3E83C4] text-white text-sm px-6 py-2 rounded-md 
+             hover:bg-[#356bb3]
+             disabled:bg-gray-400 disabled:cursor-not-allowed"
+>
+  {updating ? "Saving..." : "Save Changes"}
+</button>
           </div>
         </div>
       </section>

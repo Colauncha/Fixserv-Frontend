@@ -889,14 +889,14 @@ if (
 
 
 
-          {/* <button
+          <button
             onClick={() => login()}
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-md mb-4"
           >
             <img src={googleLogo} className="w-5 h-5" />
             Sign up with Google
-          </button> */}
+          </button>
 
 
 
@@ -948,7 +948,7 @@ if (
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
-              placeholder="e.g. 08012345678"
+              placeholder="Phone Number e.g. 08012345678"
               className={`w-full rounded-md px-4 py-3 text-sm border ${fieldErrors.phoneNumber ? "border-red-500" : "border-[#9BAAB9]"}`}
             />
 

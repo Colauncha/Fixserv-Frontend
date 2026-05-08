@@ -1,13 +1,11 @@
-const USER_BASE_URL = import.meta.env.DEV
-  ? "/api"
-  : (import.meta.env.VITE_USER_API_BASE_URL ||
-      import.meta.env.VITE_GENERAL_API_BASE_URL ||
-      "https://dev-user-api.fixserv.co/api");
+const USER_BASE_URL =
+  import.meta.env.VITE_USER_API_BASE_URL || "http://localhost:5000/api/user";
+
 
 const SERVICE_BASE_URL = import.meta.env.DEV
   ? "/api/service"
-  : (import.meta.env.VITE_SERVICE_API_BASE_URL ||
-      "https://dev-service-api.fixserv.co/api/service");
+  : import.meta.env.VITE_SERVICE_API_BASE_URL ||
+    "https://service-api.fixserv.co/api/service";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("fixserv_token");
@@ -73,9 +71,10 @@ const hydrateArtisanBio = (record) => {
 };
 
 export const getArtisanById = async (artisanId) => {
-  const res = await fetch(`${USER_BASE_URL}/admin/user/${artisanId}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${USER_BASE_URL}/admin/user/${artisanId}`, // ✅ correct
+    { headers: getAuthHeaders() }
+  );
 
   const json = await safeJson(res);
 
@@ -97,9 +96,10 @@ export const getArtisanById = async (artisanId) => {
 };
 
 export const getAllArtisans = async () => {
-  const res = await fetch(`${USER_BASE_URL}/admin/getAll?role=ARTISAN`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${USER_BASE_URL}/admin/getAll?role=ARTISAN`, // ✅ correct
+    { headers: getAuthHeaders() }
+  );
 
   const json = await safeJson(res);
 
@@ -178,6 +178,11 @@ export const getArtisanServices = async (artisanId) => {
     headers: getAuthHeaders(),
   });
 
+  // 👇 handle 404 gracefully
+  if (res.status === 404) {
+    return [];
+  }
+
   const json = await safeJson(res);
 
   if (!res.ok) {
@@ -195,6 +200,9 @@ export const getArtisanServices = async (artisanId) => {
 };
 
 export const createArtisanService = async (payload) => {
+
+  console.log("RAW CREATE SERVICE PAYLOAD SENT TO API =>", payload);
+
   const res = await fetch(`${SERVICE_BASE_URL}/createService`, {
     method: "POST",
     headers: getAuthHeaders(),
@@ -228,4 +236,21 @@ export const updateArtisanService = async (serviceId, payload) => {
   }
 
   return json?.data || json?.service || json;
+};
+
+// ✅ FIXED: now properly exported
+export const deleteArtisanService = async (serviceId) => {
+  const res = await fetch(`${SERVICE_BASE_URL}/${serviceId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const json = await safeJson(res);
+    throw new Error(
+      json?.message || `Failed to delete service (${res.status})`
+    );
+  }
+
+  return true; 
 };

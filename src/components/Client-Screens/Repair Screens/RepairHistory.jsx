@@ -1,11 +1,9 @@
-// Start testing from hewre 
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import tag from "../../../assets/client images/client-home/referal part/tag.png";
 import { getArtisanById } from "../../../api/artisan.api";
-
-const ENDPOINT = "https://dev-order-api.fixserv.co/api/orders/client-history";
+import { getClientHistory } from "../../../api/order.api";
 
 const formatNaira = (value) => {
   const num = Number(value);
@@ -394,96 +392,81 @@ const hasEmbeddedArtisanName = (item) => {
   );
 };
 
-  useEffect(() => {
-    let alive = true;
+useEffect(() => {
+  let alive = true;
 
-    const fetchHistory = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const token = localStorage.getItem("fixserv_token");
+      const token = localStorage.getItem("fixserv_token");
 
-        if (!token) {
-          setError("Unauthorized: Please login again.");
-          setLoading(false);
-          return;
-        }
-
-        const res = await axios.get(ENDPOINT, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const payload = res?.data;
-        const orders = Array.isArray(payload?.orders) ? payload.orders : [];
-
-        // console.log("CLIENT HISTORY ORDERS =>", orders);
-
-const uniqueArtisanIds = [
-  ...new Set(
-    orders
-      .filter((item) => !hasEmbeddedArtisanName(item)) // only fetch if name is missing
-      .map((item) => item?.artisanId)
-      .filter((id) => id && !badArtisanIdSet.has(id)) // skip known bad ids
-  ),
-];
-
-const artisanResults = await Promise.all(
-  uniqueArtisanIds.map(async (id) => {
-    const response = await getArtisanById(id);
-
-    if (!response) {
-      badArtisanIdSet.add(id);
-      sessionStorage.setItem(
-        "fixserv_bad_artisan_ids",
-        JSON.stringify([...badArtisanIdSet])
-      );
-      return [id, null];
-    }
-
-    return [id, normalizeArtisan(response)];
-  })
-);
-
-        const artisanMap = Object.fromEntries(artisanResults);
-
-        const normalized = orders.map((item) =>
-          normalizeRow({
-            ...item,
-            artisan: artisanMap[item.artisanId] ?? item?.artisan ?? null,
-          })
-        );
-
-        const sorted = normalized.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
-
-        if (!alive) return;
-        setData(sorted);
-        setPage(1);
-      } catch (e) {
-        if (!alive) return;
-
-        const msg =
-          e?.response?.data?.message ||
-          e?.response?.data?.error ||
-          e?.message ||
-          "Failed to load history";
-
-        setError(msg);
-      } finally {
-        if (alive) setLoading(false);
+      if (!token) {
+        setError("Unauthorized: Please login again.");
+        return;
       }
-    };
 
-    fetchHistory();
+      const orders = await getClientHistory();
 
-    return () => {
-      alive = false;
-    };
-  }, []);
+      console.log("CLIENT HISTORY =>", orders);
+
+      const uniqueArtisanIds = [
+        ...new Set(
+          orders
+            .filter((item) => !hasEmbeddedArtisanName(item))
+            .map((item) => item?.artisanId)
+            .filter((id) => id && !badArtisanIdSet.has(id))
+        ),
+      ];
+
+      const artisanResults = await Promise.all(
+        uniqueArtisanIds.map(async (id) => {
+          const response = await getArtisanById(id);
+
+          if (!response) {
+            badArtisanIdSet.add(id);
+            sessionStorage.setItem(
+              "fixserv_bad_artisan_ids",
+              JSON.stringify([...badArtisanIdSet])
+            );
+            return [id, null];
+          }
+
+          return [id, normalizeArtisan(response)];
+        })
+      );
+
+      const artisanMap = Object.fromEntries(artisanResults);
+
+      const normalized = orders.map((item) =>
+        normalizeRow({
+          ...item,
+          artisan: artisanMap[item.artisanId] ?? item?.artisan ?? null,
+        })
+      );
+
+      const sorted = normalized.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      if (!alive) return;
+
+      setData(sorted);
+      setPage(1);
+    } catch (e) {
+      setError(e?.message || "Failed to load history");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchHistory();
+
+  return () => {
+    alive = false;
+  };
+}, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

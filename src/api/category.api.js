@@ -2,15 +2,11 @@ import { getAuthToken } from "../utils/auth";
 import { createApiClient } from "./createApiClient";
 
 const CATEGORY_API = createApiClient({
-  baseURL: import.meta.env.DEV
-    ? "/api"
-    : import.meta.env.VITE_USER_API_BASE_URL ||
-      import.meta.env.VITE_GENERAL_API_BASE_URL ||
-      "https://dev-user-api.fixserv.co/api",
-  requestLabel: "CATEGORY AXIOS REQUEST =>",
-  responseLabel: "CATEGORY AXIOS RESPONSE =>",
-  errorLabel: "CATEGORY AXIOS ERROR =>",
+  baseURL:
+    import.meta.env.VITE_USER_API_BASE_URL ||
+    "https://user-api.fixserv.co/api",
 });
+
 
 CATEGORY_API.interceptors.request.use((config) => {
   const token = getAuthToken();
@@ -49,3 +45,5 @@ export const getArtisansByCategory = ({
     }
   ).then((r) => r.data);
 };
+
+

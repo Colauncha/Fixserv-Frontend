@@ -3,12 +3,12 @@ import { createApiClient } from "./createApiClient";
 const ORDER_API_BASE_URL = import.meta.env.DEV
   ? "/api/orders"
   : import.meta.env.VITE_ORDER_API_BASE_URL ||
-    "https://dev-order-api.fixserv.co/api/orders";
+    "https://order-api.fixserv.co/api/orders";
 
 const ORDER_SERVICE_API_BASE_URL = import.meta.env.DEV
   ? "/api/order-service"
   : import.meta.env.VITE_ORDER_SERVICE_API_BASE_URL ||
-    "https://dev-order-api.fixserv.co/api/order-service";
+    "https://order-api.fixserv.co/api/order-service";
 
 const ORDER_API = createApiClient({
   baseURL: ORDER_API_BASE_URL,

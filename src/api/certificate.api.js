@@ -1,383 +1,7 @@
-// import { getAuthToken, getAuthUser } from "../utils/auth";
-
-// const CERTIFICATE_API_BASE = import.meta.env.DEV
-//   ? "/api/certificate"
-//   : `${import.meta.env.VITE_USER_API_BASE_URL.replace(/\/$/, "").replace(/\/api$/, "")}/api/certificate`;
-
-// const MAX_CERT_MB = 5;
-
-// const ACCEPTED_CERT_MIME_TYPES = [
-//   "image/jpeg",
-//   "image/jpg",
-//   "image/png",
-//   "image/webp",
-//   "application/pdf",
-// ];
-
-// const ACCEPTED_CERT_EXTENSIONS = [
-//   ".jpg",
-//   ".jpeg",
-//   ".png",
-//   ".webp",
-//   ".pdf",
-// ];
-
-// const getUserId = () => {
-//   const user = getAuthUser();
-//   return user?.id || user?._id || user?.artisanId || "";
-// };
-
-// const getExtension = (filename = "") => {
-//   const dot = filename.lastIndexOf(".");
-//   return dot >= 0 ? filename.slice(dot).toLowerCase() : "";
-// };
-
-// const isAcceptedCertificateFile = (file) => {
-//   const mime = String(file?.type || "").toLowerCase();
-//   const ext = getExtension(file?.name || "");
-//   return (
-//   ACCEPTED_CERT_MIME_TYPES.includes(mime) &&
-//   ACCEPTED_CERT_EXTENSIONS.includes(ext)
-// );
-// };
-
-// export const formatFileSize = (bytes) => {
-//   if (!bytes && bytes !== 0) return "";
-//   const mb = bytes / (1024 * 1024);
-//   if (mb >= 1) return `${mb.toFixed(1)}MB`;
-//   const kb = bytes / 1024;
-//   return `${kb.toFixed(0)}KB`;
-// };
-
-// export const validateCertificateFile = (file) => {
-//   if (!file) {
-//     return { valid: false, message: "Please choose a certificate image." };
-//   }
-
-//   if (!isAcceptedCertificateFile(file)) {
-//     return {
-//       valid: false,
-//       message:
-//   "Only JPG, JPEG, PNG, WEBP, PDF, DOC, and DOCX files are allowed for certificates.",
-//     };
-//   }
-
-//   if (file.size > MAX_CERT_MB * 1024 * 1024) {
-//     return {
-//       valid: false,
-//       message: `Each certificate image must be less than ${MAX_CERT_MB}MB.`,
-//     };
-//   }
-
-//   return { valid: true, message: "" };
-// };
-
-// const readFileAsDataURL = (file) =>
-//   new Promise((resolve, reject) => {
-//     const reader = new FileReader();
-//     reader.onload = () => resolve(reader.result);
-//     reader.onerror = reject;
-//     reader.readAsDataURL(file);
-//   });
-
-// const loadImage = (src) =>
-//   new Promise((resolve, reject) => {
-//     const img = new Image();
-//     img.onload = () => resolve(img);
-//     img.onerror = reject;
-//     img.src = src;
-//   });
-
-// const canvasToBlob = (canvas, type, quality) =>
-//   new Promise((resolve) => {
-//     canvas.toBlob((blob) => resolve(blob), type, quality);
-//   });
-
-// export const compressCertificateImage = async (file) => {
-//   if (!file?.type?.startsWith("image/")) return file;
-
-//   const targetMaxBytes = 2.5 * 1024 * 1024;
-
-//   if (file.size <= targetMaxBytes) {
-//     return file;
-//   }
-
-//   const dataUrl = await readFileAsDataURL(file);
-//   const image = await loadImage(dataUrl);
-
-//   let width = image.width;
-//   let height = image.height;
-
-//   const maxWidth = 1800;
-//   const maxHeight = 1800;
-
-//   if (width > maxWidth || height > maxHeight) {
-//     const ratio = Math.min(maxWidth / width, maxHeight / height);
-//     width = Math.round(width * ratio);
-//     height = Math.round(height * ratio);
-//   }
-
-//   const canvas = document.createElement("canvas");
-//   canvas.width = width;
-//   canvas.height = height;
-
-//   const ctx = canvas.getContext("2d");
-//   ctx.drawImage(image, 0, 0, width, height);
-
-//   let quality = 0.85;
-//   let blob = await canvasToBlob(canvas, "image/jpeg", quality);
-
-//   while (blob && blob.size > targetMaxBytes && quality > 0.45) {
-//     quality -= 0.08;
-//     blob = await canvasToBlob(canvas, "image/jpeg", quality);
-//   }
-
-//   if (!blob) return file;
-
-//   const compressedName =
-//     file.name.replace(/\.[^.]+$/, "") + ".jpg";
-
-//   return new File([blob], compressedName, {
-//     type: "image/jpeg",
-//     lastModified: Date.now(),
-//   });
-// };
-
-// const getFriendlyError = (error, fallback = "Something went wrong. Please try again.") => {
-//   const status = error?.status;
-
-//   const raw =
-//     error?.response?.message ||
-//     error?.data?.message ||
-//     error?.message ||
-//     "";
-
-//   const msg = String(raw).toLowerCase();
-
-//   // ✅ HANDLE STATUS FIRST
-//   if (status === 400) {
-//     return "Unsupported file type. Please upload PDF or image files (JPG, PNG).";
-//   }
-
-//   if (status === 401) {
-//     return "Session expired. Please login again.";
-//   }
-
-//   if (status === 403) {
-//     return "You do not have permission to perform this action.";
-//   }
-
-//   if (status === 404) {
-//     return "Requested resource was not found.";
-//   }
-
-//   if (status === 413) {
-//     return "This file is too large. Please choose a smaller file.";
-//   }
-
-//   if (status >= 500) {
-//     return "Server error. Please try again later.";
-//   }
-
-//   // fallback detection
-//   if (msg.includes("failed to fetch") || msg.includes("network")) {
-//     return "Network error. Please check your internet connection and try again.";
-//   }
-
-//   if (msg.includes("timeout")) {
-//     return "The request took too long. Please try again.";
-//   }
-
-//   return raw || fallback;
-// };
-
-// export const uploadCertificates = ({ userId, files, certificateNames, onProgress }) =>
-//   new Promise(async (resolve, reject) => {
-//     try {
-//       const token = getAuthToken();
-//       const resolvedUserId = userId || getUserId();
-
-//       if (!token) {
-//         throw new Error("Missing auth token. Please login again.");
-//       }
-
-//       if (!resolvedUserId) {
-//         throw new Error("Missing user id. Please login again.");
-//       }
-
-//       if (!Array.isArray(files) || files.length === 0) {
-//         throw new Error("Please add at least one certificate image.");
-//       }
-
-//       if (!Array.isArray(certificateNames) || certificateNames.length !== files.length) {
-//         throw new Error("Please select a certificate type/name for each certificate image.");
-//       }
-
-//       const processedFiles = [];
-//       for (const file of files) {
-//         const validation = validateCertificateFile(file);
-//         if (!validation.valid) {
-//           throw new Error(validation.message);
-//         }
-
-//         const compressed = await compressCertificateImage(file);
-//         const postValidation = validateCertificateFile(compressed);
-//         if (!postValidation.valid) {
-//           throw new Error(postValidation.message);
-//         }
-
-//         processedFiles.push(compressed);
-//       }
-
-//       const formData = new FormData();
-//       processedFiles.forEach((file) => formData.append("certificates", file));
-//       formData.append("certificateNames", JSON.stringify(certificateNames));
-
-//       const xhr = new XMLHttpRequest();
-//       xhr.open("POST", `${CERTIFICATE_API_BASE}/${resolvedUserId}/upload-certificates`, true);
-//       xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-//       xhr.timeout = 120000;
-
-//       xhr.upload.onprogress = (evt) => {
-//         if (!evt.lengthComputable || typeof onProgress !== "function") return;
-//         const pct = Math.round((evt.loaded / evt.total) * 100);
-//         onProgress(pct);
-//       };
-
-//       xhr.onload = () => {
-//         let data = null;
-//         try {
-//           data = JSON.parse(xhr.responseText || "{}");
-//         } catch {
-//           data = null;
-//         }
-
-//         if (xhr.status >= 200 && xhr.status < 300) {
-//           resolve(data);
-//         } else {
-//           reject({
-//             status: xhr.status,
-//             data,
-//             message:
-//               data?.message ||
-//               data?.error ||
-//               `Upload failed (HTTP ${xhr.status})`,
-//           });
-//         }
-//       };
-
-//       xhr.onerror = () =>
-//         reject({
-//           status: 0,
-//           message: "Network error. Please check your internet connection and try again.",
-//         });
-
-//       xhr.ontimeout = () =>
-//         reject({
-//           status: 408,
-//           message: "The request took too long. Please try again.",
-//         });
-
-//       xhr.send(formData);
-//     } catch (error) {
-//       reject({
-//         message: getFriendlyError(error, "Unable to upload certificates."),
-//       });
-//     }
-//   });
-
-// export const fetchCertificates = async (userId, signal) => {
-//   const token = getAuthToken();
-//   const resolvedUserId = userId || getUserId();
-
-//   if (!resolvedUserId) {
-//     throw new Error("Missing user id. Please login again.");
-//   }
-
-//   const res = await fetch(
-//     `${CERTIFICATE_API_BASE}/${resolvedUserId}/certificates`,
-//     {
-//       method: "GET",
-//       headers: token ? { Authorization: `Bearer ${token}` } : {},
-//       signal,
-//     }
-//   );
-
-//   let json = null;
-//   try {
-//     json = await res.json();
-//   } catch {
-//     json = null;
-//   }
-
-//   if (!res.ok) {
-//     throw new Error(
-//       json?.message ||
-//         json?.error ||
-//         `Failed to load certificates (HTTP ${res.status})`
-//     );
-//   }
-
-//   if (!json?.success) {
-//     throw new Error(json?.message || "Unable to load certificates.");
-//   }
-
-//   return json;
-// };
-
-// export const deleteCertificate = async (userId, certificateId) => {
-//   const token = getAuthToken();
-//   const resolvedUserId = userId || getUserId();
-
-//   if (!resolvedUserId) {
-//     throw new Error("Missing user id. Please login again.");
-//   }
-
-//   const res = await fetch(
-//     `${CERTIFICATE_API_BASE}/${resolvedUserId}/certificates/${certificateId}`,
-//     {
-//       method: "DELETE",
-//       headers: token ? { Authorization: `Bearer ${token}` } : {},
-//     }
-//   );
-
-//   let json = null;
-//   try {
-//     json = await res.json();
-//   } catch {
-//     json = null;
-//   }
-
-//   if (!res.ok) {
-//     throw new Error(
-//       json?.message ||
-//         json?.error ||
-//         `Delete failed (HTTP ${res.status})`
-//     );
-//   }
-
-//   if (!json?.success) {
-//     throw new Error(json?.message || "Unable to delete certificate.");
-//   }
-
-//   return json;
-// };
-
-// export const getCertificateFriendlyError = getFriendlyError;
-
 import { getAuthToken, getAuthUser } from "../utils/auth";
 
-/* =========================
-   BASE URL
-========================= */
-
-const CERTIFICATE_API_BASE = import.meta.env.DEV
-  ? "/api/certificate"
-  : `${import.meta.env.VITE_USER_API_BASE_URL.replace(/\/$/, "")}/certificate`;
-
-/* =========================
-   CONSTANTS
-========================= */
+const CERTIFICATE_API_BASE =
+  `${import.meta.env.VITE_USER_API_BASE_URL.replace(/\/$/, "")}/certificate`;
 
 const MAX_CERT_MB = 5;
 
@@ -390,10 +14,6 @@ const ACCEPTED_TYPES = [
 ];
 
 const ACCEPTED_EXT = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
-
-/* =========================
-   HELPERS
-========================= */
 
 const getUserId = () => {
   const user = getAuthUser();
@@ -412,10 +32,6 @@ export const formatFileSize = (bytes) => {
   const kb = bytes / 1024;
   return `${kb.toFixed(0)}KB`;
 };
-
-/* =========================
-   VALIDATION
-========================= */
 
 export const validateCertificateFile = (file) => {
   if (!file) {
@@ -442,10 +58,6 @@ export const validateCertificateFile = (file) => {
 
   return { valid: true, message: "" };
 };
-
-/* =========================
-   IMAGE COMPRESSION
-========================= */
 
 const readFile = (file) =>
   new Promise((res, rej) => {
@@ -507,10 +119,6 @@ export const compressCertificateImage = async (file) => {
   });
 };
 
-/* =========================
-   ERROR HANDLER
-========================= */
-
 export const getCertificateFriendlyError = (err) => {
   if (!err) return "Upload failed.";
 
@@ -533,10 +141,6 @@ export const getCertificateFriendlyError = (err) => {
 
   return msg || "Upload failed.";
 };
-
-/* =========================
-   UPLOAD CERTIFICATES
-========================= */
 
 export const uploadCertificates = async ({
   userId,
@@ -630,10 +234,6 @@ export const uploadCertificates = async ({
   });
 };
 
-/* =========================
-   FETCH CERTIFICATES
-========================= */
-
 export const fetchCertificates = async (userId, signal) => {
   const token = getAuthToken();
   const resolvedUserId = userId || getUserId();
@@ -663,10 +263,6 @@ export const fetchCertificates = async (userId, signal) => {
 
   return data;
 };
-
-/* =========================
-   DELETE CERTIFICATE
-========================= */
 
 export const deleteCertificate = async (userId, certificateId) => {
   const token = getAuthToken();

@@ -1,28 +1,300 @@
-<Route element={<ProtectedRoute allowedRoles={["CLIENT"]} />}>
-  <Route path="/client" element={<ClientLayout />}>
-    <Route index element={<ClientHome />} />
-    <Route path="client-request" element={<ClientRequest />} />
-    <Route path="history" element={<ClientHistory />} />
+import { useEffect, useRef, useState } from "react";
+import { getAuthUser, getAuthToken } from "../../utils/auth";
+import { useAuth } from "../../context/AuthContext";
+import ArtisanHeader from "./ArtisanHeader";
+import {
+  getArtisanById,
+  getArtisanServices,
+  createArtisanService,
+  updateArtisanData,
+  updateArtisanService,
+  deleteArtisanService,
+} from "../../api/artisan.api";
 
-    <Route path="artisan-profile/:artisanId" element={<ClientArtisanProfile />} />
+/* ---------------- HELPERS ---------------- */
 
-    <Route path="a-profile" element={<ArtisanProfile />} />
-    <Route path="a-profile/:artisanId" element={<ArtisanProfile />} />
+const getServiceId = (s) => s?.id || s?._id || s?.serviceId;
 
-    <Route path="booking/:artisanId" element={<ClientBooking />} />
-    <Route path="booking-summary-a" element={<BookingSummary />} />
-    <Route path="booking-summary" element={<BookingSummary />} />
-    <Route path="track-repair" element={<TrackRepair />} />
-    <Route path="profile" element={<UserProfile />} />
-    <Route path="settings" element={<ProfileSettings />} />
-    <Route path="refer-earn" element={<ReferEarn />} />
-    <Route path="upload-item" element={<Additem />} />
-    <Route path="view-track-repair" element={<ViewTrackRepair />} />
-    <Route path="referral" element={<ReferalPage />} />
-    <Route path="repair" element={<RepairHistory />} />
-    <Route path="view" element={<ViewRepair />} />
-    <Route path="request-repair" element={<RequestRepair />} />
-    <Route path="technician" element={<Technican />} />
-    <Route path="review-rating" element={<ReviewRating />} />
-  </Route>
-</Route>
+const normalizeTime = (t) => {
+  if (!t) return "";
+  const [h, m] = t.split(":");
+  if (!h || !m) return "";
+  return `${h.padStart(2, "0")}:${m}`;
+};
+
+const isValidTime = (value) =>
+  /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
+
+const DAYS = [
+  "monday","tuesday","wednesday","thursday","friday","saturday","sunday"
+];
+
+const defaultBusinessHours = {
+  monday:{open:"09:00",close:"18:00"},
+  tuesday:{open:"09:00",close:"18:00"},
+  wednesday:{open:"09:00",close:"18:00"},
+  thursday:{open:"09:00",close:"18:00"},
+  friday:{open:"09:00",close:"18:00"},
+  saturday:{open:"",close:""},
+  sunday:{open:"",close:""},
+};
+
+const normalizeHours = (hours = {}) => {
+  const out = {};
+  for (const d of DAYS) {
+    const o = normalizeTime(hours?.[d]?.open || "");
+    const c = normalizeTime(hours?.[d]?.close || "");
+    out[d] = isValidTime(o) && isValidTime(c)
+      ? { open: o, close: c }
+      : { open: "", close: "" };
+  }
+  return out;
+};
+
+const toClosedMap = (h) => {
+  const out = {};
+  for (const d of DAYS) {
+    out[d] = !h?.[d]?.open || !h?.[d]?.close;
+  }
+  return out;
+};
+
+/* ---------------- COMPONENT ---------------- */
+
+const Profile = () => {
+  const { setUser } = useAuth();
+
+  const [artisan, setArtisan] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName:"",
+    businessName:"",
+    location:"",
+    phoneNumber:"",
+    skillsText:"",
+    bio:"",
+    businessHours: normalizeHours(defaultBusinessHours),
+    closedDays: toClosedMap(defaultBusinessHours),
+    serviceDetails:[]
+  });
+
+  const [confirmDeleteIndex, setConfirmDeleteIndex] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+
+  const [error,setError]=useState("");
+  const [success,setSuccess]=useState("");
+  const [saving,setSaving]=useState(false);
+
+  /* ---------------- LOAD ---------------- */
+
+  useEffect(()=>{
+    const load = async()=>{
+      try{
+        const cached = getAuthUser();
+        const id = cached?.id || cached?._id;
+
+        const fresh = await getArtisanById(id);
+        const services = await getArtisanServices(id);
+
+        const hours = normalizeHours(fresh.businessHours || defaultBusinessHours);
+
+        setArtisan({...fresh, services});
+
+        setFormData({
+          fullName:fresh.fullName || "",
+          businessName:fresh.businessName || "",
+          location:fresh.location || "",
+          phoneNumber:fresh.phoneNumber || "",
+          skillsText:(fresh.skillSet || []).join(", "),
+          bio:fresh.bio || "",
+          businessHours:hours,
+          closedDays:toClosedMap(hours),
+          serviceDetails:services || []
+        });
+
+      }catch(err){
+        setError("Failed to load profile");
+      }finally{
+        setLoading(false);
+      }
+    };
+    load();
+  },[]);
+
+  /* ---------------- DELETE ---------------- */
+
+  const handleConfirmedDelete = (index)=>{
+    const service = formData.serviceDetails[index];
+
+    setFormData(prev=>({
+      ...prev,
+      serviceDetails: prev.serviceDetails.filter((_,i)=>i!==index)
+    }));
+
+    setConfirmDeleteIndex(null);
+
+    const timeoutId = setTimeout(async ()=>{
+      try{
+        const id = getServiceId(service);
+        if(id) await deleteArtisanService(id);
+        setPendingDelete(null);
+      }catch(err){
+        // restore if API fails
+        setFormData(prev=>{
+          const arr=[...prev.serviceDetails];
+          arr.splice(index,0,service);
+          return {...prev, serviceDetails:arr};
+        });
+      }
+    },5000);
+
+    setPendingDelete({service,index,timeoutId});
+  };
+
+  /* ---------------- SAVE ---------------- */
+
+  const handleSave = async ()=>{
+    try{
+      setSaving(true);
+
+      const artisanId = artisan.id;
+
+      // skills dedupe
+      const skills = [...new Set(
+        formData.skillsText
+          .split(",")
+          .map(s=>s.trim().toLowerCase())
+          .filter(Boolean)
+      )];
+
+      // hours
+      const strictHours = {};
+      for(const d of DAYS){
+        if(formData.closedDays[d]){
+          strictHours[d]={open:"",close:""};
+        }else{
+          const o = normalizeTime(formData.businessHours[d].open);
+          const c = normalizeTime(formData.businessHours[d].close);
+
+          if(!isValidTime(o)||!isValidTime(c)){
+            throw new Error(`Invalid time for ${d}`);
+          }
+          strictHours[d]={open:o,close:c};
+        }
+      }
+
+      // finalize pending delete
+      if(pendingDelete){
+        clearTimeout(pendingDelete.timeoutId);
+        const id = getServiceId(pendingDelete.service);
+        if(id) await deleteArtisanService(id);
+        setPendingDelete(null);
+      }
+
+      await updateArtisanData(artisanId,{
+        ...formData,
+        skillSet:skills,
+        businessHours:strictHours
+      });
+
+      // services
+      for(const s of formData.serviceDetails){
+
+        if(!s.title?.trim()) continue; // require title
+
+        const id = getServiceId(s);
+
+        if(id){
+          await updateArtisanService(id,s);
+        }else{
+          await createArtisanService({
+            ...s,
+            artisanId
+          });
+        }
+      }
+
+      setSuccess("Profile updated");
+      setIsEditing(false);
+
+    }catch(err){
+      setError(err.message);
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  /* ---------------- UI ---------------- */
+
+  if(loading) return <p>Loading...</p>;
+  if(!artisan) return <p>Error loading</p>;
+
+  return (
+    <div className="p-6">
+
+      <ArtisanHeader title="Profile"/>
+
+      {error && <p className="text-red-500">{error}</p>}
+      {success && <p className="text-green-600">{success}</p>}
+
+      {/* SERVICES */}
+      {formData.serviceDetails.map((s,index)=>(
+        <div key={index} className="border p-4 mb-3">
+
+          <input
+            value={s.title}
+            onChange={e=>{
+              const val=e.target.value;
+              setFormData(p=>{
+                const arr=[...p.serviceDetails];
+                arr[index].title=val;
+                return {...p, serviceDetails:arr};
+              });
+            }}
+          />
+
+          <button
+            onClick={()=>setConfirmDeleteIndex(index)}
+            className="text-red-500"
+          >
+            Delete
+          </button>
+
+        </div>
+      ))}
+
+      {/* SAVE */}
+      {isEditing ? (
+        <button onClick={handleSave} disabled={saving}>
+          {saving ? "Saving..." : "Save"}
+        </button>
+      ) : (
+        <button onClick={()=>setIsEditing(true)}>
+          Edit
+        </button>
+      )}
+
+      {/* DELETE MODAL */}
+      {confirmDeleteIndex !== null && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div className="bg-white p-6">
+            <p>Delete service?</p>
+
+            <button onClick={()=>setConfirmDeleteIndex(null)}>
+              Cancel
+            </button>
+
+            <button onClick={()=>handleConfirmedDelete(confirmDeleteIndex)}>
+              Confirm
+            </button>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+export default Profile;
