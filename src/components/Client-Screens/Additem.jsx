@@ -44,7 +44,7 @@ const handleUpload = async () => {
     setLoading(true);
 
     const res = await fetch(
-      `https://dev-user-api.fixserv.co/api/upload/${userId}/upload-products`,
+  `${import.meta.env.VITE_USER_API_BASE_URL}/upload/${userId}/upload-products`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

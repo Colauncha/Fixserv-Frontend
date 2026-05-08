@@ -1,13 +1,9 @@
 import { createApiClient } from "./createApiClient";
 
 const NOTIFICATION_API = createApiClient({
-  baseURL: import.meta.env.DEV
-    ? "/api/notifications"
-    : import.meta.env.VITE_NOTIFICATION_API_BASE_URL ||
-      "https://dev-notifications-api.fixserv.co/api/notifications",
-  requestLabel: "NOTIFICATION AXIOS REQUEST =>",
-  responseLabel: "NOTIFICATION AXIOS RESPONSE =>",
-  errorLabel: "NOTIFICATION AXIOS ERROR =>",
+  baseURL:
+    import.meta.env.VITE_NOTIFICATION_API_BASE_URL ||
+    "https://notifications-api.fixserv.co/api/notifications",
 });
 
 const isNotificationServiceUnavailable = (error) => {
@@ -26,7 +22,7 @@ const isNotificationServiceUnavailable = (error) => {
 
 export const getNotifications = async () => {
   try {
-    const response = await NOTIFICATION_API.get("");
+    const response = await NOTIFICATION_API.get("/");
     return response?.data || [];
   } catch (error) {
     console.warn("Notifications unavailable:", error?.message);

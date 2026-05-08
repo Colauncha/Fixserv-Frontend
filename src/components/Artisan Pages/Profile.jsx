@@ -3,6 +3,8 @@ import { getAuthUser, getAuthToken } from "../../utils/auth";
 import star from "../../assets/Artisan Images/star.png";
 import locationIcon from "../../assets/Artisan Images/location.png";
 import badge from "../../assets/Artisan Images/badge.png";
+import { APP_ERROR_EVENT } from "../../utils/apiErrorHandler";
+
 import profileImg from "../../assets/Artisan Images/adebayo.png";
 import { useAuth } from "../../context/AuthContext";
 import ArtisanHeader from "./ArtisanHeader";
@@ -12,6 +14,7 @@ import {
   createArtisanService,
   updateArtisanData,
   updateArtisanService,
+  deleteArtisanService, 
 } from "../../api/artisan.api";
 import {
   uploadProfilePictureFile,
@@ -141,9 +144,11 @@ const normalizeProfileImage = (user) => {
 };
 
 const normalizeService = (service = {}) => {
-  const src = service?.details && typeof service.details === "object"
+const src =
+  service?.details && typeof service.details === "object" && service.details !== null
     ? { ...service, ...service.details }
     : service;
+
 
   return {
     id: src?.id || src?._id || src?.serviceId || service?.id || service?._id || "",
@@ -188,6 +193,10 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  const [confirmDeleteIndex, setConfirmDeleteIndex] = useState(null);
+
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -306,6 +315,14 @@ const Profile = () => {
     loadProfile();
   }, [setUser]);
 
+  useEffect(() => {
+  return () => {
+    if (imgPreview) {
+      URL.revokeObjectURL(imgPreview);
+    }
+  };
+}, [imgPreview]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setError("");
@@ -344,35 +361,6 @@ const Profile = () => {
         },
       ],
     }));
-  };
-
-  const removeServiceRow = (index) => {
-    setError("");
-    setSuccessMsg("");
-
-    setFormData((prev) => {
-      if (prev.serviceDetails.length === 1) {
-        return {
-          ...prev,
-          serviceDetails: [
-            {
-              id: "",
-              title: "",
-              price: "",
-              estimatedDuration: "",
-              description: "",
-              isActive: true,
-              rating: 0,
-            },
-          ],
-        };
-      }
-
-      return {
-        ...prev,
-        serviceDetails: prev.serviceDetails.filter((_, i) => i !== index),
-      };
-    });
   };
 
   const setHoursField = (day, field, value) => {
@@ -466,6 +454,39 @@ const Profile = () => {
     });
   };
 
+  const handleConfirmedDelete = (index) => {
+  const service = formData.serviceDetails[index];
+
+  // Remove from UI immediately
+  setFormData((prev) => ({
+    ...prev,
+    serviceDetails: prev.serviceDetails.filter((_, i) => i !== index),
+  }));
+
+  setConfirmDeleteIndex(null);
+
+  // Store pending delete
+  const timeoutId = setTimeout(async () => {
+    try {
+      if (service?.id) {
+        await deleteArtisanService(service.id);
+      }
+      setPendingDelete(null);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete service.");
+    }
+  }, 5000);
+
+  setPendingDelete({
+    service,
+    index,
+    timeoutId,
+  });
+
+  setSuccessMsg("");
+};
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -475,7 +496,9 @@ const Profile = () => {
       const token = getAuthToken();
       if (!token) throw new Error("Missing auth token. Please login again.");
 
-      const artisanId = artisan?.id || artisan?._id || artisan?.artisanId;
+const artisanId =
+  artisan?.id ?? artisan?._id ?? artisan?.artisanId ?? null;
+
       if (!artisanId) throw new Error("Missing artisan id. Cannot update profile.");
 
       const cleanedSkills = String(formData.skillsText || "")
@@ -505,6 +528,16 @@ for (const day of DAYS) {
   strictHours[day] = { open, close };
 }
 
+if (pendingDelete) {
+  clearTimeout(pendingDelete.timeoutId);
+
+  if (pendingDelete.service?.id) {
+    await deleteArtisanService(pendingDelete.service.id);
+  }
+
+  setPendingDelete(null);
+}
+
 const artisanPayload = {
   fullName: formData.fullName.trim(),
   businessName: formData.businessName.trim(),
@@ -517,7 +550,14 @@ const artisanPayload = {
 
       console.log("ARTISAN PATCH PAYLOAD =>", artisanPayload);
 
-            const artisanResponse = await updateArtisanData(artisanId, artisanPayload);
+          const artisanResponse = await updateArtisanData(artisanId, artisanPayload);
+
+if (!artisanResponse || artisanResponse.error) {
+  throw new Error(
+    artisanResponse?.message || "Failed to update artisan profile."
+  );
+}
+
       console.log("UPDATE ARTISAN RESPONSE =>", artisanResponse);
       setSavedBio(artisanId, formData.bio.trim());
 
@@ -542,7 +582,15 @@ const artisanPayload = {
       const updatedServices = [];
 
       for (const service of submittedServices) {
-        const numericPrice = service.price === "" ? 0 : Number(service.price);
+      const numericPrice =
+  service.price.trim() === "" ? 0 : Number(service.price);
+
+if (!Number.isFinite(numericPrice) || numericPrice < 0) {
+  throw new Error(
+    `Service price for "${service.title || "Untitled service"}" must be a valid number.`
+  );
+}
+
 
         if (Number.isNaN(numericPrice) || numericPrice < 0) {
           throw new Error(`Service price for "${service.title || "Untitled service"}" must be a valid number.`);
@@ -551,6 +599,7 @@ const artisanPayload = {
         const sharedBio = formData.bio.trim();
 
 const createPayload = {
+  artisanId, 
   title: service.title,
   description: service.description,
   bio: sharedBio,
@@ -589,6 +638,9 @@ const updatePayload = {
   rating: updated?.rating ?? service.rating ?? 0,
 });
         } else {
+          console.log("CREATE SERVICE PAYLOAD =>", JSON.stringify(createPayload, null, 2));
+console.log("ARTISAN OBJECT =>", artisan);
+console.log("RESOLVED ARTISAN ID =>", artisanId);
                     const created = await createArtisanService(createPayload);
           console.log("CREATE SERVICE RESPONSE =>", created);
 
@@ -659,11 +711,26 @@ phone:
       });
 
       setIsEditing(false);
-      setSuccessMsg("Profile updated successfully.");
+      window.dispatchEvent(
+  new CustomEvent(APP_ERROR_EVENT, {
+    detail: {
+      message: "Profile updated successfully.",
+      type: "success",
+    },
+  })
+);
+
     } catch (err) {
       console.error("Failed to update profile", err);
-      // setError(err?.message || "Failed to update profile");
-      setError(getUserFriendlyError(err, "Failed to update profile."));
+     window.dispatchEvent(
+  new CustomEvent(APP_ERROR_EVENT, {
+    detail: {
+      message: getUserFriendlyError(err, "Failed to update profile."),
+      type: "error",
+    },
+  })
+);
+
     } finally {
       setSaving(false);
     }
@@ -684,8 +751,24 @@ const onFileSelected = (e) => {
     return;
   }
 
-  setError("");
-  setSuccessMsg("");
+  window.dispatchEvent(
+  new CustomEvent(APP_ERROR_EVENT, {
+    detail: {
+      message: getUserFriendlyError(err, "Failed to update profile."),
+      type: "error",
+    },
+  })
+);
+
+  window.dispatchEvent(
+  new CustomEvent(APP_ERROR_EVENT, {
+    detail: {
+      message: "Profile updated successfully.",
+      type: "success",
+    },
+  })
+);
+
 
   if (imgPreview) {
     URL.revokeObjectURL(imgPreview);
@@ -745,7 +828,15 @@ const uploadProfilePicture = async () => {
 
     setImgFile(null);
     setImgPreview("");
-    setSuccessMsg("Profile picture updated successfully.");
+    window.dispatchEvent(
+  new CustomEvent(APP_ERROR_EVENT, {
+    detail: {
+      message: "Profile updated successfully.",
+      type: "success",
+    },
+  })
+);
+  
 
     if (fileRef.current) {
       fileRef.current.value = "";
@@ -799,6 +890,35 @@ const uploadProfilePicture = async () => {
           {successMsg}
         </div>
       ) : null}
+
+      {pendingDelete && (
+  <div className="mt-4 p-3 rounded-md bg-yellow-50 text-yellow-800 text-sm flex justify-between items-center">
+    <span>Service deleted</span>
+
+    <button
+      onClick={() => {
+        clearTimeout(pendingDelete.timeoutId);
+
+        // Restore service
+        setFormData((prev) => {
+          const updated = [...prev.serviceDetails];
+          updated.splice(pendingDelete.index, 0, pendingDelete.service);
+
+          return {
+            ...prev,
+            serviceDetails: updated,
+          };
+        });
+
+        setPendingDelete(null);
+        setSuccessMsg("Deletion undone.");
+      }}
+      className="ml-4 text-sm font-medium underline"
+    >
+      Undo
+    </button>
+  </div>
+)}
 
       <div className="mt-6">
         <div className="flex flex-col xl:flex-row gap-8 items-start">
@@ -976,18 +1096,19 @@ const uploadProfilePicture = async () => {
                   className="border border-gray-200 rounded-xl p-4 bg-white"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-gray-700">
-                      Service {index + 1}
-                    </h4>
+  <h4 className="font-medium text-gray-700">
+    Service {index + 1}
+  </h4>
 
-                    <button
-                      type="button"
-                      onClick={() => removeServiceRow(index)}
-                      className="text-sm px-3 py-1.5 rounded-md border border-red-200 text-red-600"
-                    >
-                      Remove
-                    </button>
-                  </div>
+  <button
+    type="button"
+    onClick={() => setConfirmDeleteIndex(index)}
+    className="text-red-600 text-sm font-medium"
+  >
+    Delete
+  </button>
+</div>
+
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
@@ -1249,6 +1370,33 @@ const uploadProfilePicture = async () => {
             )}
           </div>
         </div>
+
+                            {confirmDeleteIndex !== null && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white rounded-xl p-6 w-[90%] max-w-md shadow-lg">
+      <h3 className="text-lg font-semibold mb-3">Delete Service</h3>
+      <p className="text-sm text-gray-600 mb-6">
+        Are you sure you want to delete this service? This action can't be undone after a few seconds.
+      </p>
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setConfirmDeleteIndex(null)}
+          className="px-4 py-2 text-sm rounded-md border"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={() => handleConfirmedDelete(confirmDeleteIndex)}
+          className="px-4 py-2 text-sm rounded-md bg-red-600 text-white"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );

@@ -108,7 +108,7 @@ const Dashboard = () => {
         const token = localStorage.getItem("fixserv_token");
 
         const res = await fetch(
-          `https://dev-wallet-api.fixserv.co/api/wallet/fixpoints/balance/${userId}`,
+          `https://wallet-api.fixserv.co/api/wallet/fixpoints/balance/${userId}`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           }

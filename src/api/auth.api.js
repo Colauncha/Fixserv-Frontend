@@ -1,11 +1,10 @@
 import { createApiClient } from "./createApiClient";
 
 const API = createApiClient({
-  baseURL: import.meta.env.DEV
-    ? "/api"
-    : import.meta.env.VITE_USER_API_BASE_URL ||
-      import.meta.env.VITE_GENERAL_API_BASE_URL ||
-      "https://dev-user-api.fixserv.co/api",
+  baseURL:
+    import.meta.env.VITE_USER_API_BASE_URL ||
+    import.meta.env.VITE_GENERAL_API_BASE_URL ||
+    "https://user-api.fixserv.co/api",
   requestLabel: "AXIOS REQUEST =>",
   responseLabel: "AXIOS RESPONSE =>",
   errorLabel: "AXIOS ERROR =>",

@@ -8,8 +8,7 @@ const ArtisanForget = () => {
   const navigate = useNavigate();
 
 const BASE_URL = (
-  import.meta.env.VITE_USER_API_BASE_URL ||
-  "https://dev-user-api.fixserv.co/api"
+  import.meta.env.VITE_USER_API_BASE_URL || ""
 ).replace(/\/+$/, "");
 
   const [email, setEmail] = useState("");

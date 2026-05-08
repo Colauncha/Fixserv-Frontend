@@ -1,14 +1,12 @@
 import { createApiClient } from "./createApiClient";
 
-const WALLET_BASE_URL = import.meta.env.DEV
-  ? "/api/wallet"
-  : import.meta.env.VITE_WALLET_API_BASE_URL ||
-    "https://dev-wallet-api.fixserv.co/api/wallet";
+const WALLET_BASE_URL =
+  import.meta.env.VITE_WALLET_API_BASE_URL ||
+  "https://wallet-api.fixserv.co/api/wallet";
 
-const WALLET_GENERAL_BASE_URL = import.meta.env.DEV
-  ? "/api"
-  : import.meta.env.VITE_WALLET_GENERAL_API_BASE_URL ||
-    "https://dev-wallet-api.fixserv.co/api";
+const WALLET_GENERAL_BASE_URL =
+  import.meta.env.VITE_WALLET_GENERAL_API_BASE_URL ||
+  "https://wallet-api.fixserv.co/api";
 
 const WALLET_API = createApiClient({
   baseURL: WALLET_BASE_URL,
@@ -47,8 +45,8 @@ export const getWithdrawalBanks = () =>
 export const getReferralInfo = (userId) =>
   WALLET_API.get(`/referral/info/${userId}`);
 
-export const getWithdrawalHistory = (walletId, page = 1, limit = 10) =>
-  WALLET_API.get(`/withdrawal/history/${walletId}`, {
+export const getWithdrawalHistory = (userId, page = 1, limit = 10) =>
+  WALLET_API.get(`/withdrawal/history/${userId}`, {
     params: { page, limit },
   });
 

@@ -223,14 +223,16 @@ const handleWalletPayment = async () => {
       selectedServiceFromArtisan?.serviceId ||
       null;
 
-    if (!selectedServiceId) {
-      throw new Error("No valid artisan service selected for this booking.");
-    }
+if (!selectedServiceId) {
+  console.error("INVALID SERVICE =>", selectedServiceFromArtisan);
+  throw new Error("No valid artisan service selected for this booking.");
+}
 
-    const createdOrder = await createOrder({
-      serviceId: selectedServiceId,
-      uploadedProductId: booking.uploadedProductId,
-    });
+    await createOrder({
+  serviceId: selectedServiceId,
+  uploadedProductId: booking.uploadedProductId,
+  draftOrderId: booking.draftOrderId, // ✅ ADD THIS
+});
 
     const finalOrderId =
       createdOrder?.id ||

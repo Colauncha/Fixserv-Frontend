@@ -1579,7 +1579,7 @@ if (
 
 
 
-          {/* <button
+          <button
             type="button"
             onClick={() => googleSignUp()}
             disabled={loading}
@@ -1587,7 +1587,7 @@ if (
           >
             <img src={googleLogo} className="w-5 h-5" />
             Sign up with Google
-          </button> */}
+          </button>
 
 
 

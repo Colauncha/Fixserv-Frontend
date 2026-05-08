@@ -7,12 +7,26 @@ const GlobalErrorAlert = () => {
   useEffect(() => {
     let timer;
 
+    const scrollToTop = () => {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    };
+
     const handleAppError = (event) => {
       const message = event?.detail?.message || "Something went wrong.";
       const type = event?.detail?.type || "error";
 
+      // ✅ SET ALERT
       setAlert({ message, type });
 
+      // ✅ FORCE SCROLL TO TOP
+      setTimeout(() => {
+        scrollToTop();
+      }, 50); // ensures DOM renders first
+
+      // ✅ AUTO CLEAR
       clearTimeout(timer);
       timer = setTimeout(() => {
         setAlert(null);
@@ -29,9 +43,19 @@ const GlobalErrorAlert = () => {
 
   if (!alert) return null;
 
+  // ✅ dynamic styling (you weren’t using type before)
+  const bgColor =
+    alert.type === "success"
+      ? "bg-green-600"
+      : alert.type === "warning"
+      ? "bg-yellow-500"
+      : "bg-red-600";
+
   return (
     <div className="fixed top-4 right-4 z-[9999] w-[90%] max-w-md">
-      <div className="rounded-xl bg-red-600 text-white shadow-lg px-4 py-3 text-sm font-medium">
+      <div
+        className={`rounded-xl ${bgColor} text-white shadow-lg px-4 py-3 text-sm font-medium`}
+      >
         {alert.message}
       </div>
     </div>
