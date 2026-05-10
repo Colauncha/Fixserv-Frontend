@@ -58,6 +58,8 @@ jobs:
             CURRENT_LINK="$BASE_DIR/current"
             NEW_RELEASE="$RELEASES_DIR/$(date +%Y%m%d%H%M%S)"
 
+            echo $USER
+
             # Create releases directory if not exists
             mkdir -p $RELEASES_DIR
 
