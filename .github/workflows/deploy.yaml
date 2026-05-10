@@ -72,7 +72,7 @@ jobs:
             rm -rf $NEW_RELEASE/dist
 
             # Atomically switch symlink
-            ln -sfn $NEW_RELEASE $CURRENT_LINK
+            sudo ln -sfn $NEW_RELEASE $CURRENT_LINK
 
             # Ensure correct permissions (optional)
             sudo chown -R www-data:www-data $BASE_DIR
