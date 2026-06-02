@@ -145,16 +145,19 @@ const ArtisanCertificates = () => {
 
   const handleDelete = async (cert) => {
     try {
-      setDeletingId(cert.id);
+      const certId = cert.id || cert._id;
+setDeletingId(certId);
       setError("");
       setSuccessMsg("");
 
-      const result = await deleteCertificate(userId, cert.id);
+      const result = await deleteCertificate(userId, certId);
 
       if (result?.success) {
         setData((prev) => {
           const current = prev?.certificates || [];
-          const updatedCertificates = current.filter((c) => c.id !== cert.id);
+          const updatedCertificates = current.filter(
+  (c) => (c.id || c._id) !== certId
+);
 
           return {
             ...prev,
@@ -166,7 +169,7 @@ const ArtisanCertificates = () => {
           };
         });
 
-        if (preview?.id === cert.id) {
+        if (preview?.id === certId) {
           setPreview(null);
         }
 
@@ -274,9 +277,12 @@ const ArtisanCertificates = () => {
           <p className="text-gray-400">No certificates found.</p>
         ) : (
           <div className="grid gap-4 transition-all duration-300">
-            {filteredCertificates.map((cert) => (
+           {filteredCertificates.map((cert) => {
+  const certId = cert.id || cert._id;
+
+  return (
               <div
-                key={cert.id}
+                key={certId}
                 className="flex flex-col md:flex-row justify-between border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-300"
               >
                 <div className="flex gap-4 items-center">
@@ -307,49 +313,58 @@ const ArtisanCertificates = () => {
 
                 <div className="flex flex-col items-start md:items-end gap-2 mt-4 md:mt-0">
                   <span
-                    className={`text-xs px-3 py-1 rounded-full ${
-                      STATUS_STYLES[cert.status]
-                    }`}
-                  >
-                    {cert.status}
-                  </span>
+  className={`text-xs px-3 py-1 rounded-full ${
+    STATUS_STYLES[String(cert.status).trim().toUpperCase()]
+  }`}
+>
+  {String(cert.status).trim().toUpperCase()}
+</span>
+
 
                   <div className="flex gap-3 text-sm">
-                    {/* <button
+ {/* <button
                       type="button"
                       onClick={() => setPreview(cert)}
                       className="text-blue-600 hover:underline"
                     >
                       Preview
                     </button> */}
+  <button
+    type="button"
+    onClick={() => handleDownload(cert.fileUrl, cert.name)}
+    className="text-green-600 hover:underline cursor-pointer"
+  >
+    Download
+  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDownload(cert.fileUrl, cert.name)}
-                      className="text-green-600 hover:underline"
-                    >
-                      Download
-                    </button>
+  {/* <p className="text-xs text-blue-500">
+    STATUS: {JSON.stringify(cert.status)}
+  </p> */}
 
-                    {cert.status === "PENDING" && (
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDelete(cert)}
-                        className="text-red-600 hover:underline"
-                      >
-                        {deletingId === cert.id ? "Deleting..." : "Delete"}
-                      </button>
-                    )}
-                  </div>
+  {["PENDING", "REJECTED"].includes(
+    String(cert.status).trim().toUpperCase()
+  ) && (
+    <button
+      type="button"
+      onClick={() => setConfirmDelete(cert)}
+      className="text-red-600 hover:underline cursor-pointer"
+    >
+      {deletingId === certId ? "Deleting..." : "Delete"}
+    </button>
+  )}
+</div>
+                  
 
-                  {cert.status === "REJECTED" && cert.rejectionReason && (
-                    <p className="text-xs text-red-500 max-w-xs">
-                      {cert.rejectionReason}
-                    </p>
-                  )}
+                 {String(cert.status).trim().toUpperCase() === "REJECTED" &&
+  cert.rejectionReason && (
+    <p className="text-xs text-red-500 max-w-xs">
+      {cert.rejectionReason}
+    </p>
+)}
                 </div>
               </div>
-            ))}
+  );
+})}
           </div>
         )}
       </div>
@@ -401,7 +416,7 @@ const ArtisanCertificates = () => {
               <button
                 type="button"
                 onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"
+                className="px-4 py-2 rounded-lg bg-gray-100 cursor-pointer text-gray-600 hover:bg-gray-200"
               >
                 Cancel
               </button>
@@ -409,10 +424,10 @@ const ArtisanCertificates = () => {
               <button
                 type="button"
                 onClick={() => handleDelete(confirmDelete)}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
-                disabled={deletingId === confirmDelete.id}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                disabled={deletingId === (confirmDelete.id || confirmDelete._id)}
               >
-                {deletingId === confirmDelete.id ? "Deleting..." : "Confirm Delete"}
+                {deletingId === (confirmDelete.id || confirmDelete._id) ? "Deleting..." : "Confirm Delete"}
               </button>
             </div>
           </div>

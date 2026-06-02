@@ -1,4 +1,6 @@
 import React from "react";
+import { Toaster } from "react-hot-toast";
+
 import {
   Route,
   createBrowserRouter,
@@ -248,12 +250,25 @@ const App = () => {
   //   return <RouterProvider router={router} />;
 // };
 
-  return (
-    <>
-      <RouterProvider router={router} />
-      <GlobalErrorAlert />
-    </>
-  );
+return (
+  <>
+    <Toaster
+      position="top-right"
+      toastOptions={{
+        duration: 2000,
+        style: {
+          background: "#333",
+          color: "#fff",
+          borderRadius: "10px",
+          fontSize: "14px",
+        },
+      }}
+    />
+
+    <RouterProvider router={router} />
+    <GlobalErrorAlert />
+  </>
+);
 };
 
 export default App;

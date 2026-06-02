@@ -12,8 +12,7 @@ const ResetPassword = () => {
 
   const token = searchParams.get("token");
 
-      const BASE_URL = import.meta.env.VITE_USER_API;
-
+const BASE_URL = import.meta.env.VITE_USER_API_BASE_URL;
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -42,7 +41,6 @@ const handleSubmit = async () => {
     return;
   }
 
-  // Basic password strength rule
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
   if (!passwordRegex.test(password)) {
     setError(
@@ -55,18 +53,17 @@ const handleSubmit = async () => {
   setLoading(true);
 
   const res = await fetch(
-    `${BASE_URL}/api/admin/reset-password?token=${encodeURIComponent(token)}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        newPassword: password,
-      }),
-    }
-  );
-
+  `${BASE_URL}/admin/reset-password?token=${encodeURIComponent(token)}`,
+  {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      newPassword: password,
+    }),
+  }
+);
   let data;
   try {
     data = await res.json();
@@ -90,7 +87,6 @@ const handleSubmit = async () => {
   return (
     <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
 
-      {/* LEFT IMAGE PANEL (unchanged) */}
       <div className="relative hidden lg:flex flex-col">
         <img src={signImage} className="absolute inset-0 w-full h-full object-cover" />
         <img src={signOverlay} className="absolute inset-0 w-full h-full object-cover" />
@@ -106,7 +102,6 @@ const handleSubmit = async () => {
         </div>
       </div>
 
-      {/* RIGHT FORM */}
       <div className="flex justify-center px-6 bg-white pt-20">
         <div className="w-full max-w-md">
 
@@ -133,7 +128,6 @@ const handleSubmit = async () => {
             }}
           >
 
-            {/* Password */}
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -151,7 +145,6 @@ const handleSubmit = async () => {
               </button>
             </div>
 
-            {/* Confirm Password */}
             <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
@@ -186,7 +179,6 @@ const handleSubmit = async () => {
         </div>
       </div>
 
-      {/* SUCCESS MODAL */}
       {showSuccess && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-8 text-center">

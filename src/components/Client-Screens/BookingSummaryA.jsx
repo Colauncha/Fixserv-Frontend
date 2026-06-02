@@ -228,20 +228,37 @@ if (!selectedServiceId) {
   throw new Error("No valid artisan service selected for this booking.");
 }
 
-    await createOrder({
+//     await createOrder({
+//   serviceId: selectedServiceId,
+//   uploadedProductId: booking.uploadedProductId,
+//   draftOrderId: booking.draftOrderId,
+// });
+
+const createdOrder = await createOrder({
   serviceId: selectedServiceId,
   uploadedProductId: booking.uploadedProductId,
-  draftOrderId: booking.draftOrderId, // ✅ ADD THIS
+  draftOrderId: booking.draftOrderId,
 });
 
-    const finalOrderId =
-      createdOrder?.id ||
-      createdOrder?._id ||
-      createdOrder?.orderId ||
-      createdOrder?.data?.id ||
-      createdOrder?.data?._id ||
-      createdOrder?.data?.orderId ||
-      "";
+console.log("CREATED ORDER =>", createdOrder);
+
+const finalOrderId =
+  createdOrder?.id ||
+  createdOrder?._id ||
+  createdOrder?.orderId ||
+  createdOrder?.data?.id ||
+  createdOrder?.data?._id ||
+  createdOrder?.data?.orderId ||
+  "";
+
+    // const finalOrderId =
+    //   createdOrder?.id ||
+    //   createdOrder?._id ||
+    //   createdOrder?.orderId ||
+    //   createdOrder?.data?.id ||
+    //   createdOrder?.data?._id ||
+    //   createdOrder?.data?.orderId ||
+    //   "";
 
     if (!finalOrderId) {
       throw new Error("Order created but no order id was returned.");

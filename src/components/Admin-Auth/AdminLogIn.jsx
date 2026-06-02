@@ -6,16 +6,21 @@ import googleLogo from '../../assets/sign/google logo.png';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
+import { adminLogin, googleLogin } from "../../api/auth.api";
+import { useAuth } from "../../context/AuthContext";
+import { useEffect } from "react";
 
 
 const AdminLogIn = () => {
     const navigate = useNavigate();
       const [showPassword, setShowPassword] = useState(false);
-const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+// const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 const [formData, setFormData] = useState({
   email: "",
   password: "",
 });
+
+const { login } = useAuth();
 
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
@@ -27,116 +32,176 @@ const handleChange = (e) => {
 
 const handleLogin = async (e) => {
   e.preventDefault();
+
+  if (loading) return;
+
   setError("");
 
   try {
     setLoading(true);
 
-    const res = await fetch(
-      "https://user-management-h4hg.onrender.com/api/admin/login",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
-      }
-    );
+    const email = formData.email.trim().toLowerCase();
 
-    const data = await res.json();
+    const res = await adminLogin({
+      email,
+      password: formData.password,
+    });
 
-    if (!res.ok) {
-      throw new Error(data.message || "Login failed");
+    const wrapper = res.data;
+    const inner = wrapper?.data ?? wrapper;
+
+    const token = inner?.BearerToken || inner?.token;
+    const user = inner?.response || inner?.user;
+
+    if (!token || !user) {
+      setError("Unable to log in. Please try again.");
+      return;
     }
-    
-    if (data.user.role !== "ADMIN") {
-  throw new Error("Unauthorized access");
-}
 
-    // ✅ Save token (temporary: localStorage)
-    localStorage.setItem("adminToken", data.token);
-    localStorage.setItem("adminUser", JSON.stringify(data.user));
+   
+    if (user.role !== "ADMIN") {
+      setError("Unauthorized access.");
+      return;
+    }
 
-    // ✅ Redirect to admin dashboard
+    login?.(token, user);
+
     navigate("/admin");
 
   } catch (err) {
-    setError(err.message);
+
+    if (err?.code === "ECONNABORTED") {
+      setError("Server is taking too long to respond.");
+      return;
+    }
+
+    if (!err?.response) {
+      setError("Network error. Check your connection.");
+      return;
+    }
+
+    const status = err.response.status;
+
+    const apiData = err.response.data;
+
+    const rawMessage =
+      apiData?.errors?.[0]?.message ||
+      apiData?.message ||
+      err?.message ||
+      "";
+
+    const msg = String(rawMessage).toLowerCase();
+
+    if (
+      msg.includes("invalid credentials") ||
+      msg.includes("incorrect password")
+    ) {
+      setError("Incorrect email or password.");
+      return;
+    }
+
+    if (
+      msg.includes("user not found") ||
+      msg.includes("email not found")
+    ) {
+      setError("No admin account found.");
+      return;
+    }
+
+    if (status >= 500) {
+      setError("Server error. Please try again later.");
+      return;
+    }
+
+    setError("Unable to log in.");
+
   } finally {
     setLoading(false);
   }
 };
 
 const googleAdminLogin = useGoogleLogin({
+
+  flow: "implicit",
+
   onSuccess: async (tokenResponse) => {
+
     try {
-      setError("");
+
       setLoading(true);
+      setError("");
 
-      const res = await fetch(
-        "https://user-management-h4hg.onrender.com/api/admin/google-login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            idToken: tokenResponse.access_token,
-          }),
-        }
-      );
+      const { data } = await googleLogin({
+        idToken: tokenResponse.access_token,
+      });
 
-      const data = await res.json();
+      const token = data?.BearerToken || data?.token;
+      const user = data?.user || data?.response;
 
-      if (!res.ok) {
-        throw new Error(data.message || "Google login failed");
+      if (!token || !user) {
+        throw new Error("Invalid server response");
       }
 
-      /**
-       * EXPECTED RESPONSE
-       * {
-       *   token: "...",
-       *   user: { id, email, role: "ADMIN" }
-       * }
-       */
-
-      // 🔐 ENFORCE ADMIN ROLE
-      if (data.user.role !== "ADMIN") {
+      if (user.role !== "ADMIN") {
         throw new Error("Unauthorized access");
       }
 
-      // ✅ SAVE AUTH
-      localStorage.setItem("adminToken", data.token);
-      localStorage.setItem("adminUser", JSON.stringify(data.user));
+      login(token, user);
 
-      // ✅ REDIRECT
       navigate("/admin");
 
     } catch (err) {
-      setError(err.message);
+
+      setError(
+        err?.message || "Google login failed."
+      );
+
     } finally {
+
       setLoading(false);
+
     }
+
   },
 
   onError: () => {
     setError("Google authentication cancelled");
   },
+
 });
 
+useEffect(() => {
+  const token = localStorage.getItem("fixserv_token");
+  const role = localStorage.getItem("fixserv_role");
 
+  if (!token) return;
+
+  switch (role) {
+    case "ADMIN":
+      navigate("/admin");
+      break;
+
+    case "CLIENT":
+      navigate("/client");
+      break;
+
+    case "ARTISAN":
+      navigate("/artisan");
+      break;
+
+    default:
+      navigate("/");
+  }
+}, [navigate]);
 
   return (
       <div>
                 <section className="h-screen grid grid-cols-1 lg:grid-cols-[40%_60%]">
         
-        {/* LEFT — IMAGE PANEL */}
+
         <div className="relative flex flex-col min-h-[340px] sm:min-h-[340px] lg:min-h-full">
         
-          {/* Background */}
+        
           <img
             src={signImage}
             alt=""
@@ -148,12 +213,11 @@ const googleAdminLogin = useGoogleLogin({
             className="absolute inset-0 w-full h-full object-cover"
           />
         
-        {/* Logo */}
         <div className="relative z-10 px-6 sm:px-10 lg:px-30 pt-6 sm:pt-10 lg:pt-16">
           <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
         </div>
         
-          {/* CENTER CONTENT */}
+         
           <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 sm:px-10 lg:px-14 text-center text-white max-w-lg mx-auto">
           <h2 className="text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-5 lg:mb-10 font-medium leading-tight">
               Manage Your Platform
@@ -168,12 +232,12 @@ const googleAdminLogin = useGoogleLogin({
         </div>
         
         
-          {/* RIGHT — FORM */}
+      
       <div className="flex items-center justify-center 
                 px-6 sm:px-10 lg:px-16 
                 py-10 sm:py-14 lg:py-16">
 
-          {/* <div className="w-full max-w-2xl"> */}
+   
           <div className="w-full max-w-xl">
         
               <h2 className="text-2xl font-semibold text-black text-center">
@@ -183,7 +247,7 @@ const googleAdminLogin = useGoogleLogin({
                 Enter your details to access the admin dashboard
               </p>
         
-              {/* Google */}
+
               <button
   type="button"
   onClick={() => googleAdminLogin()}
@@ -202,7 +266,7 @@ const googleAdminLogin = useGoogleLogin({
         </div>
         
               {/* Form */}
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={handleLogin}>
                 <label htmlFor="email">Email:</label>
                 
         
@@ -220,7 +284,7 @@ const googleAdminLogin = useGoogleLogin({
         
         
                 <label htmlFor="password">Password:</label>
-                {/* Password */}
+       
            <div className="relative">
 <input
   type={showPassword ? "text" : "password"}
@@ -241,12 +305,6 @@ const googleAdminLogin = useGoogleLogin({
   </button>
 </div>
 
-
-
-        
-                
-        
-                {/* Confirmation */}
             <div className="flex items-center justify-between mb-12">
     <label className="flex items-center gap-2 cursor-pointer">
       <input
@@ -274,7 +332,7 @@ const googleAdminLogin = useGoogleLogin({
 )}
 
                 <button
-  onClick={handleLogin}
+  type="submit"
   disabled={loading}
   className="w-full bg-[#3E83C4] hover:bg-[#2d75b8] text-white py-3 rounded-md font-medium transition disabled:opacity-60"
 >

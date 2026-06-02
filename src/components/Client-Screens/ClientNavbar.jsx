@@ -128,7 +128,7 @@ const ClientNavbar = () => {
 
           {/* NOTIFICATIONS */}
           <button onClick={toggleNotifications} className="relative">
-            <img src={profile} alt="Notifications" className="h-8 w-8" />
+            <img src={profile} alt="Notifications" className="h-8 w-8 cursor-pointer" />
 
             {notificationCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1.5">
@@ -142,7 +142,7 @@ const ClientNavbar = () => {
             <img
               src={profileImage}
               alt="Profile"
-              className="h-8 w-8 rounded-full object-cover"
+              className="h-8 w-8 rounded-full object-cover cursor-pointer"
               onError={(e) => (e.target.src = not)}
             />
           </button>
@@ -175,7 +175,7 @@ const ClientNavbar = () => {
 
             {/* NOTIFICATIONS */}
             <button onClick={toggleNotifications}>
-              <img src={profile} alt="Notifications" className="h-8 w-8" />
+              <img src={profile} alt="Notifications" className="h-8 w-8 cursor-pointer" />
             </button>
 
             {/* PROFILE (DYNAMIC) */}
@@ -183,7 +183,7 @@ const ClientNavbar = () => {
               <img
                 src={profileImage}
                 alt="Profile"
-                className="h-8 w-8 rounded-full object-cover"
+                className="h-8 w-8 rounded-full object-cover cursor-pointer"
                 onError={(e) => (e.target.src = not)}
               />
             </button>

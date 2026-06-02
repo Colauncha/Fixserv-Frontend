@@ -34,14 +34,17 @@ function getBackendMessage(error) {
 
   if (!data) return "";
 
-  if (typeof data === "string") return data;
+  if (typeof data === "string") {
+    return data;
+  }
 
   return (
-    data.message ||
-    data.error ||
-    data.details ||
-    data.title ||
-    data.msg ||
+    data?.errors?.[0]?.message ||
+    data?.message ||
+    data?.error ||
+    data?.details ||
+    data?.title ||
+    data?.msg ||
     ""
   );
 }
@@ -142,15 +145,16 @@ export function normalizeApiError(error) {
   const backendMessage = getBackendMessage(error);
   const message = getUserFriendlyMessage(error);
 
-  emitGlobalError(message, "error");
-
-  if (isAuthError(status, backendMessage)) {
-    redirectToLogin();
-  }
-
   const normalizedError = new Error(message);
+
   normalizedError.status = status;
   normalizedError.backendMessage = backendMessage;
+
+
+  normalizedError.response = error?.response;
+  normalizedError.request = error?.request;
+  normalizedError.config = error?.config;
+
   normalizedError.originalError = error;
 
   return normalizedError;

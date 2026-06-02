@@ -724,7 +724,7 @@ setError(
               <button
                 type="button"
                 onClick={handleBrowseClick}
-                className="bg-[#3E83C4] text-white px-6 py-3 rounded-lg font-medium disabled:opacity-60"
+                className="bg-[#3E83C4] text-white px-6 py-3 rounded-lg font-medium disabled:opacity-60 cursor-pointer"
                 disabled={submitting}
               >
                 Browse Files
@@ -879,7 +879,7 @@ image/png,image/jpeg,image/webp"
             <button
               type="button"
               onClick={() => navigate("/artisan")}
-              className="w-full bg-[#3E83C4] text-white py-3 rounded-lg"
+              className="w-full bg-[#3E83C4] text-white py-3 rounded-lg cursor-pointer"
             >
               Go to Dashboard
             </button>

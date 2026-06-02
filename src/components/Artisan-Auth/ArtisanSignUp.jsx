@@ -1211,9 +1211,6 @@ const ArtisanSignUp = () => {
     password: "",
     confirmPassword: "",
   });
-
-
-  /* Prevent logged in users visiting signup */
   useEffect(() => {
 
     const token = localStorage.getItem("fixserv_token");
@@ -1245,9 +1242,6 @@ const ArtisanSignUp = () => {
     if (error) setError(null);
 
   };
-
-
-
   const normalizePhoneNumber = (phone) => {
 
     const rawPhone = phone.trim();
@@ -1269,10 +1263,6 @@ const ArtisanSignUp = () => {
     return `+${cleanedPhone}`;
 
   };
-
-
-
-  /* GOOGLE SIGNUP */
 
   const googleSignUp = useGoogleLogin({
 
@@ -1458,10 +1448,6 @@ const ArtisanSignUp = () => {
 
       const msg = String(rawMessage).toLowerCase();
 
-
-
-      /* EMAIL ALREADY EXISTS */
-
 if (
   status === 409 ||
   msg.includes("duplicate") ||
@@ -1476,8 +1462,6 @@ setFieldErrors({
 
   return;
 }
-
-      /* WEAK PASSWORD */
 if (
   status === 422 &&
   (msg.includes("password") && msg.includes("weak"))
@@ -1486,7 +1470,6 @@ if (
   return;
 }
 
-      /* INVALID EMAIL */
 if (
   msg.includes("invalid email") ||
   msg.includes("email is invalid") ||
@@ -1498,20 +1481,10 @@ if (
   return;
 }
 
-
-
-
-      /* SERVER ERROR */
-
       if (status >= 500) {
         setError("Server error. Please try again later.");
         return;
       }
-
-
-
-      /* FALLBACK */
-
       setError("Unable to create account. Please try again.");
 
     }
@@ -1528,8 +1501,6 @@ if (
   return (
 
     <section className="h-screen grid grid-cols-1 lg:grid-cols-[40%_60%]">
-
-      {/* LEFT PANEL */}
 
       <div className="relative flex flex-col h-[300px] sm:h-[340px] lg:h-screen overflow-hidden">
 
@@ -1561,10 +1532,6 @@ if (
 
       </div>
 
-
-
-      {/* RIGHT PANEL */}
-
       <div className="flex items-start justify-center px-6 sm:px-10 lg:px-16 py-10 sm:py-14 lg:py-16 h-screen overflow-y-auto">
 
         <div className="w-full max-w-xl">
@@ -1576,20 +1543,6 @@ if (
           <p className="text-sm text-[#656565] text-center mt-2 mb-8">
             Create your artisan account to get repair requests and manage earnings.
           </p>
-
-
-
-          <button
-            type="button"
-            onClick={() => googleSignUp()}
-            disabled={loading}
-            className="w-full flex items-center justify-center mb-4 gap-3 bg-black text-white py-3 rounded-md disabled:opacity-70"
-          >
-            <img src={googleLogo} className="w-5 h-5" />
-            Sign up with Google
-          </button>
-
-
 
           {/* <button
             type="button"
