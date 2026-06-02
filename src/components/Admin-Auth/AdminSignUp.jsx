@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from "react";
 import signLogo from '../../assets/sign/sign logo.png';
 import signImage from '../../assets/sign/sign image.png';
 import signOverlay from '../../assets/sign/sign overlay.png';
@@ -7,6 +7,10 @@ import appleLogo from '../../assets/sign/apple logo.png';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
+import {
+  registerUser,
+  googleLogin,
+} from "../../api/auth.api";
 
 const AdminSignUp = () => {
     const navigate = useNavigate();
@@ -22,41 +26,51 @@ const [formData, setFormData] = useState({
 });
 
 const googleAdminLogin = useGoogleLogin({
+  flow: "implicit",
+
   onSuccess: async (tokenResponse) => {
     try {
-      const res = await fetch(
-        "https://user-management-h4hg.onrender.com/api/admin/google-login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            idToken: tokenResponse.access_token,
-          }),
-        }
-      );
+      setLoading(true);
+      setError("");
 
-      const data = await res.json();
+      const { data } = await googleLogin({
+        idToken: tokenResponse.access_token,
+      });
 
-      if (!res.ok) {
-        throw new Error(data.message || "Google admin login failed");
+      if (!data?.user || !data?.BearerToken) {
+        throw new Error("Invalid server response");
       }
-
-     
-      localStorage.setItem("fixserv_token", data.token);
-      localStorage.setItem("fixserv_user", JSON.stringify(data.user));
-      localStorage.setItem("fixserv_role", data.user.role);
 
       if (data.user.role !== "ADMIN") {
         throw new Error("Unauthorized role");
       }
 
-      navigate("/admin");
+      localStorage.setItem(
+        "fixserv_token",
+        data.BearerToken
+      );
 
+      localStorage.setItem(
+        "fixserv_user",
+        JSON.stringify(data.user)
+      );
+
+      localStorage.setItem(
+        "fixserv_role",
+        data.user.role
+      );
+
+      navigate("/admin");
     } catch (err) {
-      console.error(err);
-      setError(err.message || "Google authentication failed");
+      console.log("GOOGLE ADMIN ERROR =>", err);
+
+      setError(
+        err.backendMessage ||
+        err.message ||
+        "Google authentication failed"
+      );
+    } finally {
+      setLoading(false);
     }
   },
 
@@ -68,81 +82,196 @@ const googleAdminLogin = useGoogleLogin({
 
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
+const [fieldErrors, setFieldErrors] = useState({});
+const formRef = useRef(null);
 
 const [agreed, setAgreed] = useState(false);
+
+const getPasswordStrength = (password) => {
+  if (!password) return { label: "", color: "" };
+
+  let score = 0;
+
+  if (password.length >= 8) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  if (score <= 1)
+    return { label: "Weak password", color: "text-red-500" };
+
+  if (score <= 3)
+    return { label: "Medium strength", color: "text-yellow-500" };
+
+  return {
+    label: "Strong password",
+    color: "text-green-600",
+  };
+};
 
 
 const handleChange = (e) => {
   const { name, value } = e.target;
-  setFormData((prev) => ({ ...prev, [name]: value }));
-};
-const handleSubmit = async (e) => {
-  e.preventDefault();
+
   setError("");
 
+  setFormData((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+
+  setFieldErrors((prev) => ({
+    ...prev,
+    [name]: "",
+  }));
+};
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (loading) return;
+
+  setError("");
+
+  const errors = {};
+
+  if (!formData.fullName.trim()) {
+    errors.fullName = "Full name is required";
+  }
+
+  if (!formData.email.trim()) {
+    errors.email = "Email is required";
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(formData.email)) {
+      errors.email = "Please enter a valid email address";
+    }
+  }
+
+  if (!formData.password) {
+    errors.password = "Password is required";
+  }
+
+  if (!formData.confirmPassword) {
+    errors.confirmPassword = "Confirm your password";
+  }
+
+  if (
+    formData.password &&
+    formData.confirmPassword &&
+    formData.password !== formData.confirmPassword
+  ) {
+    errors.confirmPassword = "Passwords do not match";
+  }
+
   if (!agreed) {
-    setError("You must agree to the Terms & Conditions");
-    return;
+    errors.agreed = "You must agree to the Terms & Conditions";
   }
 
-  if (formData.password !== formData.confirmPassword) {
-    setError("Passwords do not match");
-    return;
-  }
+  if (Object.keys(errors).length > 0) {
+    setFieldErrors(errors);
 
-  try {
-    setLoading(true);
+    const firstErrorField = Object.keys(errors)[0];
 
-    const payload = {
-      email: formData.email.trim(),
-      password: formData.password,
-      fullName: formData.fullName.trim(),
-      role: "ADMIN",
-      adminData: {
-        permissions: formData.permissions,
-      },
-    };
+    const element =
+      formRef.current?.querySelector(
+        `[name="${firstErrorField}"]`
+      );
 
-    const res = await fetch(
-      "https://user-management-h4hg.onrender.com/api/users/register",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Registration failed");
+    if (element) {
+      element.focus();
     }
 
-    // optional, safe
-    localStorage.setItem("fixserv_role", "ADMIN");
+    return;
+  }
 
-    navigate("/admin-login");
-  } catch (err) {
-    setError(err.message);
-  } finally {
+  setFieldErrors({});
+
+try {
+  setLoading(true);
+
+  const payload = {
+    email: formData.email.trim().toLowerCase(),
+    password: formData.password,
+    fullName: formData.fullName.trim(),
+    role: "ADMIN",
+    adminData: {
+      permissions: ["basic-access"],
+    },
+  };
+
+  console.log("ADMIN REGISTER PAYLOAD =>", payload);
+
+  await registerUser(payload);
+
+  navigate("/admin-login");
+} 
+catch (err) {
+  console.log("FULL ERROR", err);
+  console.log("STATUS", err.status);
+  console.log("BACKEND MESSAGE", err.backendMessage);
+
+  const status = err.status;
+
+  const msg = String(
+    err.backendMessage || err.message || ""
+  ).toLowerCase();
+
+  if (
+  msg.includes("email already") ||
+  msg.includes("email exist") ||
+  msg.includes("already exists") ||
+  msg.includes("already registered") ||
+  msg.includes("user already") ||
+  msg.includes("duplicate") ||
+  msg.includes("e11000")
+) {
+  setFieldErrors({
+    email: "An account with this email already exists.",
+  });
+  return;
+}
+
+  if (msg.includes("invalid email")) {
+    setFieldErrors({
+      email: "Please enter a valid email address.",
+    });
+    return;
+  }
+
+  if (
+    msg.includes("password") &&
+    msg.includes("least")
+  ) {
+    setFieldErrors({
+      password: "Password must be at least 8 characters.",
+    });
+    return;
+  }
+
+  if (status >= 500) {
+    setError("Server error. Please try again later.");
+    return;
+  }
+
+  setError(
+    err.message ||
+    "Unable to create account."
+  );
+} finally {
     setLoading(false);
   }
 };
-
-
-
   return (
       <div>
                     <section className="h-screen grid grid-cols-1 lg:grid-cols-[40%_60%]">
 
-        
-        {/* LEFT — IMAGE PANEL */}
             <div className="relative flex flex-col 
                 h-[300px] sm:h-[340px] 
                 lg:h-screen 
                 overflow-hidden">
 
-          {/* Background */}
           <img
             src={signImage}
             alt=""
@@ -154,12 +283,10 @@ const handleSubmit = async (e) => {
             className="absolute inset-0 w-full h-full object-cover"
           />
         
-        {/* Logo */}
         <div className="relative z-10 px-6 sm:px-10 lg:px-30 pt-6 sm:pt-10 lg:pt-16">
           <img src={signLogo} className="h-8 sm:h-9 lg:h-10 w-auto" />
         </div>
         
-        {/* Center Content */}
         <div className="
   relative z-10 flex-1 flex flex-col items-center justify-center
   mb-8 sm:mb-12 lg:mb-30
@@ -180,7 +307,6 @@ const handleSubmit = async (e) => {
         </div>
         
         
-          {/* RIGHT — FORM */}
            <div className="flex items-start justify-center 
                 px-6 sm:px-10 lg:px-16
                 py-10 sm:py-14 lg:py-16
@@ -195,7 +321,6 @@ const handleSubmit = async (e) => {
                 Sign up to access the admin dashboard
               </p>
         
-              {/* Google */}
               <button
   type="button"
   onClick={() => googleAdminLogin()}
@@ -213,8 +338,11 @@ const handleSubmit = async (e) => {
           <div className="w-6 h-px bg-[#B3B3B3]" />
         </div>
         
-              {/* Form */}
-              <form className="space-y-4" onSubmit={handleSubmit}>
+              <form
+  ref={formRef}
+  className="space-y-4"
+  onSubmit={handleSubmit}
+>
                 <input
   type="text"
   name="fullName"
@@ -223,6 +351,11 @@ const handleSubmit = async (e) => {
   onChange={handleChange}
   className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm"
 />
+{fieldErrors.fullName && (
+  <p className="text-xs text-red-500">
+    {fieldErrors.fullName}
+  </p>
+)}
 
         
                
@@ -234,10 +367,12 @@ const handleSubmit = async (e) => {
   onChange={handleChange}
   className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 text-sm"
 />
+{fieldErrors.email && (
+  <p className="text-xs text-red-500">
+    {fieldErrors.email}
+  </p>
+)}
 
-        
-        
-{/* Password */}
            <div className="relative">
 <input
   type={showPassword ? "text" : "password"}
@@ -247,8 +382,21 @@ const handleSubmit = async (e) => {
   onChange={handleChange}
   className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 pr-12 text-sm"
 />
+{formData.password && (
+  <p
+    className={`text-xs mt-1 ${
+      getPasswordStrength(formData.password).color
+    }`}
+  >
+    {getPasswordStrength(formData.password).label}
+  </p>
+)}
 
-
+{fieldErrors.password && (
+  <p className="text-xs text-red-500">
+    {fieldErrors.password}
+  </p>
+)}
   <button
     type="button"
     onClick={() => setShowPassword(!showPassword)}
@@ -258,8 +406,6 @@ const handleSubmit = async (e) => {
   </button>
 </div>
 
-
-            {/* Confirm Password */}
 <div className="relative">
 <input
   type={showConfirmPassword ? "text" : "password"}
@@ -269,6 +415,11 @@ const handleSubmit = async (e) => {
   onChange={handleChange}
   className="w-full border border-[#9BAAB9] rounded-md px-4 py-3 pr-12 text-sm"
 />
+{fieldErrors.confirmPassword && (
+  <p className="text-xs text-red-500">
+    {fieldErrors.confirmPassword}
+  </p>
+)}
 
 
   <button
@@ -280,7 +431,6 @@ const handleSubmit = async (e) => {
   </button>
 </div>
         
-                {/* Confirmation */}
           <div className="flex items-center justify-between mb-12">
             <label className="flex items-center gap-2 cursor-pointer">
               
@@ -291,9 +441,14 @@ const handleSubmit = async (e) => {
   className="w-4 h-4 text-[#3E83C4] border-gray-300 rounded focus:ring-blue-700 cursor-pointer"
 />
 
+
               <span className="text-sm text-black">I agree to the <span className='text-[#3E83C4]'>Terms & Conditions</span> and <span className='text-[#3E83C4]'>Privacy Policy</span></span>
             </label>
-        
+        {fieldErrors.agreed && (
+  <p className="text-xs text-red-500">
+    {fieldErrors.agreed}
+  </p>
+)}
             
           </div>
         

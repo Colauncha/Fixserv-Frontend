@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import referBg from "../../assets/client images/client-home/referal part/referbg.png";
 import flash from "../../assets/client images/client-home/referal part/flash.png";
 import crown from "../../assets/client images/client-home/referal part/crown.png";
@@ -7,7 +7,7 @@ import fb from "../../assets/client images/client-home/referal part/fb.png";
 import insta from "../../assets/client images/client-home/referal part/insta.png";
 import linkedin from "../../assets/client images/client-home/referal part/linkedin.png";
 import twitter from "../../assets/client images/client-home/referal part/x.png";
-import toast from "react-hot-toast";
+// import toast from "react-hot-toast";
 
 const ReferEarn = ({ onClose, referralCode }) => {
   const APP_URL = window.location.origin;
@@ -22,17 +22,33 @@ const ReferEarn = ({ onClose, referralCode }) => {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-const copyText = async (text, message) => {
-  if (!text) return;
-  try {
+const [copied, setCopied] = useState("");
 
-await navigator.clipboard.writeText(text);
-toast.success("Referral code copied!");
+const copyText = async (text, type) => {
+  try {
+    await navigator.clipboard.writeText(text);
+
+    setCopied(type);
+
+    setTimeout(() => {
+      setCopied("");
+    }, 2000);
   } catch (e) {
-    console.error("Copy failed:", e);
-    alert("Copy failed. Please copy manually.");
+    console.error(e);
   }
 };
+
+// const copyText = async (text, message) => {
+//   if (!text) return;
+//   try {
+
+// await navigator.clipboard.writeText(text);
+// toast.success("Referral code copied!");
+//   } catch (e) {
+//     console.error("Copy failed:", e);
+//     alert("Copy failed. Please copy manually.");
+//   }
+// };
 
   const shareReferral = async () => {
     const shareData = {
@@ -64,7 +80,7 @@ toast.success("Referral code copied!");
         >
           <button
             onClick={onClose}
-            className="absolute top-1 right-4 text-gray-500 hover:text-gray-700 w-7 h-7 flex items-center justify-center"
+            className="absolute top-1 right-4 text-gray-500 hover:text-gray-700 w-7 h-7 flex items-center justify-center cursor-pointer"
             aria-label="Close"
           >
             ✕
@@ -92,18 +108,51 @@ toast.success("Referral code copied!");
         </div>
 
        
-        <p className="text-sm mb-2">Your referral code:</p>
-        <div className="flex mb-3">
-          <input value={referralCode || ""} readOnly className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm" />
-          <button onClick={() => copyText(referralCode, "Referral code copied!")} className="bg-blue-500 text-white px-5 rounded-r-md text-sm">Copy Code</button>
-        </div>
+   <p className="text-sm mb-2">Your referral code:</p>
 
-       
-        <div className="flex mb-5">
-          <input value={referralLink} readOnly className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm" />
-          <button onClick={() => copyText(referralLink, "Referral link copied!")} className="bg-gray-800 text-white px-5 rounded-r-md text-sm">Copy Link</button>
-        </div>
+<div className="flex mb-5 relative">
+  <input
+    value={referralCode || ""}
+    readOnly
+    className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm outline-none"
+  />
 
+  <button
+    onClick={() => copyText(referralCode, "code")}
+    className="bg-blue-500 hover:bg-blue-600 transition text-white px-5 rounded-r-md text-sm cursor-pointer"
+  >
+    Copy Code
+  </button>
+
+  {copied === "code" && (
+    <span className="absolute -top-9 right-2 bg-black text-white text-xs px-3 py-1 rounded-md shadow-md animate-pulse">
+      Copied!
+    </span>
+  )}
+</div>
+
+<p className="text-sm mb-2">Your referral link:</p>
+
+<div className="flex mb-5 relative">
+  <input
+    value={referralLink}
+    readOnly
+    className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm outline-none"
+  />
+
+  <button
+    onClick={() => copyText(referralLink, "link")}
+    className="bg-gray-800 hover:bg-black transition text-white px-5 rounded-r-md text-sm cursor-pointer"
+  >
+    Copy Link
+  </button>
+
+  {copied === "link" && (
+    <span className="absolute -top-9 right-2 bg-black text-white text-xs px-3 py-1 rounded-md shadow-md animate-pulse">
+      Copied!
+    </span>
+  )}
+</div>
    
         <div className="flex items-center gap-5 justify-center">
           {[fb, insta, linkedin, twitter].map((icon, i) => (

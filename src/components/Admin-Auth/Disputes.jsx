@@ -1,11 +1,241 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import exportImg from "../../assets/Admin Images/export.png";
 import newImg from "../../assets/Admin Images/new.png";
 import escalated from "../../assets/Admin Images/escalated.png";
 import eye from "../../assets/Admin Images/preview.png";
+// import { useState } from "react";
 
 const Disputes = () => {
+
+  const [showResolveModal, setShowResolveModal] = useState(false);
+
+const [selectedDispute, setSelectedDispute] = useState(null);
+
+const [resolutionData, setResolutionData] = useState({
+  resolution: "REFUND_CLIENT",
+  note: "",
+});
+
+const [disputes, setDisputes] = useState([]);
+
+const [resolveLoading, setResolveLoading] = useState(false);
+
+const newCount = disputes.filter(
+  (d) => d.status === "New"
+).length;
+
+const reviewCount = disputes.filter(
+  (d) => d.status === "In Review"
+).length;
+
+const escalatedCount = disputes.filter(
+  (d) => d.status === "Escalated"
+).length;
+
+const resolvedCount = disputes.filter(
+  (d) => d.status === "Resolved"
+).length;
+
+
+const handleResolveDispute = async () => {
+
+  try {
+
+    setResolveLoading(true);
+
+    const token = getAuthToken();
+
+    const response = await fetch(
+      `/api/orders/${selectedDispute.orderId}/resolve-dispute`,
+      {
+        method: "PATCH",
+
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          resolution: resolutionData.resolution,
+          note: resolutionData.note,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    console.log(data);
+
+    if (response.ok) {
+
+      alert("Dispute resolved successfully");
+
+      setShowResolveModal(false);
+
+      setResolutionData({
+        resolution: "REFUND_CLIENT",
+        note: "",
+      });
+
+    } else {
+
+      alert(data.message || "Failed to resolve dispute");
+    }
+
+  } catch (error) {
+
+    console.log(error);
+
+    alert("Something went wrong");
+
+  } finally {
+
+    setResolveLoading(false);
+  }
+};
+
+const fetchDisputes = async () => {
+
+  try {
+
+    const token = getAuthToken();
+
+    const response = await fetch(
+      "/api/orders/dashboard/disputes",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("DISPUTES:", data);
+
+    setDisputes(data?.data?.disputes || []);
+
+  } catch (error) {
+
+    console.log(error);
+  }
+};
+
+useEffect(() => {
+  fetchDisputes();
+}, []);
+
   return (
+    <>
+    {showResolveModal && (
+
+  <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
+
+    <div className="bg-white rounded-2xl w-full max-w-lg p-6">
+
+      <div className="flex justify-between items-center mb-6">
+
+        <div>
+          <h2 className="text-xl font-semibold">
+            Resolve Dispute
+          </h2>
+
+          <p className="text-sm text-gray-500 mt-1">
+            {selectedDispute?.id}
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowResolveModal(false)}
+          className="text-2xl text-gray-500"
+        >
+          ×
+        </button>
+
+      </div>
+
+      {/* RESOLUTION */}
+      <div className="mb-4">
+
+        <label className="text-sm text-gray-600 block mb-2">
+          Resolution
+        </label>
+
+        <select
+          value={resolutionData.resolution}
+          onChange={(e) =>
+            setResolutionData({
+              ...resolutionData,
+              resolution: e.target.value,
+            })
+          }
+          className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none"
+        >
+          <option value="REFUND_CLIENT">
+            Refund Client
+          </option>
+
+          <option value="RELEASE_PAYMENT">
+            Release Payment
+          </option>
+
+          <option value="PARTIAL_REFUND">
+            Partial Refund
+          </option>
+
+        </select>
+
+      </div>
+
+      {/* NOTE */}
+      <div className="mb-6">
+
+        <label className="text-sm text-gray-600 block mb-2">
+          Admin Note
+        </label>
+
+        <textarea
+          rows={5}
+          value={resolutionData.note}
+          onChange={(e) =>
+            setResolutionData({
+              ...resolutionData,
+              note: e.target.value,
+            })
+          }
+          placeholder="Explain the resolution..."
+          className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none resize-none"
+        />
+
+      </div>
+
+      {/* ACTIONS */}
+      <div className="flex justify-end gap-3">
+
+        <button
+          onClick={() => setShowResolveModal(false)}
+          className="border border-gray-300 px-4 py-2 rounded-lg"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleResolveDispute}
+          disabled={resolveLoading}
+          className="bg-[#3E83C4] text-white px-5 py-2 rounded-lg disabled:opacity-50"
+        >
+          {resolveLoading
+            ? "Resolving..."
+            : "Resolve Dispute"}
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+)}
     <div className="w-full bg-white">
       <section className="w-full py-10">
         <div className="max-w-7xl mx-auto px-6">
@@ -30,11 +260,11 @@ const Disputes = () => {
           {/* Summary Cards */}
           <div className="grid grid-cols-4 gap-4 mb-6">
             {[
-              { label: "New", value: 3 },
-              { label: "In Review", value: 5 },
-              { label: "Escalated", value: 2 },
-              { label: "Resolved (7d)", value: 18 },
-            ].map((item, i) => (
+  { label: "New", value: newCount },
+  { label: "In Review", value: reviewCount },
+  { label: "Escalated", value: escalatedCount },
+  { label: "Resolved (7d)", value: resolvedCount },
+].map((item, i) => (
               <div key={i} className="bg-gray-100 rounded-lg p-4">
                 <p className="text-xs text-gray-500">{item.label}</p>
                 <h2 className="text-xl font-semibold text-black mt-1">
@@ -73,20 +303,15 @@ const Disputes = () => {
             </div>
 
             {/* Rows */}
-            {[
-              { issue: "Item not as described", priority: "High", status: "New" },
-              { issue: "Damaged during shipping", priority: "Medium", status: "In Review" },
-              { issue: "Late delivery", priority: "Low", status: "New" },
-              { issue: "Item not as described", priority: "High", status: "Resolved" },
-            ].map((row, i) => (
+            {disputes.map((row, i) => (
               <div
                 key={i}
                 className="grid grid-cols-12 px-5 py-4 border-b text-sm items-center"
               >
-                <div className="col-span-1">DSP-001</div>
-                <div className="col-span-1">TXN-001234</div>
-                <div className="col-span-1">John Pee</div>
-                <div className="col-span-1">Sarah Moses</div>
+                <div className="col-span-1">{row.disputeId || row.id}</div>
+                <div className="col-span-1">{row.transactionId || row.orderId}</div>
+                <div className="col-span-1">{row.clientName || row.client?.fullName || "N/A"}</div>
+                <div className="col-span-1">{row.artisanName || row.artisan?.fullName || "N/A"}</div>
 
                 <div className="col-span-3">{row.issue}</div>
 
@@ -124,7 +349,7 @@ const Disputes = () => {
                 </div>
 
                 <div className="col-span-1 text-xs text-gray-500">
-                  22h remaining
+                 {row.sla || "N/A"}
                 </div>
 
                 <div className="col-span-2 flex justify-end gap-3">
@@ -134,10 +359,16 @@ const Disputes = () => {
                   </button>
 
                   {row.status !== "Resolved" && (
-                    <button className="flex items-center gap-1 text-xs text-red-600 border border-gray-300 px-2 py-1 rounded-md">
-                      <img src={escalated} className="w-3 h-3" />
-                      Escalate
-                    </button>
+                    <button
+  onClick={() => {
+    setSelectedDispute(row);
+    setShowResolveModal(true);
+  }}
+  className="flex items-center gap-1 text-xs text-red-600 border border-gray-300 px-2 py-1 rounded-md"
+>
+  <img src={escalated} className="w-3 h-3" />
+  Resolve
+</button>
                   )}
                 </div>
               </div>
@@ -147,6 +378,7 @@ const Disputes = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

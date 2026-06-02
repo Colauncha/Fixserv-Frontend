@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { getAuthUser, getAuthToken } from "../../utils/auth";
 import star from "../../assets/Artisan Images/star.png";
 import locationIcon from "../../assets/Artisan Images/location.png";
+import adebayoImg from "../../assets/Artisan Images/profileImg.jpg";
 import badge from "../../assets/Artisan Images/badge.png";
 import { APP_ERROR_EVENT } from "../../utils/apiErrorHandler";
 
-import profileImg from "../../assets/Artisan Images/adebayo.png";
+
 import { useAuth } from "../../context/AuthContext";
 import ArtisanHeader from "./ArtisanHeader";
 import {
@@ -754,15 +755,6 @@ const onFileSelected = (e) => {
   window.dispatchEvent(
   new CustomEvent(APP_ERROR_EVENT, {
     detail: {
-      message: getUserFriendlyError(err, "Failed to update profile."),
-      type: "error",
-    },
-  })
-);
-
-  window.dispatchEvent(
-  new CustomEvent(APP_ERROR_EVENT, {
-    detail: {
       message: "Profile updated successfully.",
       type: "success",
     },
@@ -867,11 +859,16 @@ const uploadProfilePicture = async () => {
     );
   }
 
-  const shownProfileImage =
-    imgPreview || artisan?.profileImage || artisan?.profilePicture || profileImg;
+const shownProfileImage =
+  imgPreview ||
+  artisan?.profileImage ||
+  artisan?.profilePicture ||
+  adebayoImg;
 
-  const headerProfileImage =
-    artisan?.profileImage || artisan?.profilePicture || profileImg;
+const headerProfileImage =
+  artisan?.profileImage ||
+  artisan?.profilePicture ||
+  adebayoImg;
 
   const displayServices = Array.isArray(artisan?.services) ? artisan.services : [];
 

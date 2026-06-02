@@ -11,6 +11,10 @@ const API = createApiClient({
 });
 
 // AUTH
+
+export const adminLogin = (payload, config = {}) =>
+  API.post("/admin/login", payload, config);
+
 export const registerUser = (payload, config = {}) =>
   API.post("/users/register", payload, config);
 

@@ -11,7 +11,7 @@ const ArtisanReset = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
-        const BASE_URL = import.meta.env.VITE_USER_API;
+const BASE_URL = import.meta.env.VITE_USER_API_BASE_URL;
 
 
   const [password, setPassword] = useState("");
@@ -54,14 +54,17 @@ const handleSubmit = async (e) => {
     setLoading(true);
 
     const res = await fetch(
-      `${BASE_URL}/api/admin/reset-password?token=${encodeURIComponent(token)}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPassword: password }),
-      }
-    );
-
+  `${BASE_URL}/admin/reset-password?token=${encodeURIComponent(token)}`,
+  {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      newPassword: password,
+    }),
+  }
+);
     let data;
     try {
       data = await res.json();

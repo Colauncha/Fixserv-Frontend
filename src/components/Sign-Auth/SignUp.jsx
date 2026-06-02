@@ -516,8 +516,6 @@ const SignUp = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 
-
-  /* PASSWORD STRENGTH */
   const getPasswordStrength = (password) => {
     if (!password) return { label: "", color: "" };
 
@@ -535,8 +533,6 @@ const SignUp = () => {
   };
 
 
-
-  /* HANDLE INPUT CHANGE */
   const handleChange = (e) => {
 
     const { name, value } = e.target;
@@ -545,7 +541,6 @@ const SignUp = () => {
 
     let newValue = value;
 
-    /* CLEAN PHONE INPUT */
     if (name === "phoneNumber") {
       newValue = value.replace(/[^\d+]/g, "");
     }
@@ -555,7 +550,6 @@ const SignUp = () => {
       [name]: newValue,
     });
 
-    /* CLEAR FIELD ERROR */
     setFieldErrors((prev) => ({
       ...prev,
       [name]: "",
@@ -563,9 +557,6 @@ const SignUp = () => {
 
   };
 
-
-
-  /* HANDLE SUBMIT */
   const handleSubmit = async () => {
 
     if (loading) return;
@@ -575,8 +566,6 @@ const SignUp = () => {
     const errors = {};
 
     const { firstName, lastName, email, phoneNumber, password, confirmPassword, referral } = formData;
-
-    /* VALIDATION */
 
     if (!firstName.trim()) errors.firstName = "First name is required";
     if (!lastName.trim()) errors.lastName = "Last name is required";
@@ -604,15 +593,9 @@ const SignUp = () => {
       errors.agreed = "You must agree to the Terms & Conditions";
     }
 
-
-
-    /* IF ERRORS EXIST */
-
     if (Object.keys(errors).length > 0) {
 
       setFieldErrors(errors);
-
-      /* AUTO FOCUS FIRST ERROR */
 
       const firstErrorField = Object.keys(errors)[0];
       const element = formRef.current?.querySelector(`[name="${firstErrorField}"]`);
@@ -622,8 +605,6 @@ const SignUp = () => {
       return;
     }
 
-
-
     setFieldErrors({});
 
 
@@ -632,9 +613,6 @@ const SignUp = () => {
 
       setLoading(true);
 
-
-
-      /* NORMALIZE PHONE */
 
       const rawPhone = phoneNumber.trim();
       const cleanedPhone = rawPhone.replace(/[^\d+]/g, "");
@@ -657,27 +635,61 @@ const SignUp = () => {
 
       const normalizedEmail = email.trim().toLowerCase();
 
-await registerUser({
+
+const payload = {
+  
   email: normalizedEmail,
   password,
   fullName: `${firstName.trim()} ${lastName.trim()}`.trim(),
   role: "CLIENT",
   phoneNumber: normalizedPhone,
-  ...(referral.trim() && { referralCode: referral.trim().toUpperCase() }),
+  ...(referral.trim() && {
+    referralCode: referral.trim().toUpperCase(),
+  }),
+};
+
+console.log("REGISTER PAYLOAD =>", payload);
+
+
+
+await registerUser(payload);
+
+navigate("/verification", {
+  state: { email: normalizedEmail },
 });
 
-      navigate("/verification", { state: { email: normalizedEmail } });
-
     }
+    
 catch (err) {
+  console.log(err);
 
-  if (!err?.response) {
+  const message =
+    err?.message ||
+    "Unable to create account. Please try again.";
+
+  setError(message);
+
+
+  console.log("FULL ERROR", err);
+  console.log("RESPONSE", err.response);
+  console.log("DATA", err.response?.data);
+
+
+  console.log("REGISTER ERROR =>", err);
+console.log("REGISTER RESPONSE =>", err?.response);
+console.log("REGISTER DATA =>", err?.response?.data);
+
+const response =
+  err?.response ||
+  err?.originalError?.response;
+
+if (!response) {
     setError("Network error. Please check your internet connection.");
     return;
   }
 
-  const status = err.response.status;
-  const data = err.response.data;
+const status = response.status;
+const data = response.data;
 
 
   const rawMessage =
@@ -688,7 +700,6 @@ catch (err) {
 
   const msg = String(rawMessage).toLowerCase();
 
-  /* EMAIL ALREADY EXISTS */
 
 if (
   msg.includes("email already") ||
@@ -705,21 +716,12 @@ if (
   return;
 }
 
-
-
-
-  /* INVALID EMAIL */
-
   if (msg.includes("invalid email")) {
     setFieldErrors({
       email: "Please enter a valid email address.",
     });
     return;
   }
-
-
-
-  /* PASSWORD TOO SHORT */
 
   if (msg.includes("password") && msg.includes("least")) {
     setFieldErrors({
@@ -729,17 +731,10 @@ if (
   }
 
 
-
-  /* NETWORK ERROR */
-
   if (!err?.response) {
     setError("Network error. Please check your internet connection.");
     return;
   }
-
-
-
-  /* SERVER ERROR */
 
   if (status >= 500) {
     setError("Server error. Please try again later.");
@@ -747,8 +742,6 @@ if (
   }
 
 
-
-  /* FALLBACK USER MESSAGE */
 
   setError("Unable to create account. Please try again.");
 
@@ -762,9 +755,6 @@ if (
 
   };
 
-
-
-  /* GOOGLE LOGIN */
 
   const handleGoogleError = () => {
     setError("Google Sign-In failed. Please try again.");

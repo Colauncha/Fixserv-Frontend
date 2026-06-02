@@ -32,13 +32,15 @@ export const searchServicesAndArtisans = async (params = {}) => {
 
   const queryParams = {
     keyword,
-    // isAvailableNow: true,
   };
 
-  // allow override if explicitly passed
+  // TEMPORARILY DISABLED
+  // backend bug with isAvailableNow=true
+  /*
   if (typeof params?.isAvailableNow !== "undefined") {
     queryParams.isAvailableNow = params.isAvailableNow;
   }
+  */
 
   const res = await SEARCH_API.get("/search", {
     params: queryParams,

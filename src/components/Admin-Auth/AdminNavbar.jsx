@@ -91,18 +91,26 @@
 // export default AdminNavbar;
 
 
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import logo from "../../assets/navbar logo/Navbar logo.png";
+import { useAuth } from "../../context/AuthContext";
 
 const AdminNavbar = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const { logout } = useAuth();
 
   const go = (path) => {
     navigate(path);
+    setOpen(false);
+  };
+
+  // Logout Function
+  const handleLogout = () => {
+    logout(); 
+    navigate("/admin-login");
     setOpen(false);
   };
 
@@ -119,7 +127,7 @@ const AdminNavbar = () => {
             <img src={logo} alt="Fixserv Logo" className="h-10 w-auto" />
           </div>
 
-          {/* Always-visible Hamburger */}
+          {/* Hamburger */}
           <button
             onClick={() => setOpen(!open)}
             className="text-[#3E83C4] cursor-pointer"
@@ -131,32 +139,59 @@ const AdminNavbar = () => {
 
       {/* Side Menu */}
       <div
-        className={`fixed top-0 right-0 h-full w-64 bg-white shadow-xl z-40 transform transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-40 transform transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="pt-26 px-6 space-y-6">
+        <div className="pt-24 px-6 flex flex-col h-full">
+          {/* Menu Links */}
+          <div className="space-y-3">
+            <button
+              onClick={() => go("/admin")}
+              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] transition-all duration-200 cursor-pointer"
+            >
+              Dashboard
+            </button>
 
-          <button onClick={() => go("/admin")} className="block cursor-pointer text-black text-sm hover:text-[#3E83C4]">
-            Dashboard
-          </button>
+            <button
+              onClick={() => go("/admin/verify-artisan")}
+              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] transition-all duration-200 cursor-pointer"
+            >
+              Verify Artisans
+            </button>
 
-          <button onClick={() => go("/admin/verify-artisan")} className="block cursor-pointer text-black text-sm hover:text-[#3E83C4]">
-            Verify Artisans
-          </button>
+            <button
+              onClick={() => go("/admin/manage-user")}
+              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] transition-all duration-200 cursor-pointer"
+            >
+              Manage Users
+            </button>
 
-          <button onClick={() => go("/admin/manage-user")} className="block cursor-pointer text-black text-sm hover:text-[#3E83C4]">
-            Manage Users
-          </button>
+            <button
+              onClick={() => go("/admin/monitor-transaction")}
+              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] transition-all duration-200 cursor-pointer"
+            >
+              Transactions
+            </button>
 
-          <button onClick={() => go("/admin/monitor-transaction")} className="block cursor-pointer text-black text-sm hover:text-[#3E83C4]">
-            Transactions
-          </button>
+            <button
+              onClick={() => go("/admin/disputes")}
+              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] transition-all duration-200 cursor-pointer"
+            >
+              Disputes
+            </button>
+          </div>
 
-          <button onClick={() => go("/admin/disputes")} className="block cursor-pointer text-black text-sm hover:text-[#3E83C4]">
-            Disputes
-          </button>
-
+          {/* Logout Button */}
+          <div className="mt-auto pb-8">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium shadow-md transition-all duration-200 cursor-pointer"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
@@ -164,7 +199,7 @@ const AdminNavbar = () => {
       {open && (
         <div
           onClick={() => setOpen(false)}
-          className="fixed inset-0 bg-black/20 z-30"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
         />
       )}
     </>
