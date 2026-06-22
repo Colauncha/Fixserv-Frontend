@@ -251,10 +251,10 @@ useEffect(() => {
               </p>
             </div>
 
-            <button className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-md text-sm">
+            {/* <button className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-md text-sm">
               <img src={exportImg} className="w-4 h-4" />
               Export
-            </button>
+            </button> */}
           </div>
 
           {/* Summary Cards */}
@@ -281,9 +281,9 @@ useEffect(() => {
               className="border border-blue-300 focus:border-blue-500 outline-none px-4 py-2 text-sm w-[380px] rounded-lg"
             />
 
-            <select className="border border-gray-300 px-4 py-2 text-sm rounded-md bg-white">
+            {/* <select className="border border-gray-300 px-4 py-2 text-sm rounded-md bg-white">
               <option>All Statuses</option>
-            </select>
+            </select> */}
           </div>
 
           {/* Table */}

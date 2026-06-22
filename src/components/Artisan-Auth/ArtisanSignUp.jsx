@@ -1190,6 +1190,7 @@ import { registerUser, googleLogin as googleAuth } from "../../api/auth.api";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const ArtisanSignUp = () => {
 
@@ -1675,17 +1676,32 @@ if (
 
             {/* Terms */}
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
-                className="w-4 h-4"
-              />
-              <span className="text-sm">
-                I agree to the <span className="text-[#3E83C4]">Terms</span> and <span className="text-[#3E83C4]">Privacy Policy</span>
-              </span>
-            </label>
+            <label className="flex items-start gap-2 text-sm text-gray-600">
+  <input
+    type="checkbox"
+    checked={agreed}
+    onChange={(e) => setAgreed(e.target.checked)}
+  />
+
+  <span>
+    I agree to the{" "}
+    <Link
+      to="/terms"
+      target="_blank"
+      className="text-[#3E83C4] hover:underline font-medium"
+    >
+      Terms & Conditions
+    </Link>{" "}
+    and{" "}
+    <Link
+      to="/privacy"
+      target="_blank"
+      className="text-[#3E83C4] hover:underline font-medium"
+    >
+      Privacy Policy
+    </Link>
+  </span>
+</label>
 
             {fieldErrors.agreed && (
               <p className="text-xs text-red-500">{fieldErrors.agreed}</p>
@@ -1710,11 +1726,14 @@ if (
 
 
             <p className="text-sm text-center">
-              Already have a Fixserv account?{" "}
-              <a href="/artisan-login" className="text-[#3E83C4] hover:underline font-medium">
-                Log In
-              </a>
-            </p>
+  Already have a Fixserv account?{" "}
+  <Link
+    to="/artisan-login"
+    className="text-[#3E83C4] hover:underline font-medium"
+  >
+    Log In
+  </Link>
+</p>
 
           </form>
 

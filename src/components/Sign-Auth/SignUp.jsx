@@ -489,6 +489,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { registerUser, googleLogin } from "../../api/auth.api";
+import { Link } from "react-router-dom";
 
 const SignUp = () => {
 
@@ -1017,14 +1018,32 @@ if (
 
 
 
-            <label className="flex items-start gap-2 text-sm text-gray-600">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
-              />
-              <span>I agree to the Terms & Conditions and Privacy Policy</span>
-            </label>
+           <label className="flex items-start gap-2 text-sm text-gray-600">
+  <input
+    type="checkbox"
+    checked={agreed}
+    onChange={(e) => setAgreed(e.target.checked)}
+  />
+
+  <span>
+    I agree to the{" "}
+    <Link
+      to="/terms"
+      target="_blank"
+      className="text-[#3E83C4] hover:underline font-medium"
+    >
+      Terms & Conditions
+    </Link>{" "}
+    and{" "}
+    <Link
+      to="/privacy"
+      target="_blank"
+      className="text-[#3E83C4] hover:underline font-medium"
+    >
+      Privacy Policy
+    </Link>
+  </span>
+</label>
 
             {fieldErrors.agreed && (
               <p className="text-xs text-red-500">{fieldErrors.agreed}</p>
