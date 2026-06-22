@@ -14,7 +14,11 @@ import insta from "../../../assets/client images/client-home/referal part/insta.
 import linkedin from "../../../assets/client images/client-home/referal part/linkedin.png";
 import twitter from "../../../assets/client images/client-home/referal part/x.png";
 
-const Task = ({ referralCode }) => {
+const Task = ({
+  referralCode,
+  fixpoints = 0,
+}) => {
+
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
@@ -167,35 +171,132 @@ const Task = ({ referralCode }) => {
 
       {/* MODAL */}
       {showModal && (
-        <div className="md:hidden space-y-4">
-  {tasks.map((task, i) => (
-    <div key={i} className="border border-blue-100 rounded-xl p-4">
-      <div className="flex items-start gap-3">
-        <img src={task.icon} className="w-5 h-5 mt-0.5 shrink-0" alt="" />
+  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-5">
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-medium text-gray-800 break-words">
-              {task.title}
+    <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden">
+
+      {/* Header */}
+      <div className="px-6 py-5 border-b">
+
+        <div className="flex items-center justify-between">
+
+          <div>
+            <h2 className="text-xl font-semibold">
+              Invite Friends
+            </h2>
+
+            <p className="text-sm text-gray-500">
+              Share your referral and earn Fixpoints
             </p>
-
-            <span className="text-sm text-gray-500 shrink-0">
-              {task.points}
-            </span>
           </div>
 
           <button
-            onClick={() => handleAction(task.action)}
-            className="mt-3 bg-[#3E83C4] text-white px-4 py-2 rounded-full text-xs hover:bg-[#2A6BA0] transition cursor-pointer w-full sm:w-auto"
+            onClick={() =>
+              setShowModal(false)
+            }
+            className="text-2xl text-gray-500 cursor-pointer"
           >
-            {task.label}
+            ×
           </button>
+
         </div>
+
       </div>
+
+      {/* Body */}
+      <div className="p-6 space-y-6">
+
+        {/* Fixpoints */}
+        <div className="bg-[#EFF7FF] rounded-2xl p-5 text-center">
+
+          <p className="text-sm text-gray-500">
+            Your Fixpoints
+          </p>
+
+          <h1 className="text-4xl font-bold text-[#3E83C4] mt-2">
+            {fixpoints}
+          </h1>
+
+          <p className="text-xs text-gray-500 mt-2">
+            pts available
+          </p>
+
+        </div>
+
+        {/* Referral Code */}
+        <div>
+
+          <label className="text-sm text-gray-500">
+            Referral Code
+          </label>
+
+          <div className="mt-2 bg-gray-100 rounded-xl px-4 py-4 flex justify-between items-center gap-3">
+
+            <span className="font-medium break-all">
+              {referralCode}
+            </span>
+
+            <button
+              onClick={() =>
+                handleCopy(referralCode)
+              }
+              className="bg-[#3E83C4] text-white px-4 py-2 rounded-lg text-sm"
+            >
+              {copied
+                ? "Copied!"
+                : "Copy"}
+            </button>
+
+          </div>
+
+        </div>
+
+        {/* Referral Link */}
+        <div>
+
+          <label className="text-sm text-gray-500">
+            Share Link
+          </label>
+
+          <div className="mt-2 bg-gray-100 rounded-xl p-4">
+
+            <p className="text-sm break-all">
+              {referralLink}
+            </p>
+
+          </div>
+
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-3">
+
+          <button
+            onClick={() =>
+              handleCopy(
+                referralLink
+              )
+            }
+            className="flex-1 border border-[#3E83C4] text-[#3E83C4] py-3 rounded-xl"
+          >
+            Copy Link
+          </button>
+
+          <button
+            onClick={handleShare}
+            className="flex-1 bg-[#3E83C4] text-white py-3 rounded-xl"
+          >
+            Share
+          </button>
+
+        </div>
+
+      </div>
+
     </div>
-  ))}
-</div>
-      )}
+
+  </div>
+)}
     </>
   );
 };

@@ -278,20 +278,20 @@ const VerifyArtisan = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <select className="border border-gray-300 text-sm px-3 py-2 bg-white rounded-md">
+              {/* <select className="border border-gray-300 text-sm px-3 py-2 bg-white rounded-md">
                 <option>Sort by</option>
                 <option>Newest</option>
                 <option>Oldest</option>
-              </select>
+              </select> */}
 
-              <button className="flex items-center gap-2 border border-gray-300 px-4 py-2 text-sm rounded-md">
+              {/* <button className="flex items-center gap-2 border border-gray-300 px-4 py-2 text-sm rounded-md">
                 <img
                   src={exportImg}
                   alt="export"
                   className="w-4 h-4"
                 />
                 Export
-              </button>
+              </button> */}
             </div>
           </div>
 

@@ -552,7 +552,12 @@ useEffect(() => {
 
             {activeTab === "points" && <MyFixpointsPanel fixpoints={fixpoints} />}
             {activeTab === "board" && <LeaderBoard />}
-            {activeTab === "tasks" && <Task referralCode={referralCode} />}
+            {activeTab === "tasks" && (
+  <Task
+    referralCode={referralCode}
+    fixpoints={fixpoints}
+  />
+)}
           </div>
         </div>
       </section>

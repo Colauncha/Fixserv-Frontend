@@ -130,6 +130,17 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
     const title = String(item?.title || "").toUpperCase();
     const message = String(item?.message || "").toUpperCase();
 
+    const goHome = () => {
+  if (userRole === "ARTISAN") {
+    navigate("/artisan");
+  } else if (userRole === "CLIENT") {
+    navigate("/client");
+  } else {
+    navigate("/");
+  }
+
+  onClose?.();
+};
 
     if (userRole === "ARTISAN") {
   const paymentReleasedNotification =
@@ -161,32 +172,13 @@ const NotificationDropdown = ({ isOpen, onClose, onChanged, userRole }) => {
     return;
   }
 
-  navigate("/artisan/dashboard");
+  navigate("/artisan");
   onClose?.();
   return;
+
+  goHome();
+  return;
 }
-
-    // if (userRole === "ARTISAN") {
-    //   if (
-    //     orderId &&
-    //     (type.includes("ORDER") ||
-    //       type.includes("REQUEST") ||
-    //       status ||
-    //       title.includes("REQUEST") ||
-    //       message.includes("REQUEST") ||
-    //       title.includes("JOB") ||
-    //       message.includes("JOB"))
-    //   ) {
-    //     navigate("/artisan/jobs");
-    //     onClose?.();
-    //     return;
-    //   }
-
-    //   navigate("/artisan");
-    //   onClose?.();
-    //   return;
-    // }
-
     if (userRole === "CLIENT") {
       if (orderId) {
         navigate(`/client/track-repair/${orderId}`, {

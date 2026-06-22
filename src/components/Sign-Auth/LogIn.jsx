@@ -606,67 +606,38 @@ const LogIn = () => {
       /* EMAIL NOT FOUND */
 
       if (
-  msg.includes("user not found") ||
-  msg.includes("email not found") ||
-  msg.includes("account not found") ||
-  msg.includes("no user with that email") ||
-  msg.includes("email does not exist") ||
-  msg.includes("user does not exist")
-) {
-  setFieldErrors({
-    email: "No account found with this email.",
-    password: "",
-  });
-  return;
-}
-
-
-
-
-      /* INCORRECT PASSWORD */
-
-      if (
-        msg.includes("invalid credentials") ||
-        msg.includes("password incorrect") ||
-        msg.includes("incorrect password")
-      ) {
-        setFieldErrors({
-          email: "",
-          password: "Incorrect password. Please try again.",
-        });
-        return;
-      }
-
-
-
-      /* INVALID LOGIN */
-
-      if (status === 401) {
-        setError("Invalid email or password.");
-        return;
-      }
-
-
-
-      /* SERVER ERROR */
-
-      if (status >= 500) {
-        setError("Server error. Please try again later.");
-        return;
-      }
-
-      setError("Unable to log in. Please try again.");
-
+      msg.includes("user not found") ||
+      msg.includes("email not found") ||
+      msg.includes("account not found") ||
+      msg.includes("no user with that email") ||
+      msg.includes("user does not exist") ||
+      msg.includes("email does not exist") ||
+      msg.includes("email not registered")
+    ) {
+      setFieldErrors({
+        email: "No artisan account found with this email.",
+        password: "",
+      });
+      return;
     }
 
-
-    finally {
-
-      setLoading(false);
-
+    if (
+      msg.includes("invalid credentials") ||
+      msg.includes("incorrect password") ||
+      msg.includes("password incorrect")
+    ) {
+      setFieldErrors({
+        email: "",
+        password: "Incorrect password. Please try again.",
+      });
+      return;
     }
 
-  };
+    setError(err.message || "Unable to log in. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
 
 

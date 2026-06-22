@@ -91,29 +91,44 @@ const handleViewUser = (user) => {
 
 const handleSuspendUser = async (userId) => {
   try {
+    const reason = window.prompt(
+      "Enter suspension reason:"
+    );
+
+    if (!reason?.trim()) {
+      alert("Suspension reason is required");
+      return;
+    }
+
     setSuspendingUserId(userId);
 
     const token = getAuthToken();
 
     const response = await fetch(
-      `/api/user/admin/users/${userId}/suspend`,
+  `/api/user/admin/users/${userId}/suspend`,
       {
         method: "PATCH",
 
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
+
+        body: JSON.stringify({
+          reason,
+        }),
       }
     );
 
     const data = await response.json();
 
-    console.log("SUSPEND USER:", data);
+    console.log(
+      "SUSPEND RESPONSE:",
+      data
+    );
 
-    if (data.success) {
+    if (response.ok && data.success) {
 
-      // update user instantly in UI
       setUsers((prev) =>
         prev.map((user) =>
           user.id === userId
@@ -125,18 +140,133 @@ const handleSuspendUser = async (userId) => {
         )
       );
 
-      alert("User suspended successfully");
+      if (selectedUser?.id === userId) {
+  setSelectedUser((prev) => ({
+    ...prev,
+    suspended: true,
+  }));
+}``
+
+      alert(
+        "User suspended successfully"
+      );
 
     } else {
-      alert(data.message || "Failed to suspend user");
+
+      alert(
+        data.message ||
+        "Failed to suspend user"
+      );
+
     }
 
   } catch (error) {
-    console.log(error);
 
-    alert("Something went wrong");
+    console.log(
+      "SUSPEND ERROR:",
+      error
+    );
+
+    alert(
+      "Something went wrong"
+    );
+
   } finally {
+
     setSuspendingUserId(null);
+
+  }
+};
+
+const handleUnsuspendUser = async (userId) => {
+  const confirmUnsuspend =
+  window.confirm(
+    "Restore this user's account access?"
+  );
+
+if (!confirmUnsuspend) return;
+  try {
+    setSuspendingUserId(userId);
+
+    const token = getAuthToken();
+
+    console.log(
+      "UNSUSPEND URL:",
+      `/api/user/admin/users/${userId}/unsuspend`
+    );
+
+    const response = await fetch(
+      `/api/user/admin/users/${userId}/unsuspend`,
+      {
+        method: "PATCH",
+
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    let data = {};
+
+try {
+  data = await response.json();
+} catch {
+  data = {};
+}
+
+    console.log(
+      "UNSUSPEND RESPONSE:",
+      data
+    );
+
+    if (response.ok) {
+
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                suspended: false,
+              }
+            : user
+        )
+      );
+      if (selectedUser?.id === userId) {
+  setSelectedUser((prev) => ({
+    ...prev,
+    suspended: false,
+  }));
+}
+
+      alert(
+        data.message ||
+        "User unsuspended successfully"
+      );
+
+    } else {
+
+      alert(
+        data.message ||
+        "Failed to unsuspend user"
+      );
+
+    }
+
+  } catch (error) {
+
+    console.log(
+      "UNSUSPEND ERROR:",
+      error
+    );
+
+    alert(
+      "Something went wrong"
+    );
+
+  } finally {
+
+    setSuspendingUserId(null);
+
   }
 };
 
@@ -283,7 +413,7 @@ const handleSuspendUser = async (userId) => {
         </div>
 
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-sm text-gray-600">
+          {/* <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-sm text-gray-600">
             <img src={importImg} className="w-4" />
             Import CSV
           </button>
@@ -291,7 +421,7 @@ const handleSuspendUser = async (userId) => {
           <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-sm text-gray-600">
             <img src={exportImg} className="w-4" />
             Export CSV
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -377,11 +507,15 @@ const handleSuspendUser = async (userId) => {
 
                 <td className="px-6 py-4">
                   <span className={`px-2 py-0.5 text-xs rounded border ${
-                    item.isEmailVerified
-                      ? "border-green-300 text-green-600"
-                      : "border-red-300 text-red-600"
+                    item.suspended
+? "border-red-300 text-red-600"
+: item.isEmailVerified
+? "border-green-300 text-green-600"
+: "border-yellow-300 text-yellow-600"
                   }`}>
-                   {item.isEmailVerified
+                   {item.suspended
+  ? "Suspended"
+  : item.isEmailVerified
   ? "Active"
   : "Unverified"}
                   </span>
@@ -407,20 +541,25 @@ const handleSuspendUser = async (userId) => {
                   <button
   className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition ${
     item.suspended
-      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+      ? "border border-green-200 text-green-600 hover:bg-green-50"
       : "border border-red-200 text-red-500 hover:bg-red-50"
   }`}
-  onClick={() => handleSuspendUser(item.id)}
-  disabled={
-    suspendingUserId === item.id ||
+  onClick={() =>
     item.suspended
+      ? handleUnsuspendUser(item.id)
+      : handleSuspendUser(item.id)
+  }
+  disabled={
+    suspendingUserId === item.id
   }
 >
                     <img src={suspend} className="w-4" />
                     {suspendingUserId === item.id
-  ? "Suspending..."
+  ? item.suspended
+    ? "Unsuspending..."
+    : "Suspending..."
   : item.suspended
-  ? "Suspended"
+  ? "Unsuspend"
   : "Suspend"}
                   </button>
                 </td>

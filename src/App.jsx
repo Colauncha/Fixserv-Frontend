@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 
 import {
   Route,
+  Navigate,
   createBrowserRouter,
   createRoutesFromElements,
   RouterProvider,
@@ -188,8 +189,10 @@ const App = () => {
             <Route path="review-rating" element={<ReviewRating />} />
             <Route path="feedback" element={<FeedbackPage />} />
 
+            <Route path="*" element={<Navigate to="/client" replace />} />
+
             {/* CLIENT 404 */}
-            <Route path="*" element={<Notfound />} />
+            {/* <Route path="*" element={<Notfound />} /> */}
           </Route>
         </Route>
 
@@ -207,9 +210,10 @@ const App = () => {
             <Route path="help" element={<Help />} />
             <Route path="accept-request" element={<AcceptRequest />} />
             <Route path="accept-request/:orderId" element={<AcceptRequest />} />
+            <Route path="*" element={<Navigate to="/artisan" replace />} />
 
             {/* ARTISAN 404 */}
-            <Route path="*" element={<Notfound />} />
+            {/* <Route path="*" element={<Notfound />} /> */}
           </Route>
         </Route>
 

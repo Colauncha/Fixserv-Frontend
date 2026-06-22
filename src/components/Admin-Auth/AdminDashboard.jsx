@@ -30,6 +30,8 @@ const [announcementData, setAnnouncementData] = useState({
   userId: "",
 });
 
+const [topArtisans, setTopArtisans] = useState([]);
+
 const [announcementLoading, setAnnouncementLoading] = useState(false);
 
 const [showUsersModal, setShowUsersModal] = useState(false);
@@ -106,13 +108,21 @@ const fetchDashboardData = async () => {
       { headers }
     );
 
+    //TopArtisans
+    const topArtisansRes = await fetch(
+  "https://order-api.fixserv.co/api/orders/dashboard/top-artisans?limit=10",
+  { headers }
+);
+
     const usersData = await usersRes.json();
     const ordersData = await ordersRes.json();
     const disputesData = await disputesRes.json();
+    const topArtisansData = await topArtisansRes.json();
 
     console.log("USERS:", usersData);
     console.log("ORDERS:", ordersData);
     console.log("DISPUTES:", disputesData);
+    console.log("TOP ARTISANS:", topArtisansData);
 
 setDashboardData({
   totalUsers:
@@ -142,6 +152,10 @@ setDashboardData({
   transactionVolume:
     ordersData?.data?.revenueBreakdown?.weekly || [],
 });
+
+setTopArtisans(
+  topArtisansData?.data || []
+);
 
   } catch (error) {
     console.log("DASHBOARD ERROR:", error);
@@ -316,22 +330,12 @@ const artisans = (
   role: "ARTISAN",
 }));
 
-// MOCK CLIENTS FROM COUNTS TEMPORARILY
-// because backend is not returning actual clients array
-
-const clientCount =
-  data?.data?.totalUsers?.clients || 0;
-
-const clients = Array.from(
-  { length: clientCount },
-  (_, index) => ({
-    id: `client-${index + 1}`,
-    fullName: `Client User ${index + 1}`,
-    email: `client${index + 1}@fixserv.co`,
-    role: "CLIENT",
-    createdAt: new Date().toISOString(),
-  })
-);
+const clients = (
+  data?.data?.activeClients?.clients || []
+).map((user) => ({
+  ...user,
+  role: "CLIENT",
+}));
 
 const adminsCount =
   data?.data?.totalUsers?.admins || 0;
@@ -363,8 +367,9 @@ if (type === "USERS") {
   setUsersList(clients);
 
 } else if (type === "SIGNUPS") {
-  setUsersList(allUsers);
-
+  setUsersList(
+    data?.data?.newSignups?.users || []
+  );
 } else {
   setUsersList([]);
 }
@@ -753,10 +758,10 @@ return (
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 border border-gray-300 text-sm px-4 py-2 rounded-md cursor-pointer hover:bg-gray-50">
+              {/* <button className="flex items-center gap-2 border border-gray-300 text-sm px-4 py-2 rounded-md cursor-pointer hover:bg-gray-50">
                 <img src={exportImg} className="w-4 h-4" />
                 Export CSV
-              </button>
+              </button> */}
 
               <button
   onClick={() => setShowAnnouncementModal(true)}
@@ -969,13 +974,7 @@ return (
         </div>
 
         {/* Rows */}
-        {[
-          { name: "Sarah Moses", role: "Pottery", amount: "₦12,450", rating: "4.9" },
-          { name: "Marcus Ike", role: "Woodwork", amount: "₦10,230", rating: "4.8" },
-          { name: "Amara Okafor", role: "Textiles", amount: "₦9,870", rating: "4.7" },
-          { name: "Elena Udoh", role: "Jewelry", amount: "₦8,650", rating: "4.6" },
-          { name: "Biliki Kareem", role: "Ceramics", amount: "₦7,920", rating: "3.9" },
-        ].map((item, i) => (
+        {topArtisans.map((item, i) => (
           <div
             key={i}
             className="flex items-center justify-between px-6 py-4 border-b border-gray-200 last:border-b-0"
@@ -987,21 +986,22 @@ return (
 
               <div>
                 <p className="text-sm font-medium text-gray-900">
-                  {item.name}
+                  {item.fullName}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {item.role}
+                  {item.services?.[0]?.name || "No Service"}
                 </p>
               </div>
             </div>
 
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">
-                {item.amount}
+                ₦{Number(item.totalSales || 0).toLocaleString()}
               </p>
               <p className="text-xs text-gray-400">
-                ★ {item.rating}
-              </p>
+  ★ {item.rating || 0} • {item.totalOrders} Orders
+</p>
+              
             </div>
           </div>
         ))}

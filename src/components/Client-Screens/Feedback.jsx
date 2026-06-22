@@ -7,7 +7,10 @@ import bg from "../../assets/client images/client-home/referal part/referalbg.pn
 import overlayOne from "../../assets/client images/client-home/referal part/referalbgoverlayone.png";
 import overlayTwo from "../../assets/client images/client-home/referal part/referalbgoverlaytwo.png";
 
-const GENERAL_API = import.meta.env.VITE_GENERAL_API_BASE_URL;
+const GENERAL_API =
+import.meta.env.VITE_USER_API_BASE_URL;
+
+console.log("GENERAL_API:", GENERAL_API);
 
 const FeedbackPage = () => {
   const navigate = useNavigate();
@@ -17,6 +20,9 @@ const FeedbackPage = () => {
   const [message, setMessage] = useState("");
   const [rating, setRating] = useState(0);
   const [sending, setSending] = useState(false);
+
+  const [success, setSuccess] =
+useState(false);
 
   const categories = [
     "General",
@@ -28,37 +34,73 @@ const FeedbackPage = () => {
  
   const handleSubmit = async () => {
     if (!message.trim()) {
-      alert("Please enter your feedback");
-      return;
-    }
+  alert("Please enter your feedback");
+  return;
+}
+
+if (!rating) {
+  alert("Please select a rating");
+  return;
+}
+
+if (message.trim().length < 10) {
+  alert("Feedback must be at least 10 characters");
+  return;
+}
 
     try {
       setSending(true);
 
-      const res = await fetch(`${GENERAL_API}/feedback`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userId: user?.id,
-          category,
-          message,
-          rating,
-        }),
-      });
+     console.log(
+"Submitting to:",
+`${GENERAL_API}/feedback`
+);
 
-      const data = await res.json();
+      const res = await fetch(
+`${GENERAL_API}/feedback`,
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+Authorization:`Bearer ${token}`,
+},
+body:JSON.stringify({
+category,
+message,
+rating,
+}),
+}
+);
+
+console.log(
+res.status,
+await res.clone().text()
+);
+
+      let data={};
+
+try{
+data=
+await res.json();
+}
+catch{
+data={};
+}
 
       if (!res.ok) {
         throw new Error(data?.message || "Failed to submit feedback");
       }
 
-      alert("Feedback submitted successfully 🎉");
-      setMessage("");
-      setRating(0);
-      setCategory("General");
+      alert("Feedback submitted successfully ");
+      setSuccess(true);
+
+setMessage("");
+setRating(0);
+setCategory("General");
+
+setTimeout(() => {
+setSuccess(false);
+}, 3000);
     } catch (err) {
       console.log(err);
       alert(err.message || "Something went wrong");
@@ -70,15 +112,15 @@ const FeedbackPage = () => {
   return (
     <div className="w-full bg-white">
       {/* HERO */}
-      <section className="relative w-full min-h-[260px] bg-[#254B71] overflow-hidden">
+      <section className="relative w-full min-h-[280px] sm:h-[300px] bg-[#254B71] overflow-hidden">
         <img src={bg} className="absolute inset-0 w-full h-full object-cover" />
         <img src={overlayOne} className="absolute inset-0 w-full h-full object-cover" />
         <img src={overlayTwo} className="absolute inset-0 w-full h-full object-cover" />
 
-        <div className="relative z-10 h-full flex flex-col justify-center items-center text-white text-center px-4 pt-16 pb-10">
+        <div className="max-w-7xl mx-auto relative z-10 h-full flex flex-col justify-center items-center text-white text-center px-4 pt-14 pb-10">
           <button
             onClick={() => navigate(-1)}
-            className="absolute top-8 left-4 text-sm"
+            className="absolute top-14 left-4 text-sm cursor-pointer"
           >
             ← Back
           </button>
@@ -93,11 +135,27 @@ const FeedbackPage = () => {
       </section>
 
       {/* FORM CARD */}
-      <section className="relative -mt-10 pb-16">
+      <section className="relative -mt-12 pb-16">
         <div className="max-w-3xl mx-auto px-4">
           <div className="bg-[#EFF7FF] p-6 sm:p-8 rounded-2xl shadow-xl">
             <div className="bg-white rounded-xl p-6 sm:p-8 space-y-6">
-              
+              {success && (
+
+<div
+className="
+bg-green-100
+text-green-700
+rounded-lg
+px-4
+py-3
+"
+>
+
+Feedback submitted successfully 🎉
+
+</div>
+
+)}
               {/* CATEGORY */}
               <div>
                 <label className="text-sm text-gray-600 mb-2 block">
@@ -133,28 +191,66 @@ const FeedbackPage = () => {
                 <label className="text-sm text-gray-600 mb-2 block">
                   Rate your experience
                 </label>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => setRating(num)}
-                      className={`w-10 h-10 rounded-full border flex items-center justify-center cursor-pointer ${
-                        rating >= num
-                          ? "bg-[#3E83C4] text-white border-[#3E83C4]"
-                          : "bg-white text-gray-400"
-                      }`}
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
+                <div className="flex gap-3">
+
+{[1,2,3,4,5].map((num)=>(
+
+<button
+type="button"
+key={num}
+onClick={() =>
+setRating(num)
+}
+className={`
+w-12
+h-12
+rounded-full
+transition
+
+${
+rating >= num
+? "bg-[#3E83C4] text-white"
+: "bg-gray-100"
+}
+`}
+>
+
+★
+
+</button>
+
+))}
+
+</div>
+
+<p className="text-sm text-gray-500 mt-2">
+
+{
+rating
+? `${rating}/5 selected`
+: "Select rating"
+}
+
+</p>
               </div>
 
               {/* SUBMIT */}
               <button
                 onClick={handleSubmit}
-                disabled={sending}
-                className="w-full bg-[#3E83C4] text-white py-3 rounded-lg text-sm sm:text-base cursor-pointer disabled:opacity-60"
+                disabled={
+sending ||
+!message.trim() ||
+!rating
+}
+                className="
+w-full
+bg-[#3E83C4]
+text-white
+py-3
+rounded-lg
+disabled:opacity-50
+disabled:cursor-not-allowed
+"
               >
                 {sending ? "Submitting..." : "Submit Feedback"}
               </button>
