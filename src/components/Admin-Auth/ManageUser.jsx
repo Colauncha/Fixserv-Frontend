@@ -51,7 +51,8 @@ if (!token) {
         : "ARTISAN";
 
     let endpoint =
-      `/api/user/admin/dashboard/manage-users?page=${page}&limit=${limit}&role=${role}`;
+    // https://user-api.fixserv.co/api/admin/dashboard/manage-users
+      `/api/admin/dashboard/manage-users?page=${page}&limit=${limit}&role=${role}`;
 
     if (search.trim()) {
       endpoint += `&search=${search}`;
@@ -105,7 +106,7 @@ const handleSuspendUser = async (userId) => {
     const token = getAuthToken();
 
     const response = await fetch(
-  `/api/user/admin/users/${userId}/suspend`,
+  `/api/admin/users/${userId}/suspend`,
       {
         method: "PATCH",
 
@@ -192,11 +193,11 @@ if (!confirmUnsuspend) return;
 
     console.log(
       "UNSUSPEND URL:",
-      `/api/user/admin/users/${userId}/unsuspend`
+      `/api/admin/users/${userId}/unsuspend`
     );
 
     const response = await fetch(
-      `/api/user/admin/users/${userId}/unsuspend`,
+      `/api/admin/users/${userId}/unsuspend`,
       {
         method: "PATCH",
 
