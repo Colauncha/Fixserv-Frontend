@@ -44,8 +44,82 @@ const [usersLoading, setUsersLoading] = useState(false);
 
 const [selectedUser, setSelectedUser] = useState(null);
 
+const [recentActivities, setRecentActivities] = useState([]);
+const [activityLoading, setActivityLoading] = useState(false);
+
+const fetchRecentActivities = async () => {
+  try {
+    setActivityLoading(true);
+
+    const token = getAuthToken();
+
+    const response = await fetch(
+      "https://activity-api.fixserv.co/api/activity/all",
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("RECENT ACTIVITIES:", data);
+
+    const fetchRecentActivities = async () => {
+  try {
+    setActivityLoading(true);
+
+    const token = getAuthToken();
+
+    const response = await fetch(
+      "https://activity-api.fixserv.co/api/activity/all",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("ACTIVITY RESPONSE:", data);
+
+    const activities =
+      data?.data?.activities ||
+      data?.data ||
+      data?.activities ||
+      [];
+
+    setRecentActivities(
+      Array.isArray(activities)
+        ? activities
+        : []
+    );
+
+  } catch (error) {
+    console.log(error);
+
+    setRecentActivities([]);
+
+  } finally {
+    setActivityLoading(false);
+  }
+};
+
+  } catch (error) {
+    console.log("ACTIVITY ERROR:", error);
+
+  } finally {
+    setActivityLoading(false);
+  }
+};
+
 useEffect(() => {
   fetchDashboardData();
+  fetchRecentActivities();
 }, []);
 
 useEffect(() => {
@@ -65,6 +139,42 @@ useEffect(() => {
   };
 
 }, []);
+
+const formatAction = (action) =>
+  action
+    ?.replaceAll("_", " ")
+    ?.toLowerCase()
+    ?.replace(/\b\w/g, l => l.toUpperCase());
+
+    const getActivityName = (item) => {
+return (
+item?.user?.fullName ||
+item?.actor?.fullName ||
+item?.performedBy?.fullName ||
+item?.fullName ||
+"System"
+);
+};
+
+const getRelativeTime = (date) => {
+if (!date) return "";
+
+const diff = Math.floor(
+(Date.now() - new Date(date)) / 60000
+);
+
+if (diff < 1) return "Just now";
+
+if (diff < 60)
+return `${diff} min ago`;
+
+if (diff < 1440)
+return `${Math.floor(diff / 60)} hr ago`;
+
+return new Date(date)
+.toLocaleDateString();
+};
+
 
 const getBarHeight = (value) => {
   const maxHeight = 180;
@@ -281,33 +391,33 @@ switch (type) {
   case "USERS":
 
     endpoint =
-      "/api/user/admin/dashboard/users?period=month&page=1&limit=20";
+      "/api/admin/dashboard/users?period=month&page=1&limit=20";
 
     break;
 
   case "ARTISANS":
 
     endpoint =
-      "/api/user/admin/dashboard/users?period=month&page=1&limit=20";
+      "/api/admin/dashboard/users?period=month&page=1&limit=20";
 
     break;
 
     case "CLIENTS":
   endpoint =
-    "/api/user/admin/dashboard/users?period=month&page=1&limit=20";
+    "/api/admin/dashboard/users?period=month&page=1&limit=20";
   break;
 
   case "SIGNUPS":
 
     endpoint =
-      "/api/user/admin/dashboard/users?period=month&page=1&limit=20";
+      "/api/admin/dashboard/users?period=month&page=1&limit=20";
 
     break;
 
   default:
 
     endpoint =
-      "/api/user/admin/dashboard/users?period=month&page=1&limit=20";
+      "/api/admin/dashboard/users?period=month&page=1&limit=20";
 }
 
 const response = await fetch(endpoint, {
@@ -964,7 +1074,7 @@ return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
       {/* LEFT: Top 10 Artisans */}
-      <div className="lg:col-span-2 bg-white border border-gray-200">
+      <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl">
 
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200">
@@ -1008,7 +1118,7 @@ return (
       </div>
 
       {/* RIGHT: Recent Activity */}
-      <div className="bg-white border border-gray-200">
+      <div className="bg-white border border-gray-200 rounded-xl">
 
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200">
@@ -1018,36 +1128,63 @@ return (
         </div>
 
         {/* Rows */}
-        {[
-          { name: "John Doe", action: "Purchased handmade vase", time: "2 min ago", amount: "₦85,000" },
-          { name: "Jane Smith", action: "Left 5-star review", time: "5 min ago" },
-          { name: "Mike Johnson", action: "New artisan signup", time: "12 min ago" },
-          { name: "Emily Brown", action: "Dispute opened", time: "18 min ago", amount: "₦60,000" },
-          { name: "David James", action: "Purchased custom furniture", time: "25 min ago", amount: "₦60,000" },
-        ].map((item, i) => (
-          <div
-            key={i}
-            className="flex justify-between px-6 py-4 border-b border-gray-200 last:border-b-0"
-          >
-            <div>
-              <p className="text-sm font-medium text-gray-900">
-                {item.name}
-              </p>
-              <p className="text-xs text-gray-500">
-                {item.action}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                {item.time}
-              </p>
-            </div>
+        {activityLoading ? (
 
-            {item.amount && (
-              <p className="text-sm font-medium text-gray-900">
-                {item.amount}
-              </p>
-            )}
-          </div>
-        ))}
+  <div className="px-6 py-10 text-center text-gray-500">
+    Loading activities...
+  </div>
+
+) : recentActivities.length === 0 ? (
+
+  <div className="px-6 py-10 text-center text-gray-500">
+    No activity found
+  </div>
+
+) : (
+
+  recentActivities
+    .slice(0, 8)
+    .map((item, i) => (
+
+      <div
+        key={
+ item.id ||
+ item.activityId ||
+ i
+}
+        className="flex justify-between px-6 py-4 border-b border-gray-200"
+      >
+
+        <div>
+
+          <p className="text-sm font-medium text-gray-900">
+            {getActivityName(item)}
+          </p>
+
+          <p className="text-xs text-gray-500">
+            {formatAction(item.action)}
+          </p>
+
+          <p className="text-xs text-gray-400 mt-1">
+            {
+              item.createdAt
+                ? getRelativeTime(item.createdAt)
+                : ""
+            }
+          </p>
+
+        </div>
+
+        {item.amount && (
+          <p className="text-sm font-medium text-gray-900">
+            ₦{Number(item.amount).toLocaleString()}
+          </p>
+        )}
+
+      </div>
+
+))
+)}
       </div>
 
     </div>
