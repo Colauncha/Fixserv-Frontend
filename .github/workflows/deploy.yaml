@@ -82,4 +82,4 @@ jobs:
 
             # Optional: keep only last 5 releases
             cd $RELEASES_DIR
-            sudo ls -dt */ | tail -n +6 | xargs -r rm -rf
+            ls -dt */ | tail -n +6 | sudo xargs -r rm -rf
