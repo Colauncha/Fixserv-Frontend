@@ -420,7 +420,9 @@ switch (type) {
       "/api/admin/dashboard/users?period=month&page=1&limit=20";
 }
 
-const response = await fetch(endpoint, {
+const BASE_URL = 'https://user-api.fixserv.co'
+
+const response = await fetch(`${BASE_URL}${endpoint}`, {
   headers,
 });
 
