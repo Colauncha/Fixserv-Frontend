@@ -56,7 +56,7 @@ const Dashboard = ({ onClose }) => {
   return (
     <div className="flex flex-col items-center gap-6">
 
-      <div className="bg-[#F6FBFF] border border-[#3e83c4] rounded-xl p-5 w-[320px]">
+      <div className="bg-[#F6FBFF] border border-[#3e83c4] rounded-xl p-5 w-full max-w-[320px]">
         <div className="flex items-center gap-2 mb-4">
           <img src={walletIcon} alt="" className="w-5 h-5" />
           <h3 className="font-semibold text-sm text-black">Wallet</h3>
@@ -96,7 +96,7 @@ const Dashboard = ({ onClose }) => {
       </div>
 
       
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
 
         
         <div
@@ -105,11 +105,42 @@ const Dashboard = ({ onClose }) => {
         />
 
       
-        <div className="relative w-[520px] bg-white rounded-2xl shadow-xl p-6 z-10 animate-fadeIn">
+        <div
+  className="
+    relative
+    w-[95%]
+    max-w-[520px]
+    max-h-[90vh]
+    overflow-y-auto
+    bg-white
+    rounded-2xl
+    shadow-xl
+    p-4
+    sm:p-5
+    md:p-6
+    z-10
+    animate-fadeIn
+  "
+>
 
           
           <div
-            className="relative rounded-xl p-8 h-[210px] flex items-center mb-6 bg-cover bg-center border border-[#3E83C4]"
+  className="
+    relative
+    rounded-xl
+    border
+    border-[#3E83C4]
+    bg-cover
+    bg-center
+    p-5
+    sm:p-6
+    md:p-8
+    min-h-[180px]
+    sm:min-h-[210px]
+    flex
+    items-center
+    mb-6
+  "
             style={{ backgroundImage: `url(${referBg})` }}
           >
 
@@ -126,11 +157,11 @@ const Dashboard = ({ onClose }) => {
                 Earn 150+ fixpoints
               </p>
 
-              <h3 className="text-xl font-semibold text-gray-900">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">
                 Share & Earn Fixpoints
               </h3>
 
-              <p className="text-sm text-gray-600 max-w-[300px] mt-2">
+              <p className="text-xs sm:text-sm text-gray-600 max-w-full sm:max-w-[300px] mt-2">
                 Invite your friends to join Fixserv and earn 150 Fixpoints for each successful referral.
               </p>
 
@@ -159,25 +190,45 @@ const Dashboard = ({ onClose }) => {
 
           <p className="text-sm mb-2">Your referral code:</p>
 
-          <div className="flex mb-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 mb-4">
             <input
-              value={user?.referralCode || ""}
-              readOnly
-              className="flex-1 bg-gray-100 px-4 py-2 rounded-l-md text-sm"
-            />
+  value={user?.referralCode || ""}
+  readOnly
+  className="
+    flex-1
+    bg-gray-100
+    px-4
+    py-3
+    sm:py-2
+    rounded-md
+    sm:rounded-l-md
+    sm:rounded-r-none
+    text-sm
+  "
+/>
             <button
-              onClick={() => {
-                if (!user?.referralCode) return;
-                navigator.clipboard.writeText(user.referralCode);
-                alert("Referral code copied!");
-              }}
-              className="bg-blue-500 text-white px-5 rounded-r-md text-sm"
-            >
-              Copy Code
-            </button>
+  onClick={() => {
+    if (!user?.referralCode) return;
+    navigator.clipboard.writeText(user.referralCode);
+    alert("Referral code copied!");
+  }}
+  className="
+    bg-blue-500
+    text-white
+    px-5
+    py-3
+    sm:py-2
+    rounded-md
+    sm:rounded-l-none
+    sm:rounded-r-md
+    text-sm
+  "
+>
+  Copy Code
+</button>
           </div>
 
-          <div className="flex items-center gap-4 justify-center">
+          <div className="flex flex-wrap justify-center gap-5">
             <img src={fb} className="w-6 cursor-pointer" />
             <img src={insta} className="w-6 cursor-pointer" />
             <img src={linkedin} className="w-6 cursor-pointer" />

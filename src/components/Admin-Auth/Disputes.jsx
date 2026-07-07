@@ -45,8 +45,10 @@ const handleResolveDispute = async () => {
 
     const token = getAuthToken();
 
+    const BASE_URL = 'https://order-api.fixserv.co'
+
     const response = await fetch(
-      `/api/orders/${selectedDispute.orderId}/resolve-dispute`,
+      `${BASE_URL}/api/orders/${selectedDispute.orderId}/resolve-dispute`,
       {
         method: "PATCH",
 
@@ -98,10 +100,12 @@ const fetchDisputes = async () => {
 
   try {
 
+    const BASE_URL = 'https://order-api.fixserv.co'
+
     const token = getAuthToken();
 
     const response = await fetch(
-      "/api/orders/dashboard/disputes",
+      `${BASE_URL}/api/orders/dashboard/disputes`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

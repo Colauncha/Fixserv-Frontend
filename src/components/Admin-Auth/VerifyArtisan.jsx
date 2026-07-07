@@ -15,8 +15,10 @@ const VerifyArtisan = () => {
 
       const token = getAuthToken();
 
+      const BASE_URL = 'https://user-api.fixserv.co'
+
       const response = await fetch(
-  "/api/certificate/admin/certificates/pending",
+  `${BASE_URL}/api/certificate/admin/certificates/pending`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -64,8 +66,10 @@ const VerifyArtisan = () => {
         payload.rejectionReason = reason;
       }
 
+      const BASE_URL = 'https://user-api.fixserv.co'
+
       const response = await fetch(
-  `/api/certificate/admin/artisan/${artisanId}/certificates/${certificateId}/review`,
+  `${BASE_URL}/api/certificate/admin/artisan/${artisanId}/certificates/${certificateId}/review`,
   {
     method: "PATCH",
     headers: {

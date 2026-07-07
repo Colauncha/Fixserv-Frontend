@@ -50,6 +50,8 @@ if (!token) {
         ? "CLIENT"
         : "ARTISAN";
 
+    const BASE_URL = 'https://user-api.fixserv.co'
+
     let endpoint =
     // https://user-api.fixserv.co/api/admin/dashboard/manage-users
       `/api/admin/dashboard/manage-users?page=${page}&limit=${limit}&role=${role}`;
@@ -58,7 +60,7 @@ if (!token) {
       endpoint += `&search=${search}`;
     }
 
-    const response = await fetch(endpoint, {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

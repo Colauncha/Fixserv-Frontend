@@ -54,6 +54,8 @@ const fetchTransactions = async () => {
 
     const token = getAuthToken();
 
+    const BASE_URL = 'https://wallet-api.fixserv.co'
+
     let endpoint =
       `/api/wallet/admin/monitor-transactions?page=${page}&limit=${limit}`;
 
@@ -73,7 +75,7 @@ const fetchTransactions = async () => {
       endpoint += `&endDate=${endDate}`;
     }
 
-    const response = await fetch(endpoint, {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -111,9 +113,11 @@ const handleRefund = async (transaction) => {
 
     const token = getAuthToken();
 
+    const BASE_URL = 'https://wallet-api.fixserv.co'
+
     const response = await fetch(
-      `/api/wallet/admin/refund/${transaction.reference}`,
-      {
+      `${BASE_URL}/api/wallet/admin/refund/${transaction.reference}`,
+      { 
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
