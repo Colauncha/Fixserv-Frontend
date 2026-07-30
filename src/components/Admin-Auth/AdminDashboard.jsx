@@ -496,22 +496,29 @@ if (type === "USERS") {
 return (
   <>
     {showAnnouncementModal && (
-      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+   
 
-        <div className="bg-white w-full max-w-md rounded-2xl p-6">
+<div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
 
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold">
-              Create Announcement
-            </h2>
+
+<div className="bg-white w-full max-w-lg rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
+
+    {/* Header */}
+    <div className="flex justify-between items-center p-6 border-b shrink-0">
+      <h2 className="text-lg font-semibold">
+        Create Announcement
+      </h2>
 
             <button
-              onClick={() => setShowAnnouncementModal(false)}
-              className="text-gray-500 text-xl cursor-pointer"
-            >
-              ×
-            </button>
-          </div>
+        onClick={() => setShowUsersModal(false)}
+        className="text-2xl text-gray-500 hover:text-black"
+      >
+        ×
+      </button>
+    </div>
+
+       {/* Scrollable body */}
+    <div className="flex-1 overflow-y-auto p-6">
 
           {/* TITLE */}
           <div className="mb-4">
@@ -613,7 +620,7 @@ return (
 >
   {announcementLoading ? "Sending..." : "Send Announcement"}
 </button>
-
+</div>
         </div>
       </div>
     )}
@@ -625,8 +632,8 @@ return (
 >
 
 <div
-  onClick={(e) => e.stopPropagation()}
-  className="bg-white w-full max-w-6xl rounded-2xl overflow-hidden"
+    onClick={(e) => e.stopPropagation()}
+    className="bg-white w-full max-w-6xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col"
 >
 
       {/* HEADER */}
@@ -643,15 +650,15 @@ return (
         </div>
 
         <button
-          onClick={() => setShowUsersModal(false)}
-          className="text-2xl text-gray-500 cursor-pointer"
-        >
-          ×
-        </button>
+        onClick={() => setShowAnnouncementModal(false)}
+        className="text-2xl text-gray-500 hover:text-black"
+      >
+        ×
+      </button>
       </div>
 
       {/* BODY */}
-      <div className="p-6">
+      <div className="flex-1 overflow-y-auto p-6">
 
         {usersLoading ? (
           <div className="py-20 text-center text-gray-500">

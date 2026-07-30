@@ -193,12 +193,22 @@ const serviceCost = useMemo(() => {
 
 
 
-  const platformFee = 1000;
+  const platformFee = 0;
 
   const totalFee =
     serviceCost != null
       ? Number(serviceCost) + Number(platformFee)
       : null;
+
+//   const platformFee =
+//   serviceCost != null
+//     ? Number((Number(serviceCost) * 0.05).toFixed(2))
+//     : null;
+
+// const totalFee =
+//   serviceCost != null
+//     ? Number(serviceCost) + platformFee
+//     : null;
 
 const handleWalletPayment = async () => {
   if (submitLockRef.current || isSubmitting) return;
@@ -426,28 +436,45 @@ useEffect(() => {
                 </p>
 
                 <div className="pt-6 space-y-2">
-                  <p>
-                    <span className="text-[#656565]">Service Cost:</span>{" "}
+                  <p className="font-semibold text-blue-600">
+                    <span className=" font-semibold text-blue-600">Service Cost:</span>{" "}
                     {loadingServices
                       ? "Loading..."
                       : serviceCost == null
                       ? "To be confirmed"
                       : formatNaira(serviceCost)}
                   </p>
-                  <p>
+                  {/* <p>
                     <span className="text-[#656565]">Platform Fee:</span>{" "}
                     {formatNaira(platformFee)}
-                  </p>
+                  </p> */}
 
-                  <p className="text-base font-semibold text-blue-600 pt-2">
+                  {/* <p className="text-base font-semibold text-blue-600 pt-2">
                     Total Fee:{" "}
   {loadingServices
     ? "Loading..."
     : totalFee == null
     ? "To be confirmed"
     : formatNaira(totalFee)}
-                  </p>
+                  </p> */}
                 </div>
+
+                {/* <div className="mt-6 rounded-xl border border-gray-200 p-4 bg-gray-50 space-y-3">
+  <div className="flex justify-between">
+    <span className="text-gray-600">Service Cost</span>
+    <span>{formatNaira(serviceCost)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span className="text-gray-600">Platform Fee (5%)</span>
+    <span>{formatNaira(platformFee)}</span>
+  </div>
+
+  <div className="border-t pt-3 flex justify-between text-lg font-semibold text-blue-600">
+    <span>Total</span>
+    <span>{formatNaira(totalFee)}</span>
+  </div>
+</div> */}
               </div>
             </div>
           </div>
