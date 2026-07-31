@@ -238,7 +238,7 @@ const BookingSummary = () => {
     artisan?.startingPrice ??
     null;
 
-  const platformFee = 1000;
+  const platformFee = 0;
 
   const totalFee =
     serviceCost != null
@@ -473,8 +473,8 @@ const BookingSummary = () => {
                 </p>
 
                 <div className="pt-6 space-y-2">
-                  <p>
-                    <span className="text-[#656565]">Service Cost:</span>{" "}
+                  <p className="font-semibold text-blue-600">
+                    <span className="">Service Cost:</span>{" "}
                     {loadingServices
                       ? "Loading..."
                       : serviceCost == null
@@ -482,19 +482,19 @@ const BookingSummary = () => {
                       : formatNaira(serviceCost)}
                   </p>
 
-                  <p>
+                  {/* <p>
                     <span className="text-[#656565]">Platform Fee:</span>{" "}
                     {formatNaira(platformFee)}
-                  </p>
+                  </p> */}
 
-                  <p className="text-base font-semibold text-blue-600 pt-2">
+                  {/* <p className="text-base font-semibold text-blue-600 pt-2">
                     Total Fee:{" "}
                     {loadingServices
                       ? "Loading..."
                       : totalFee == null
                       ? "To be confirmed"
                       : formatNaira(totalFee)}
-                  </p>
+                  </p> */}
                 </div>
               </div>
             </div>

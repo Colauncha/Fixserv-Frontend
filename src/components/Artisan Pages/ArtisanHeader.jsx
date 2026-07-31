@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { Pencil } from "lucide-react";
 
 import not from "../../assets/Artisan Images/not.png";
 import profile from "../../assets/Artisan Images/profileImg.jpg";
@@ -161,13 +162,38 @@ const ArtisanHeader = ({ title }) => {
               </span>
             )}
           </button>
+{/* 
+         <img
+  onClick={() => navigate("/artisan/profile")}
+  src={user?.profileImage || user?.profilePicture || profile}
+  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover cursor-pointer shrink-0 hover:ring-2 hover:ring-blue-500"
+  alt="profile"
+  title="Edit Profile"
+/> */}
 
-          <img
-            onClick={() => navigate("/artisan/profile")}
-            src={user?.profileImage || user?.profilePicture || profile}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover cursor-pointer shrink-0"
-            alt="profile"
-          />
+
+
+<div className="relative inline-block group">
+  <img
+    onClick={() => navigate("/artisan/profile")}
+    src={user?.profileImage || user?.profilePicture || profile}
+    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover cursor-pointer shrink-0 transition-all duration-200 group-hover:ring-2 group-hover:ring-blue-500"
+    alt="profile"
+    title="Edit Profile"
+  />
+
+  <button
+    onClick={() => navigate("/artisan/profile")}
+    className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+    aria-label="Edit profile picture"
+    title="Edit Profile"
+  >
+    <div className="bg-white/90 p-1.5 rounded-full shadow-md">
+      <Pencil className="w-4 h-4 text-gray-800" />
+    </div>
+  </button>
+</div>
+
         </div>
       </div>
 
