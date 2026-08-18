@@ -92,10 +92,11 @@
 
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Menu, X, LogOut } from "lucide-react";
 import logo from "../../assets/navbar logo/Navbar logo.png";
 import { useAuth } from "../../context/AuthContext";
+
 
 const AdminNavbar = () => {
   const navigate = useNavigate();
@@ -113,6 +114,31 @@ const AdminNavbar = () => {
     navigate("/admin-login");
     setOpen(false);
   };
+
+  const location = useLocation();
+
+const linkClass = (path) => `
+  group relative w-full text-left px-4 py-3 rounded-xl text-sm font-medium
+  transition-all duration-300 cursor-pointer
+  ${
+    isActive(path)
+  ? "bg-[#3E83C4]/10 text-[#3E83C4] font-semibold border-l-4 border-[#3E83C4] shadow-sm"
+  : "text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] hover:translate-x-1"
+  }
+`;
+
+const isActive = (path) =>
+  path === "/admin"
+    ? location.pathname === "/admin"
+    : location.pathname.startsWith(path);
+
+    const menuItems = [
+  { label: "Dashboard", path: "/admin" },
+  { label: "Verify Artisans", path: "/admin/verify-artisan" },
+  { label: "Manage Users", path: "/admin/manage-user" },
+  { label: "Transactions", path: "/admin/monitor-transaction" },
+  { label: "Disputes", path: "/admin/disputes" },
+];
 
   return (
     <>
@@ -146,41 +172,26 @@ const AdminNavbar = () => {
         <div className="pt-24 px-6 flex flex-col h-full">
           {/* Menu Links */}
           <div className="space-y-3">
-            <button
-              onClick={() => go("/admin")}
-              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] transition-all duration-200 cursor-pointer"
-            >
-              Dashboard
-            </button>
+  {menuItems.map(({ label, path }) => (
+    <button
+      key={path}
+      onClick={() => go(path)}
+      className={linkClass(path)}
+    >
+      {label}
 
-            <button
-              onClick={() => go("/admin/verify-artisan")}
-              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] transition-all duration-200 cursor-pointer"
-            >
-              Verify Artisans
-            </button>
-
-            <button
-              onClick={() => go("/admin/manage-user")}
-              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] transition-all duration-200 cursor-pointer"
-            >
-              Manage Users
-            </button>
-
-            <button
-              onClick={() => go("/admin/monitor-transaction")}
-              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] transition-all duration-200 cursor-pointer"
-            >
-              Transactions
-            </button>
-
-            <button
-              onClick={() => go("/admin/disputes")}
-              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-[#3E83C4]/10 hover:text-[#3E83C4] transition-all duration-200 cursor-pointer"
-            >
-              Disputes
-            </button>
-          </div>
+      <span
+        className={`absolute left-4 right-4 bottom-2 h-[2px]
+        bg-[#3E83C4] rounded-full origin-left transition-all duration-300
+        ${
+          isActive(path)
+            ? "scale-x-100"
+            : "scale-x-0 group-hover:scale-x-100"
+        }`}
+      />
+    </button>
+  ))}
+</div>
 
           {/* Logout Button */}
           <div className="mt-auto pb-8">

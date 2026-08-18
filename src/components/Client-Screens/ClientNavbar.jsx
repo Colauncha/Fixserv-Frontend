@@ -148,10 +148,40 @@ const ClientNavbar = () => {
           </button>
         </div>
 
-        {/* MOBILE MENU BUTTON */}
-        <button className="md:hidden" onClick={() => setOpen(!open)}>
-          {open ? <X size={28} /> : <Menu size={28} />}
-        </button>
+        {/* MOBILE RIGHT SIDE */}
+<div className="md:hidden flex items-center gap-5">
+
+  {/* NOTIFICATIONS */}
+  <button onClick={toggleNotifications} className="relative">
+    <img
+      src={profile}
+      alt="Notifications"
+      className="h-8 w-8 cursor-pointer"
+    />
+
+    {notificationCount > 0 && (
+      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1.5">
+        {notificationCount}
+      </span>
+    )}
+  </button>
+
+  {/* PROFILE */}
+  <button onClick={() => navigate("/client/profile")}>
+    <img
+      src={profileImage}
+      alt="Profile"
+      className="h-8 w-8 rounded-full object-cover cursor-pointer"
+      onError={(e) => (e.target.src = not)}
+    />
+  </button>
+
+  {/* HAMBURGER */}
+  <button onClick={() => setOpen(!open)}>
+    {open ? <X size={28} /> : <Menu size={28} />}
+  </button>
+
+</div>
       </nav>
 
       {/* NOTIFICATION DROPDOWN */}
@@ -171,14 +201,14 @@ const ClientNavbar = () => {
           <li><NavLink to="/client/request-repair" onClick={() => setOpen(false)}>CREATE REQUEST</NavLink></li>
           <li><NavLink to="/client/repair" onClick={() => setOpen(false)}>HISTORY</NavLink></li>
 
-          <div className="flex gap-8">
+          {/* <div className="flex gap-8">
 
-            {/* NOTIFICATIONS */}
+           
             <button onClick={toggleNotifications}>
               <img src={profile} alt="Notifications" className="h-8 w-8 cursor-pointer" />
             </button>
 
-            {/* PROFILE (DYNAMIC) */}
+           
             <button onClick={() => navigate("/client/profile")}>
               <img
                 src={profileImage}
@@ -188,7 +218,7 @@ const ClientNavbar = () => {
               />
             </button>
 
-          </div>
+          </div> */}
         </ul>
       </div>
     </header>

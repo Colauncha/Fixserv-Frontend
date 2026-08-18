@@ -136,107 +136,116 @@ useEffect(() => {
 
   <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
 
-    <div className="bg-white rounded-2xl w-full max-w-lg p-6">
+<div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden">
 
-      <div className="flex justify-between items-center mb-6">
+  {/* HEADER */}
+  <div className="px-6 py-5 border-b">
+    <div className="flex justify-between items-center">
 
-        <div>
-          <h2 className="text-xl font-semibold">
-            Resolve Dispute
-          </h2>
+      <div>
+        <h2 className="text-xl font-semibold">
+          Resolve Dispute
+        </h2>
 
-          <p className="text-sm text-gray-500 mt-1">
-            {selectedDispute?.id}
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowResolveModal(false)}
-          className="text-2xl text-gray-500"
-        >
-          ×
-        </button>
-
+        <p className="text-sm text-gray-500 mt-1">
+          {selectedDispute?.id}
+        </p>
       </div>
 
-      {/* RESOLUTION */}
-      <div className="mb-4">
-
-        <label className="text-sm text-gray-600 block mb-2">
-          Resolution
-        </label>
-
-        <select
-          value={resolutionData.resolution}
-          onChange={(e) =>
-            setResolutionData({
-              ...resolutionData,
-              resolution: e.target.value,
-            })
-          }
-          className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none"
-        >
-          <option value="REFUND_CLIENT">
-            Refund Client
-          </option>
-
-          <option value="RELEASE_PAYMENT">
-            Release Payment
-          </option>
-
-          <option value="PARTIAL_REFUND">
-            Partial Refund
-          </option>
-
-        </select>
-
-      </div>
-
-      {/* NOTE */}
-      <div className="mb-6">
-
-        <label className="text-sm text-gray-600 block mb-2">
-          Admin Note
-        </label>
-
-        <textarea
-          rows={5}
-          value={resolutionData.note}
-          onChange={(e) =>
-            setResolutionData({
-              ...resolutionData,
-              note: e.target.value,
-            })
-          }
-          placeholder="Explain the resolution..."
-          className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none resize-none"
-        />
-
-      </div>
-
-      {/* ACTIONS */}
-      <div className="flex justify-end gap-3">
-
-        <button
-          onClick={() => setShowResolveModal(false)}
-          className="border border-gray-300 px-4 py-2 rounded-lg"
-        >
-          Cancel
-        </button>
-
-        <button
-          onClick={handleResolveDispute}
-          disabled={resolveLoading}
-          className="bg-[#3E83C4] text-white px-5 py-2 rounded-lg disabled:opacity-50"
-        >
-          {resolveLoading
-            ? "Resolving..."
-            : "Resolve Dispute"}
-        </button>
-
-      </div>
+      <button
+        onClick={() => setShowResolveModal(false)}
+        className="text-2xl text-gray-500"
+      >
+        ×
+      </button>
 
     </div>
+  </div>
+
+
+  {/* BODY */}
+  <div className="p-6 space-y-5">
+
+    {/* Resolution */}
+    <div>
+      <label className="text-sm text-gray-600 block mb-2">
+        Resolution
+      </label>
+
+      <select
+        value={resolutionData.resolution}
+        onChange={(e) =>
+          setResolutionData({
+            ...resolutionData,
+            resolution: e.target.value,
+          })
+        }
+        className="w-full border border-gray-300 rounded-lg px-4 py-3"
+      >
+        <option value="REFUND_CLIENT">
+          Refund Client
+        </option>
+
+        <option value="RELEASE_PAYMENT">
+          Release Payment
+        </option>
+
+        <option value="PARTIAL_REFUND">
+          Partial Refund
+        </option>
+      </select>
+    </div>
+
+
+    {/* Note */}
+    <div>
+      <label className="text-sm text-gray-600 block mb-2">
+        Admin Note
+      </label>
+
+      <textarea
+        rows={5}
+        value={resolutionData.note}
+        onChange={(e) =>
+          setResolutionData({
+            ...resolutionData,
+            note: e.target.value,
+          })
+        }
+        placeholder="Explain the resolution..."
+        className="w-full border border-gray-300 rounded-lg px-4 py-3 resize-none"
+      />
+
+    </div>
+
+  </div>
+
+
+  {/* FOOTER */}
+  <div className="px-6 py-4 border-t flex flex-col sm:flex-row justify-end gap-3">
+
+    <button
+      onClick={() => setShowResolveModal(false)}
+      className="w-full sm:w-auto border border-gray-300 px-5 py-2 rounded-lg"
+    >
+      Cancel
+    </button>
+
+
+    <button
+      onClick={handleResolveDispute}
+      disabled={resolveLoading}
+      className="w-full sm:w-auto bg-[#3E83C4] text-white px-5 py-2 rounded-lg disabled:opacity-50"
+    >
+      {resolveLoading
+        ? "Resolving..."
+        : "Resolve Dispute"}
+    </button>
+
+  </div>
+
+
+</div>
 
   </div>
 )}
@@ -245,7 +254,7 @@ useEffect(() => {
         <div className="max-w-7xl mx-auto px-6">
 
           {/* Header */}
-          <div className="flex justify-between items-start mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-semibold text-black">
                 Resolve Disputes
@@ -262,7 +271,7 @@ useEffect(() => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             {[
   { label: "New", value: newCount },
   { label: "In Review", value: reviewCount },
@@ -279,10 +288,10 @@ useEffect(() => {
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <input
               placeholder="Search by transaction ID, client, or artisan..."
-              className="border border-blue-300 focus:border-blue-500 outline-none px-4 py-2 text-sm w-[380px] rounded-lg"
+              className="border border-blue-300 focus:border-blue-500 outline-none px-4 py-2 rounded-lg text-sm w-full sm:max-w-md"
             />
 
             {/* <select className="border border-gray-300 px-4 py-2 text-sm rounded-md bg-white">
@@ -291,7 +300,9 @@ useEffect(() => {
           </div>
 
           {/* Table */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden">
+         <div className="border border-gray-200 rounded-xl overflow-hidden">
+  <div className="overflow-x-auto">
+    <div className="min-w-[1200px]">
 
             {/* Header Row */}
             <div className="grid grid-cols-12 px-5 py-3 bg-gray-50 text-xs text-gray-500 font-medium border-b">
@@ -310,7 +321,7 @@ useEffect(() => {
             {disputes.map((row, i) => (
               <div
                 key={i}
-                className="grid grid-cols-12 px-5 py-4 border-b text-sm items-center"
+                className="grid grid-cols-12 px-5 py-4 border-b text-sm items-center hover:bg-[#3E83C4]/5 transition-colors duration-200"
               >
                 <div className="col-span-1">{row.disputeId || row.id}</div>
                 <div className="col-span-1">{row.transactionId || row.orderId}</div>
@@ -320,7 +331,7 @@ useEffect(() => {
                 <div className="col-span-3">{row.issue}</div>
 
                 <div className="col-span-1">
-                  <span className={`px-2 py-1 text-xs rounded-md ${
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                     row.priority === "High"
                       ? "bg-red-100 text-red-600"
                       : row.priority === "Medium"
@@ -356,8 +367,16 @@ useEffect(() => {
                  {row.sla || "N/A"}
                 </div>
 
-                <div className="col-span-2 flex justify-end gap-3">
-                  <button className="flex items-center gap-1 text-xs border border-gray-300 px-2 py-1 rounded-md">
+                <div className="col-span-2 flex justify-end items-center gap-2">
+                  <button className="
+flex items-center justify-center gap-1
+h-9 min-w-[92px]
+text-xs
+border border-gray-300
+rounded-lg
+hover:bg-gray-50
+transition
+">
                     <img src={eye} className="w-3 h-3" />
                     Review
                   </button>
@@ -368,7 +387,16 @@ useEffect(() => {
     setSelectedDispute(row);
     setShowResolveModal(true);
   }}
-  className="flex items-center gap-1 text-xs text-red-600 border border-gray-300 px-2 py-1 rounded-md"
+  className="
+flex items-center justify-center gap-1
+h-9 min-w-[100px]
+text-xs
+border border-red-200
+text-red-600
+rounded-lg
+hover:bg-red-50
+transition
+"
 >
   <img src={escalated} className="w-3 h-3" />
   Resolve
@@ -377,6 +405,8 @@ useEffect(() => {
                 </div>
               </div>
             ))}
+          </div>
+          </div>
           </div>
 
         </div>

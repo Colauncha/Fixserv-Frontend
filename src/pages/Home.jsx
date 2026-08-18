@@ -181,32 +181,31 @@ const Home = () => {
         </motion.div>
 
         <div className="w-full px-2">
-          <div className="grid md:grid-cols-2 gap-4 items-center justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <motion.div
               variants={fadeUp}
-              className="relative h-[420px] flex items-center justify-center"
+              className="relative h-[300px] md:h-[420px] flex items-center justify-center"
             >
               {getImageStack().map((item, i) => (
-                <motion.img
-                  key={`${item.title}-${i}`}
-                  src={item.image}
-                  alt={item.title}
-                  initial={false}
-                  animate={{
-                    x: i === 0 ? 0 : i === 1 ? 40 : 80,
-                    scale: i === 0 ? 1 : i === 1 ? 0.95 : 0.9,
-                    opacity: i === 0 ? 1 : i === 1 ? 0.9 : 0.8,
-                  }}
-                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  className={`
-                    absolute rounded-2xl shadow-xl
-                    ${i === 0 ? "z-30" : ""}
-                    ${i === 1 ? "z-20" : ""}
-                    ${i === 2 ? "z-10" : ""}
-                  `}
-                  style={{ width: "440px" }}
-                />
-              ))}
+  <motion.img
+    key={`${item.title}-${i}`}
+    src={item.image}
+    alt={item.title}
+    initial={false}
+    animate={{
+      x: i === 0 ? 0 : 40,
+      scale: i === 0 ? 1 : 0.95,
+      opacity: i === 0 ? 1 : 0.8,
+    }}
+    transition={{ duration: 0.6 }}
+    className={`
+      absolute w-[90%] max-w-[440px] h-auto object-contain rounded-2xl shadow-xl
+      ${i === 0 ? "z-30" : "hidden md:block"}
+      ${i === 1 ? "z-20" : ""}
+      ${i === 2 ? "z-10" : ""}
+    `}
+  />
+))}
             </motion.div>
 
             <motion.div variants={fadeUp}>

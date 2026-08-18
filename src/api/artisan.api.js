@@ -238,7 +238,6 @@ export const updateArtisanService = async (serviceId, payload) => {
   return json?.data || json?.service || json;
 };
 
-// ✅ FIXED: now properly exported
 export const deleteArtisanService = async (serviceId) => {
   const res = await fetch(`${SERVICE_BASE_URL}/${serviceId}`, {
     method: "DELETE",

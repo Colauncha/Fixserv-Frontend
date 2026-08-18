@@ -5,6 +5,7 @@ import locationIcon from "../../assets/Artisan Images/location.png";
 import adebayoImg from "../../assets/Artisan Images/profileImg.jpg";
 import badge from "../../assets/Artisan Images/badge.png";
 import { APP_ERROR_EVENT } from "../../utils/apiErrorHandler";
+import { useLocation, useNavigate } from "react-router-dom";
 
 
 import { useAuth } from "../../context/AuthContext";
@@ -185,12 +186,37 @@ const buildServiceForms = (services = []) => {
 const formatDayLabel = (day) => day.charAt(0).toUpperCase() + day.slice(1);
 
 const Profile = () => {
+
   const { setUser } = useAuth();
+
+  const location = useLocation();
 
   const [artisan, setArtisan] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [isEditing, setIsEditing] = useState(false);
+//   const [isEditing, setIsEditing] = useState(
+//   location.state?.openEdit || false
+// );
+
+const navigate = useNavigate();
+
+const [isEditing, setIsEditing] = useState(false);
+
+const shouldOpenEdit = useRef(false);
+
+useEffect(() => {
+  if (location.state?.openEdit) {
+    shouldOpenEdit.current = true;
+
+    setIsEditing(true);
+
+    navigate(location.pathname, {
+      replace: true,
+      state: null,
+    });
+  }
+}, [location.state?.openEdit, navigate, location.pathname]);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -302,6 +328,10 @@ const Profile = () => {
           closedDays: closed,
           serviceDetails: serviceForms,
         });
+
+        if (shouldOpenEdit.current) {
+  setIsEditing(true);
+}
 
         setUser(normalizedUser);
         localStorage.setItem("fixserv_user", JSON.stringify(normalizedUser));
@@ -507,13 +537,16 @@ const artisanId =
         .map((skill) => skill.trim())
         .filter(Boolean);
 
-     const strictHours = {};
+    const strictHours = {};
 
 for (const day of DAYS) {
   const isClosed = !!formData.closedDays?.[day];
 
   if (isClosed) {
-    strictHours[day] = { open: "", close: "" };
+    strictHours[day] = {
+      open: "closed",
+      close: "closed",
+    };
     continue;
   }
 
@@ -526,7 +559,10 @@ for (const day of DAYS) {
     );
   }
 
-  strictHours[day] = { open, close };
+  strictHours[day] = {
+    open,
+    close,
+  };
 }
 
 if (pendingDelete) {
@@ -1071,8 +1107,8 @@ const headerProfileImage =
             isEditing ? "bg-blue-50 p-4 sm:p-6 rounded-xl border border-blue-100" : ""
           }`}
         >
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <h3 className="font-semibold">Service details</h3>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <h3 className="font-semibold">Service Details</h3>
 
             {isEditing ? (
               <button

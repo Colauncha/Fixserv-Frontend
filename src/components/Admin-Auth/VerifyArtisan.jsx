@@ -237,62 +237,47 @@ const VerifyArtisan = () => {
             </div>
 
             {/* Actions */}
-            <div className="col-span-3 flex flex-wrap justify-center gap-2">
+            <div className="col-span-3 flex items-center justify-center gap-2">
 
-              {/* Preview */}
-              <a
-                href={certificate.fileUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1 text-xs border border-gray-300 px-3 py-2 rounded-md whitespace-nowrap hover:bg-gray-50"
-              >
-                <img
-                  src={eye}
-                  alt="preview"
-                  className="w-3 h-3"
-                />
-                Preview
-              </a>
+  {/* Preview */}
+  <a
+    href={certificate.fileUrl}
+    target="_blank"
+    rel="noreferrer"
+    className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-100 transition"
+  >
+    <img src={eye} alt="Preview" className="w-4 h-4" />
+  </a>
 
-              {/* Approve */}
-              <button
-                onClick={() =>
-                  handleReviewCertificate(
-                    artisan.artisanId,
-                    certificate.id,
-                    "APPROVED"
-                  )
-                }
-                className="flex items-center gap-1 text-xs bg-[#3E83C4] text-white px-3 py-2 rounded-md whitespace-nowrap cursor-pointer"
-              >
-                <img
-                  src={mark}
-                  alt="approve"
-                  className="w-3 h-3"
-                />
-                Approve
-              </button>
+  {/* Approve */}
+  <button
+    onClick={() =>
+      handleReviewCertificate(
+        artisan.artisanId,
+        certificate.id,
+        "APPROVED"
+      )
+    }
+    className="px-4 py-2 rounded-lg bg-[#3E83C4] hover:bg-[#3374b3] text-white text-sm font-medium transition cursor-pointer"
+  >
+    Approve
+  </button>
 
-              {/* Reject */}
-              <button
-                onClick={() =>
-                  handleReviewCertificate(
-                    artisan.artisanId,
-                    certificate.id,
-                    "REJECTED"
-                  )
-                }
-                className="flex items-center gap-1 text-xs bg-red-500 text-white px-3 py-2 rounded-md whitespace-nowrap cursor-pointer"
-              >
-                <img
-                  src={request}
-                  alt="reject"
-                  className="w-3 h-3"
-                />
-                Reject
-              </button>
+  {/* Reject */}
+  <button
+    onClick={() =>
+      handleReviewCertificate(
+        artisan.artisanId,
+        certificate.id,
+        "REJECTED"
+      )
+    }
+    className="px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-50 text-sm font-medium transition cursor-pointer"
+  >
+    Reject
+  </button>
 
-            </div>
+</div>
           </div>
         ))
       )}
