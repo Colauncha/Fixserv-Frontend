@@ -14,7 +14,49 @@ import {
   getAllArtisans,
   getArtisanServices,
 } from "../../api/artisan.api";
+
+import { getArtisanWorkStats } from "../../api/order.api";
+
 import { getAuthUser } from "../../utils/auth";
+
+const normalizeStatus = (status) => {
+  const value = String(status || "").toUpperCase();
+
+  if (["REQUESTED", "NEW", "PENDING_ARTISAN_RESPONSE"].includes(value)) {
+    return "REQUESTED";
+  }
+
+  if (["IN_PROGRESS", "STARTED", "ONGOING"].includes(value)) {
+    return "ONGOING";
+  }
+
+  if (["ACCEPTED"].includes(value)) {
+    return "PENDING";
+  }
+
+  if (
+    [
+      "DONE",
+      "COMPLETED",
+      "FINISHED",
+      "COMPLETE",
+      "WORK_COMPLETED",
+      "COMPLETED_WORK",
+    ].includes(value)
+  ) {
+    return "COMPLETED";
+  }
+
+  if (["PENDING", "WAITING"].includes(value)) {
+    return "PENDING";
+  }
+
+  if (["REJECTED", "DECLINED", "CANCELLED", "EXPIRED"].includes(value)) {
+    return "OTHER";
+  }
+
+  return "OTHER";
+};
 
 const ArtisanProfile = () => {
   const navigate = useNavigate();
@@ -26,6 +68,8 @@ const ArtisanProfile = () => {
 
   const [artisan, setArtisan] = useState(null);
   const [loadingArtisan, setLoadingArtisan] = useState(true);
+
+  const [completedRepairsCount, setCompletedRepairsCount] = useState(0);
 
   const [activeTab, setActiveTab] = useState("services");
 
@@ -41,6 +85,59 @@ const ArtisanProfile = () => {
 const marqueeTrackRef = useRef(null);
 
 const [isDraggingMarquee, setIsDraggingMarquee] = useState(false);
+
+const getArtisanReviews = async (targetArtisanId) => {
+  if (!targetArtisanId) {
+    return [];
+  }
+
+  try {
+    const token = localStorage.getItem("fixserv_token");
+
+    const response = await fetch(
+      "https://review-api.fixserv.co/api/reviews/reviews?page=1&limit=100",
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const result = await response.json();
+
+    console.log("========== REVIEWS API ==========");
+    console.log("REVIEWS STATUS:", response.status);
+    console.log("REVIEWS RESPONSE:", result);
+    console.log("TARGET ARTISAN ID:", targetArtisanId);
+    console.log("=================================");
+
+    if (!response.ok) {
+      throw new Error(
+        result?.message || "Failed to fetch artisan reviews"
+      );
+    }
+
+    const allReviews = Array.isArray(result?.data)
+      ? result.data
+      : [];
+
+    const artisanReviews = allReviews.filter(
+      (review) =>
+        String(review?.artisanId) === String(targetArtisanId)
+    );
+
+    console.log("ALL REVIEWS:", allReviews);
+    console.log("ARTISAN REVIEWS:", artisanReviews);
+    console.log("ARTISAN REVIEWS COUNT:", artisanReviews.length);
+
+    return artisanReviews;
+  } catch (error) {
+    console.error("GET ARTISAN REVIEWS ERROR:", error);
+    return [];
+  }
+};
 
 
   const cleanText = (v, fallback = "") =>
@@ -139,22 +236,22 @@ const [isDraggingMarquee, setIsDraggingMarquee] = useState(false);
   return "";
 };
 
+
+
 const normalizeArtisan = (raw, servicesFromApi = []) => {
-  const rawReviews = raw?.reviews;
+const rawReviews =
+  raw?.reviews ||
+  raw?.reviewsList ||
+  raw?.reviewsData ||
+  raw?.data?.reviews ||
+  raw?.user?.reviews ||
+  [];
 
-  const reviewsList = Array.isArray(raw?.reviewsList)
-    ? raw.reviewsList
-    : Array.isArray(raw?.reviewsData)
-    ? raw.reviewsData
-    : Array.isArray(rawReviews)
-    ? rawReviews
-    : [];
+const reviewsList = Array.isArray(rawReviews)
+  ? rawReviews
+  : [];
 
-  const reviewsCount = Number(
-    raw?.reviewsCount ||
-      (Array.isArray(rawReviews) ? rawReviews.length : rawReviews) ||
-      0
-  );
+const reviewsCount = reviewsList.length;
 
   const skills = Array.isArray(raw?.skillSet)
     ? raw.skillSet
@@ -201,37 +298,37 @@ console.log("LATEST CACHED BIO =>", latestCachedBio);
 console.log("RESOLVED ID =>", resolvedId);
 console.log("RESOLVED BIO =>", resolvedBio);
 
-  return {
-    ...raw,
-    id: resolvedId,
-    fullName: cleanText(
-      raw?.fullName,
-      cleanText(raw?.businessName, "Unnamed Artisan")
-    ),
-    businessName: cleanText(raw?.businessName, ""),
-    location: cleanText(raw?.location, "Unknown location"),
-    email: cleanText(raw?.email, ""),
-    phoneNumber: cleanText(raw?.phoneNumber || raw?.phone, ""),
-    role: cleanText(raw?.role, ""),
-    categories: Array.isArray(raw?.categories) ? raw.categories : [],
-    skills,
-    skillSet: skills,
-    rating: Number(raw?.rating || 0),
-    bio: resolvedBio,
-    services: mergedServices,
-    reviewsList,
-    reviewsCount,
-    businessHours: normalizeBusinessHours(raw?.businessHours),
-    createdAt: raw?.createdAt,
-    totalRepairs: Number(raw?.totalRepairs || raw?.jobsDone || 0),
-    profilePicture:
-      raw?.profilePicture ||
-      raw?.profileImage ||
-      raw?.avatar ||
-      raw?.photoURL ||
-      raw?.imageUrl ||
-      "",
-  };
+return {
+  ...raw,
+  id: resolvedId,
+  fullName: cleanText(
+    raw?.fullName,
+    cleanText(raw?.businessName, "Unnamed Artisan")
+  ),
+  businessName: cleanText(raw?.businessName, ""),
+  location: cleanText(raw?.location, "Unknown location"),
+  email: cleanText(raw?.email, ""),
+  phoneNumber: cleanText(raw?.phoneNumber || raw?.phone, ""),
+  role: cleanText(raw?.role, ""),
+  categories: Array.isArray(raw?.categories) ? raw.categories : [],
+  skills,
+  skillSet: skills,
+  rating: Number(raw?.rating || 0),
+  bio: resolvedBio,
+  services: mergedServices,
+  reviewsList,
+  reviewsCount,
+  businessHours: normalizeBusinessHours(raw?.businessHours),
+  createdAt: raw?.createdAt,
+
+  profilePicture:
+    raw?.profilePicture ||
+    raw?.profileImage ||
+    raw?.avatar ||
+    raw?.photoURL ||
+    raw?.imageUrl ||
+    "",
+};
 };
 
   const yearsFromCreatedAt = artisan?.createdAt
@@ -283,21 +380,53 @@ useEffect(() => {
         return;
       }
 
-      const [rawProfile, rawServices, allArtisansResponse] = await Promise.all([
-        getArtisanById(targetArtisanId).catch((err) => {
-          console.error("ARTISAN PROFILE ERROR:", err);
-          return null;
-        }),
-        getArtisanServices(targetArtisanId).catch((err) => {
-          console.error("ARTISAN SERVICES ERROR:", err);
-          setServicesError("Unable to load artisan services.");
-          return [];
-        }),
-        getAllArtisans().catch((err) => {
-          console.error("GET ALL ARTISANS ERROR:", err);
-          return [];
-        }),
-      ]);
+const [
+  rawProfile,
+  rawServices,
+  allArtisansResponse,
+  workStats,
+  artisanReviews,
+] = await Promise.all([
+  getArtisanById(targetArtisanId).catch((err) => {
+    console.error("GET ARTISAN ERROR:", err);
+    return null;
+  }),
+
+  getArtisanServices(targetArtisanId).catch((err) => {
+    console.error("ARTISAN SERVICES ERROR:", err);
+    setServicesError("Unable to load artisan services.");
+    return [];
+  }),
+
+  getAllArtisans().catch((err) => {
+    console.error("GET ALL ARTISANS ERROR:", err);
+    return [];
+  }),
+
+  getArtisanWorkStats(targetArtisanId).catch((err) => {
+    console.error("GET ARTISAN WORK STATS ERROR:", err);
+    return null;
+  }),
+
+  getArtisanReviews(targetArtisanId),
+]);
+
+const completedJobs = Number(
+  workStats?.data?.completedOrders ??
+  workStats?.completedOrders ??
+  0
+);
+
+console.log("========== ARTISAN WORK STATS ==========");
+console.log("TARGET ARTISAN ID:", targetArtisanId);
+console.log("WORK STATS:", workStats);
+console.log("WORK STATS DATA:", workStats?.data);
+console.log("COMPLETED ORDERS:", completedJobs);
+console.log("=========================================");
+
+setCompletedRepairsCount(
+  Number.isFinite(completedJobs) ? completedJobs : 0
+);
 
       const allArtisans = Array.isArray(allArtisansResponse)
         ? allArtisansResponse
@@ -324,18 +453,24 @@ useEffect(() => {
         getCachedUserBio(targetArtisanId)
       );
 
-      const mergedRaw = {
-        ...(matchedFromAllArtisans || {}),
-        ...(fallbackArtisan || {}),
-        ...(rawProfile || {}),
-        bio: resolvedBio,
-      };
+const mergedRaw = {
+  ...(matchedFromAllArtisans || {}),
+  ...(fallbackArtisan || {}),
+  ...(rawProfile || {}),
 
-      const artisanData = normalizeArtisan(mergedRaw, rawServices);
+  bio: resolvedBio,
 
-      console.log("FINAL ARTISAN DATA =>", artisanData);
+  // Reviews come from the separate reviews API
+  reviews: artisanReviews,
+  reviewsList: artisanReviews,
+  reviewsCount: artisanReviews.length,
+};
 
-      setArtisan(artisanData);
+const artisanData = normalizeArtisan(mergedRaw, rawServices);
+
+console.log("FINAL ARTISAN DATA =>", artisanData);
+
+setArtisan(artisanData);
     } catch (err) {
       console.error("ARTISAN ERROR:", err);
 
@@ -351,30 +486,6 @@ useEffect(() => {
 
   fetchArtisan();
 }, [artisanId, passedArtisan]);
-
-  useEffect(() => {
-    const fetchRecommendedArtisans = async () => {
-      try {
-        setLoadingRecommendations(true);
-
-        const users = await getAllArtisans();
-        const list = Array.isArray(users)
-          ? users
-          : Array.isArray(users?.users)
-          ? users.users
-          : [];
-
-        setRecommendedArtisans(list);
-      } catch (err) {
-        console.error("Recommendation error:", err);
-        setRecommendedArtisans([]);
-      } finally {
-        setLoadingRecommendations(false);
-      }
-    };
-
-    fetchRecommendedArtisans();
-  }, []);
 
 const apiServices = useMemo(() => {
   const rawProfileServices = Array.isArray(artisan?.services)
@@ -687,9 +798,9 @@ const handleBookRepair = () => {
             </div>
 
             <div className="text-white flex flex-col items-center md:items-end gap-4">
-              <button className="p-2 rounded-md transition cursor-pointer">
+              {/* <button className="p-2 rounded-md transition cursor-pointer">
                 <img src={share} alt="share" className="w-4 h-4" />
-              </button>
+              </button> */}
 
               <div className="flex gap-2">
                 {(artisan.categories?.length
@@ -738,9 +849,14 @@ const handleBookRepair = () => {
               </div>
 
               <div className="text-center mt-2 text-white">
-                <p className="text-2xl font-semibold">{artisan.totalRepairs ?? 0}</p>
-                <p className="text-xs opacity-90">Total Repairs</p>
-              </div>
+  <p className="text-2xl font-semibold">
+    {completedRepairsCount}
+  </p>
+
+  <p className="text-xs opacity-90">
+    Total Repairs
+  </p>
+</div>
             </div>
           </div>
         </div>
@@ -900,33 +1016,48 @@ const handleBookRepair = () => {
             )}
 
             {activeTab === "reviews" && (
-              <div className="mt-6">
-                <div className="text-sm text-gray-600">
-                  ⭐ {artisan.rating || 0} average rating from{" "}
-                  {artisan.reviewsCount || 0} reviews
-                </div>
+  <div className="mt-6">
+    <div className="text-sm text-gray-600">
+      ⭐ {Number(artisan.rating || 0).toFixed(1)} average rating from{" "}
+      {artisan.reviewsCount || 0} reviews
+    </div>
 
-                <div className="mt-4 space-y-4">
-                  {(artisan.reviewsList || []).length === 0 ? (
-                    <div className="text-sm text-gray-500">No reviews yet.</div>
-                  ) : (
-                    artisan.reviewsList.slice(0, 5).map((r, idx) => (
-                      <div
-                        key={r.id || r._id || idx}
-                        className="border rounded-lg p-4"
-                      >
-                        <p className="font-medium text-sm text-black">
-                          {r.title || r.summary || "Review"}
-                        </p>
-                        <p className="text-xs text-[#535353] mt-1">
-                          {r.comment || r.message || r.text || ""}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
+    <div className="mt-4 space-y-4">
+      {(artisan.reviewsList || []).length === 0 ? (
+        <div className="text-sm text-gray-500">
+          No reviews yet.
+        </div>
+      ) : (
+        artisan.reviewsList.slice(0, 5).map((r, idx) => (
+          <div
+            key={r?.id || r?._id || idx}
+            className="border rounded-lg p-4"
+          >
+            <p className="font-medium text-sm text-black">
+              {r?.title ||
+                r?.summary ||
+                r?.review ||
+                r?.reviewText ||
+                r?.comment ||
+                r?.message ||
+                "Review"}
+            </p>
+
+            <p className="text-xs text-[#535353] mt-1">
+              {r?.comment ||
+                r?.message ||
+                r?.text ||
+                r?.review ||
+                r?.reviewText ||
+                r?.description ||
+                ""}
+            </p>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+)}
           </div>
         </div>
       </section>

@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { ArrowLeft } from "lucide-react";
 import profileImage from "../../assets/client images/client-home/profile.png";
 import tick from "../../assets/client images/client-home/tick.png";
-import share from "../../assets/client images/client-home/share.png";
+// import share from "../../assets/client images/client-home/share.png";
 import settingImage from "../../assets/client images/client-home/setting.png";
 import battery from "../../assets/client images/client-home/battery.png";
 import flashImage from "../../assets/client images/client-home/flash.png";
@@ -15,6 +16,8 @@ import {
   getAllArtisans,
   getArtisanServices,
 } from "../../api/artisan.api";
+
+import { getArtisanWorkStats } from "../../api/order.api";
 
 const DAYS = [
   "monday",
@@ -180,6 +183,30 @@ const normalizeArtisan = (raw) => {
 };
 
 const ClientArtisanProfile = () => {
+const isCompletedJob = (job) => {
+  const status = String(
+    job?.status ||
+      job?.orderStatus ||
+      job?.jobStatus ||
+      job?.workStatus ||
+      job?.work?.status ||
+      job?.order?.status ||
+      job?.order?.orderStatus ||
+      ""
+  )
+    .trim()
+    .toUpperCase();
+
+  return [
+    "COMPLETED",
+    "COMPLETE",
+    "DONE",
+    "FINISHED",
+    "WORK_COMPLETED",
+    "COMPLETED_WORK",
+    "WORK_DONE",
+  ].includes(status);
+};
   const navigate = useNavigate();
   const location = useLocation();
   const { artisanId } = useParams();
@@ -187,8 +214,16 @@ const ClientArtisanProfile = () => {
   const passedState = location.state || {};
   const passedArtisan = passedState?.artisan || null;
 
-  const [artisan, setArtisan] = useState(null);
-  const [loadingArtisan, setLoadingArtisan] = useState(true);
+const [artisan, setArtisan] = useState(null);
+const [loadingArtisan, setLoadingArtisan] = useState(true);
+const [completedJobsCount, setCompletedJobsCount] = useState(0);
+
+const { token } = useAuth();
+
+const [artisanReviews, setArtisanReviews] = useState([]);
+const [artisanAverageRating, setArtisanAverageRating] = useState(0);
+const [artisanReviewsCount, setArtisanReviewsCount] = useState(0);
+const [loadingReviews, setLoadingReviews] = useState(false);
 
   const [activeTab, setActiveTab] = useState("services");
 
@@ -263,13 +298,14 @@ const [isDraggingMarquee, setIsDraggingMarquee] = useState(false);
           return;
         }
 
-        const [artisanRes, servicesRes] = await Promise.allSettled([
-          getArtisanById(targetArtisanId),
-          getArtisanServices(targetArtisanId),
-        ]);
+const [artisanRes, servicesRes, workStatsRes] = await Promise.allSettled([
+  getArtisanById(targetArtisanId),
+  getArtisanServices(targetArtisanId),
+  getArtisanWorkStats(targetArtisanId),
+]);
 
-        let artisanData = null;
-        let liveServices = [];
+       let artisanData = null;
+let liveServices = [];
 
         if (artisanRes.status === "fulfilled") {
           artisanData = normalizeArtisan(artisanRes.value);
@@ -285,6 +321,30 @@ const [isDraggingMarquee, setIsDraggingMarquee] = useState(false);
           setArtisanServiceList([]);
           setServicesError("Unable to load live services right now.");
         }
+
+if (workStatsRes.status === "fulfilled") {
+  const workStats = workStatsRes.value;
+
+  const completedCount = Number(
+    workStats?.data?.completedOrders ?? 0
+  );
+
+  console.log("========== ARTISAN WORK STATS ==========");
+  console.log("TARGET ARTISAN ID:", targetArtisanId);
+  console.log("WORK STATS:", workStats);
+  console.log("COMPLETED ORDERS:", completedCount);
+  console.log("=========================================");
+
+  setCompletedJobsCount(
+    Number.isFinite(completedCount) ? completedCount : 0
+  );
+} else {
+  console.error(
+    "ARTISAN WORK STATS ERROR:",
+    workStatsRes.reason
+  );
+  setCompletedJobsCount(0);
+}
 
         if (artisanData) {
           const normalizedLiveServices = liveServices
@@ -335,6 +395,137 @@ const [isDraggingMarquee, setIsDraggingMarquee] = useState(false);
 
     fetchRecommendedArtisans();
   }, []);
+
+  useEffect(() => {
+  const fetchArtisanReviews = async () => {
+    const targetArtisanId =
+      artisanId ||
+      passedArtisan?.id ||
+      passedArtisan?._id ||
+      passedArtisan?.artisanId ||
+      null;
+
+    if (!targetArtisanId || !token) {
+      return;
+    }
+
+    try {
+      setLoadingReviews(true);
+
+      console.log("========== FETCHING ARTISAN REVIEWS ==========");
+      console.log("ARTISAN ID:", targetArtisanId);
+
+      const averageResponse = await fetch(
+        `https://review-api.fixserv.co/api/reviews/artisan/${targetArtisanId}/average`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const averageData = await averageResponse.json().catch(() => null);
+
+      console.log(
+        "AVERAGE RATING STATUS =>",
+        averageResponse.status
+      );
+
+      console.log(
+        "AVERAGE RATING RESPONSE =>",
+        averageData
+      );
+
+      if (averageResponse.ok) {
+  const average = Number(
+    averageData?.data?.averageRating?.average ?? 0
+  );
+
+  const count = Number(
+    averageData?.data?.averageRating?.count ?? 0
+  );
+
+  console.log("AVERAGE RATING VALUE =>", average);
+  console.log("AVERAGE RATING COUNT =>", count);
+
+  setArtisanAverageRating(
+    Number.isFinite(average) ? average : 0
+  );
+
+
+}
+
+      
+      const reviewsResponse = await fetch(
+        "https://review-api.fixserv.co/api/reviews/reviews?page=1&limit=100",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const reviewsData = await reviewsResponse.json().catch(() => null);
+
+      console.log(
+        "REVIEWS STATUS =>",
+        reviewsResponse.status
+      );
+
+      console.log(
+        "ALL REVIEWS RESPONSE =>",
+        reviewsData
+      );
+
+      if (!reviewsResponse.ok) {
+        throw new Error(
+          reviewsData?.message || "Failed to fetch reviews"
+        );
+      }
+
+      const allReviews = Array.isArray(reviewsData?.data)
+        ? reviewsData.data
+        : [];
+
+      // 3. Keep only reviews belonging to this artisan
+      const filteredReviews = allReviews.filter(
+        (review) =>
+          String(review?.artisanId) === String(targetArtisanId)
+      );
+
+      console.log(
+  "ARTISAN REVIEWS =>",
+  JSON.stringify(filteredReviews, null, 2)
+);
+
+      console.log(
+        "ARTISAN REVIEW COUNT =>",
+        filteredReviews.length
+      );
+
+      setArtisanReviews(filteredReviews);
+      setArtisanReviewsCount(filteredReviews.length);
+
+      console.log("==============================================");
+    } catch (error) {
+      console.error(
+        "FETCH ARTISAN REVIEWS ERROR =>",
+        error
+      );
+
+      setArtisanReviews([]);
+      setArtisanReviewsCount(0);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  fetchArtisanReviews();
+}, [artisanId, passedArtisan, token]);
 
   const serviceApiMapped = useMemo(() => {
     return (Array.isArray(artisanServiceList) ? artisanServiceList : [])
@@ -446,6 +637,7 @@ const [isDraggingMarquee, setIsDraggingMarquee] = useState(false);
 useEffect(() => {
   const wrap = marqueeWrapRef.current;
   const track = marqueeTrackRef.current;
+
   if (!wrap || !track) return;
 
   let animationFrameId;
@@ -453,12 +645,14 @@ useEffect(() => {
   let isHovered = false;
   let startX = 0;
   let startScrollLeft = 0;
+
   const speed = 0.6;
 
   const getHalf = () => track.scrollWidth / 2;
 
   const normalizeLoop = () => {
     const half = getHalf();
+
     if (half <= 0) return;
 
     if (wrap.scrollLeft >= half) {
@@ -473,10 +667,9 @@ useEffect(() => {
       wrap.scrollLeft += speed;
       normalizeLoop();
     }
+
     animationFrameId = requestAnimationFrame(animate);
   };
-
-  
 
   const onDown = (x) => {
     isDragging = true;
@@ -487,7 +680,9 @@ useEffect(() => {
 
   const onMove = (x) => {
     if (!isDragging) return;
+
     const walk = x - startX;
+
     wrap.scrollLeft = startScrollLeft - walk;
     normalizeLoop();
   };
@@ -498,33 +693,82 @@ useEffect(() => {
   };
 
   // Mouse
-  wrap.addEventListener("mousedown", (e) => onDown(e.pageX));
-  window.addEventListener("mousemove", (e) => onMove(e.pageX));
-  window.addEventListener("mouseup", onUp);
+  const handleMouseDown = (e) => {
+    onDown(e.pageX);
+  };
+
+  const handleMouseMove = (e) => {
+    onMove(e.pageX);
+  };
+
+  const handleMouseUp = () => {
+    onUp();
+  };
 
   // Touch
-  wrap.addEventListener("touchstart", (e) => {
+  const handleTouchStart = (e) => {
     const t = e.touches[0];
-    if (t) onDown(t.pageX);
-  });
 
-  window.addEventListener("touchmove", (e) => {
+    if (t) {
+      onDown(t.pageX);
+    }
+  };
+
+  const handleTouchMove = (e) => {
     if (!isDragging) return;
+
     e.preventDefault();
+
     const t = e.touches[0];
-    if (t) onMove(t.pageX);
-  }, { passive: false });
 
-  window.addEventListener("touchend", onUp);
+    if (t) {
+      onMove(t.pageX);
+    }
+  };
 
-  // Hover pause
-  wrap.addEventListener("mouseenter", () => (isHovered = true));
-  wrap.addEventListener("mouseleave", () => (isHovered = false));
+  const handleTouchEnd = () => {
+    onUp();
+  };
+
+  // Hover
+  const handleMouseEnter = () => {
+    isHovered = true;
+  };
+
+  const handleMouseLeave = () => {
+    isHovered = false;
+  };
+
+  // Add listeners
+  wrap.addEventListener("mousedown", handleMouseDown);
+  window.addEventListener("mousemove", handleMouseMove);
+  window.addEventListener("mouseup", handleMouseUp);
+
+  wrap.addEventListener("touchstart", handleTouchStart);
+  window.addEventListener("touchmove", handleTouchMove, {
+    passive: false,
+  });
+  window.addEventListener("touchend", handleTouchEnd);
+
+  wrap.addEventListener("mouseenter", handleMouseEnter);
+  wrap.addEventListener("mouseleave", handleMouseLeave);
 
   animationFrameId = requestAnimationFrame(animate);
 
+  // Cleanup
   return () => {
     cancelAnimationFrame(animationFrameId);
+
+    wrap.removeEventListener("mousedown", handleMouseDown);
+    window.removeEventListener("mousemove", handleMouseMove);
+    window.removeEventListener("mouseup", handleMouseUp);
+
+    wrap.removeEventListener("touchstart", handleTouchStart);
+    window.removeEventListener("touchmove", handleTouchMove);
+    window.removeEventListener("touchend", handleTouchEnd);
+
+    wrap.removeEventListener("mouseenter", handleMouseEnter);
+    wrap.removeEventListener("mouseleave", handleMouseLeave);
   };
 }, [mappedRecommendations.length]);
 
@@ -624,64 +868,73 @@ useEffect(() => {
               </button>
             </div>
 
-            <div className="text-white flex flex-col items-center md:items-end gap-4">
-              <button className="p-2 rounded-md transition cursor-pointer">
-                <img src={share} alt="share" className="w-4 h-4" />
-              </button>
+           <div className="text-white flex flex-col items-center md:items-end gap-4">
+  {/* <button className="p-2 rounded-md transition cursor-pointer">
+    <img src={share} alt="share" className="w-4 h-4" />
+  </button> */}
 
-              <div className="flex gap-2">
-                {(artisan.categories?.length
-                  ? artisan.categories
-                  : artisan.skills?.length
-                  ? artisan.skills
-                  : ["Phone", "Tablet", "Laptop"]
-                )
-                  .slice(0, 3)
-                  .map((c, idx) => {
-                    const label =
-                      typeof c === "string"
-                        ? c
-                        : c?.name || c?.title || `Category ${idx + 1}`;
-                    return (
-                      <span
-                        key={label + idx}
-                        className="bg-[#C1DAF3] text-[#3E83C4] px-3 py-1 rounded-full text-xs"
-                      >
-                        {label}
-                      </span>
-                    );
-                  })}
-              </div>
+  <div className="flex gap-2">
+    {(artisan.categories?.length
+      ? artisan.categories
+      : artisan.skills?.length
+      ? artisan.skills
+      : ["Phone", "Tablet", "Laptop"]
+    )
+      .slice(0, 3)
+      .map((c, idx) => {
+        const label =
+          typeof c === "string"
+            ? c
+            : c?.name || c?.title || `Category ${idx + 1}`;
 
-              <div className="mt-2 flex flex-wrap gap-2 justify-end">
-                {(artisan.skills || []).slice(0, 3).map((s, idx) => {
-                  const label =
-                    typeof s === "string"
-                      ? s
-                      : s?.name || s?.title || `Skill ${idx + 1}`;
-                  return (
-                    <span
-                      key={label + idx}
-                      className="bg-white/20 text-white px-3 py-1 rounded-full text-xs"
-                    >
-                      {label}
-                    </span>
-                  );
-                })}
-              </div>
+        return (
+          <span
+            key={label + idx}
+            className="bg-[#C1DAF3] text-[#3E83C4] px-3 py-1 rounded-full text-xs"
+          >
+            {label}
+          </span>
+        );
+      })}
+  </div>
 
-              <div className="flex items-center gap-2 text-sm">
-                {renderStars(artisan.rating)}
-                <span className="text-white">
-                  {Number(artisan.rating || 0).toFixed(1)} ({artisan.reviewsCount || 0} reviews)
-                </span>
-              </div>
+  <div className="mt-2 flex flex-wrap gap-2 justify-end">
+    {(artisan.skills || []).slice(0, 3).map((s, idx) => {
+      const label =
+        typeof s === "string"
+          ? s
+          : s?.name || s?.title || `Skill ${idx + 1}`;
 
-              <div className="text-center mt-2 text-white">
-                <p className="text-2xl font-semibold">{artisan.totalRepairs ?? 0}</p>
-                <p className="text-xs opacity-90">Total Repairs</p>
-              </div>
-            </div>
+      return (
+        <span
+          key={label + idx}
+          className="bg-white/20 text-white px-3 py-1 rounded-full text-xs"
+        >
+          {label}
+        </span>
+      );
+    })}
+  </div>
+
+ <div className="flex items-center gap-2 text-sm">
+  {renderStars(artisanAverageRating)}
+
+  <span className="text-white">
+    {Number(artisanAverageRating || 0).toFixed(1)} (
+    {artisanReviewsCount} reviews)
+  </span>
+</div>
+
+  <div className="text-center mt-2 text-white">
+    <p className="text-2xl font-semibold">
+  {completedJobsCount}
+</p>
+
+    <p className="text-xs opacity-90">
+      Total Repairs
+    </p>
+  </div>
+</div>
           </div>
         </div>
       </section>
@@ -817,33 +1070,64 @@ useEffect(() => {
             )}
 
             {activeTab === "reviews" && (
-              <div className="mt-6">
-                <div className="text-sm text-gray-600">
-                  ⭐ {artisan.rating || 0} average rating from{" "}
-                  {artisan.reviewsCount || 0} reviews
-                </div>
+  <div className="mt-6">
 
-                <div className="mt-4 space-y-4">
-                  {(artisan.reviewsList || []).length === 0 ? (
-                    <div className="text-sm text-gray-500">No reviews yet.</div>
-                  ) : (
-                    artisan.reviewsList.slice(0, 5).map((r, idx) => (
-                      <div
-                        key={r.id || r._id || idx}
-                        className="border rounded-lg p-4"
-                      >
-                        <p className="font-medium text-sm text-black">
-                          {r.title || r.summary || "Review"}
-                        </p>
-                        <p className="text-xs text-[#535353] mt-1">
-                          {r.comment || r.message || r.text || ""}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+    {/* AVERAGE RATING */}
+    <div className="text-sm text-gray-600">
+      ⭐ {Number(artisanAverageRating || 0).toFixed(1)} average rating
+      from {artisanReviewsCount} reviews
+    </div>
+
+    {/* REVIEWS */}
+    <div className="mt-4 space-y-4">
+
+      {loadingReviews ? (
+        <div className="text-sm text-gray-500">
+          Loading reviews...
+        </div>
+      ) : artisanReviews.length === 0 ? (
+        <div className="text-sm text-gray-500">
+          No reviews yet.
+        </div>
+      ) : (
+        artisanReviews.slice(0, 5).map((review, idx) => (
+          <div
+            key={review.id || review._id || idx}
+            className="border rounded-lg p-4"
+          >
+
+            {/* REVIEW RATING */}
+            <div className="flex items-center gap-2 mb-2">
+              {renderStars(review.artisanRating)}
+
+              <span className="text-xs text-gray-500">
+                {Number(review.artisanRating || 0).toFixed(1)}
+              </span>
+            </div>
+
+            {/* REVIEW COMMENT */}
+            <p className="text-sm text-[#535353]">
+              {review.comment || "No comment provided."}
+            </p>
+
+            {/* REVIEW DATE */}
+            {review.date && (
+              <p className="text-xs text-gray-400 mt-2">
+                {new Date(review.date).toLocaleDateString("en-NG", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </p>
             )}
+
+          </div>
+        ))
+      )}
+
+    </div>
+  </div>
+)}
           </div>
         </div>
       </section>

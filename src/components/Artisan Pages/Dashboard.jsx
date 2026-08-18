@@ -61,6 +61,9 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const [referralCode, setReferralCode] = useState("");
+const [copiedReferralCode, setCopiedReferralCode] = useState(false);
+
   const [walletInfo, setWalletInfo] = useState({
     balance: 0,
     lockedBalance: 0,
@@ -79,7 +82,7 @@ const Dashboard = () => {
   const [fixpoints, setFixpoints] = useState(0);
   const [showReferEarn, setShowReferEarn] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
   if (!user) return;
 
   const run = async () => {
@@ -92,6 +95,9 @@ const Dashboard = () => {
         user?.walletId ||
         userId;
 
+      // =========================
+      // GET WALLET BALANCE
+      // =========================
       if (walletIdentifier) {
         const w = await getWalletBalance(walletIdentifier);
         const payload = w?.data;
@@ -99,29 +105,99 @@ const Dashboard = () => {
         if (payload?.success) {
           setWalletInfo({
             balance: Number(payload?.data?.balance || 0),
-            lockedBalance: Number(payload?.data?.lockedBalance || 0),
+            lockedBalance: Number(
+              payload?.data?.lockedBalance || 0
+            ),
           });
         }
       }
 
+      // =========================
+      // GET FIXPOINTS
+      // =========================
       if (userId) {
         const token = localStorage.getItem("fixserv_token");
 
         const res = await fetch(
           `https://wallet-api.fixserv.co/api/wallet/fixpoints/balance/${userId}`,
           {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            headers: token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : {},
           }
         );
 
         const data = await res.json();
 
         if (data?.success) {
-          setFixpoints(Number(data?.data?.points || 0));
+          setFixpoints(
+            Number(data?.data?.points || 0)
+          );
+        }
+
+        // =========================
+        // GET REFERRAL CODE
+        // =========================
+        try {
+          const referralResponse = await fetch(
+            `https://dev-wallet-api.fixserv.co/api/wallet/referral/info/${userId}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          console.log(
+            "REFERRAL STATUS:",
+            referralResponse.status
+          );
+
+          const referralData =
+            await referralResponse.json();
+
+          console.log(
+            "REFERRAL RESPONSE:",
+            referralData
+          );
+
+          if (!referralResponse.ok) {
+            console.error(
+              "Referral API failed:",
+              referralData
+            );
+          } else {
+            const code =
+              referralData?.referralCode ||
+              referralData?.data?.referralCode;
+
+            console.log(
+              "FINAL REFERRAL CODE:",
+              code
+            );
+
+            if (code) {
+              setReferralCode(String(code));
+            }
+          }
+        } catch (error) {
+          console.error(
+            "REFERRAL ERROR:",
+            error
+          );
         }
       }
 
-      const historyResponse = await getArtisanHistory();
+      // =========================
+      // GET ARTISAN JOB HISTORY
+      // =========================
+      const historyResponse =
+        await getArtisanHistory();
+
       const jobs = Array.isArray(historyResponse)
         ? historyResponse
         : Array.isArray(historyResponse?.orders)
@@ -138,18 +214,31 @@ const Dashboard = () => {
       };
 
       jobs.forEach((job) => {
-        const normalized = normalizeStatus(job?.status);
+        const normalized =
+          normalizeStatus(job?.status);
 
-        if (normalized === "COMPLETED") stats.completedJobs += 1;
-        if (normalized === "ONGOING") stats.ongoingJobs += 1;
-        if (normalized === "PENDING") stats.pendingJobs += 1;
-        if (normalized === "REQUESTED") stats.requestedJobs += 1;
-        if (normalized === "OTHER") stats.otherJobs += 1;
+        if (normalized === "COMPLETED")
+          stats.completedJobs += 1;
+
+        if (normalized === "ONGOING")
+          stats.ongoingJobs += 1;
+
+        if (normalized === "PENDING")
+          stats.pendingJobs += 1;
+
+        if (normalized === "REQUESTED")
+          stats.requestedJobs += 1;
+
+        if (normalized === "OTHER")
+          stats.otherJobs += 1;
       });
 
       setJobStats(stats);
     } catch (err) {
-      console.error("DASHBOARD ERROR:", err);
+      console.error(
+        "DASHBOARD ERROR:",
+        err
+      );
     }
   };
 
@@ -312,10 +401,16 @@ const Dashboard = () => {
                   {user?.rating || 0} ({user?.reviewsCount || 0})
                 </span>
 
-                <div className="flex items-center gap-1 bg-blue-50 text-blue-600 text-xs px-2 py-0.5 rounded-full ml-2">
+                {/* <div className="flex items-center gap-1 bg-blue-50 text-blue-600 text-xs px-2 py-0.5 rounded-full ml-2">
                   <img src={badge} className="w-3" alt="badge" />
                   Verified
-                </div>
+                </div> */}
+                {user?.isVerified && (
+  <div className="flex items-center gap-1 bg-blue-50 text-blue-600 text-xs px-2 py-0.5 rounded-full ml-2">
+    <img src={badge} className="w-3" alt="badge" />
+    Verified
+  </div>
+)}
               </div>
 
               {user?.isVerified && (
@@ -332,15 +427,67 @@ const Dashboard = () => {
                 <img src={locationBlack} className="w-4 h-4" alt="location" />
                 <span>{user?.location || "No location"}</span>
               </div>
+             {referralCode && (
+ <div className="mt-3 flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 w-fit">
+  <div>
+    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+      Your Referral Code
+    </p>
+
+    <p className="text-sm font-bold text-[#3E83C4] tracking-widest mt-1">
+      {referralCode || "Loading..."}
+    </p>
+  </div>
+
+  {referralCode && (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(
+            referralCode
+          );
+
+          setCopiedReferralCode(true);
+
+          setTimeout(() => {
+            setCopiedReferralCode(false);
+          }, 2000);
+        } catch (error) {
+          console.error(
+            "Failed to copy referral code:",
+            error
+          );
+        }
+      }}
+      className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+        copiedReferralCode
+          ? "bg-green-500 text-white"
+          : "bg-[#3E83C4] text-white hover:bg-[#106abe]"
+      }`}
+    >
+      {copiedReferralCode
+        ? "Copied!"
+        : "Copy"}
+    </button>
+  )}
+</div>
+)}
             </div>
+
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button
-              onClick={() => navigate("/artisan/profile")}
+              onClick={() => navigate("/artisan/profile", {
+  state: {
+    openEdit: true,
+  },
+})}
+              
               className="px-8 py-4 rounded-lg bg-[#3E83C4] text-white text-sm font-medium hover:bg-[#106abe] transition cursor-pointer"
             >
-              Edit Profile
+              Add Services
             </button>
           </div>
         </div>
@@ -383,11 +530,11 @@ const Dashboard = () => {
       )}
 
       {showReferEarn && (
-        <ReferEarn
-          onClose={() => setShowReferEarn(false)}
-          referralCode={user?.referralCode || user?.refCode || ""}
-        />
-      )}
+  <ReferEarn
+    onClose={() => setShowReferEarn(false)}
+    referralCode={referralCode}
+  />
+)}
     </div>
   );
 };

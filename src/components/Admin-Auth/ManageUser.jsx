@@ -284,7 +284,7 @@ try {
 {showViewModal && selectedUser && (
   <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
 
-    <div className="bg-white w-full max-w-lg rounded-2xl overflow-hidden">
+    <div className="bg-white w-full max-w-xl mx-4 rounded-2xl overflow-hidden">
 
       {/* HEADER */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
@@ -311,7 +311,7 @@ try {
       {/* BODY */}
       <div className="p-6 space-y-5">
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
 
           <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-xl">
             {selectedUser.fullName?.slice(0, 2).toUpperCase()}
@@ -329,7 +329,7 @@ try {
 
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
           <div className="border border-gray-200 rounded-xl p-4">
             <p className="text-xs text-gray-500 mb-1">
@@ -407,7 +407,7 @@ try {
     <div className="max-w-7xl mx-auto px-6">
 
       {/* Header */}
-      <div className="flex justify-between items-start mb-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
           <h2 className="text-2xl font-semibold text-black">Manage Users</h2>
           <p className="text-sm text-gray-500 mt-1">
@@ -430,7 +430,7 @@ try {
 
       {/* Tabs + Filters */}
       {/* Tabs */}
-<div className="flex gap-2 mb-4">
+<div className="flex flex-wrap gap-2 mb-4">
   <span
     onClick={() => setTab("clients")}
     className={`px-3 py-1 text-xs rounded-md cursor-pointer ${
@@ -455,7 +455,7 @@ try {
 </div>
 
 {/* Filters Row (UNDER tabs) */}
-<div className="flex space-x-4 items-center mb-6">
+<div className="flex flex-col sm:flex-row gap-4 mb-6">
  <input
   placeholder="Search users..."
   value={search}
@@ -463,18 +463,18 @@ try {
     setSearch(e.target.value);
     setPage(1);
   }}
-  className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-[340px]"
+className="w-full sm:max-w-sm border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-[#3E83C4] focus:ring-2 focus:ring-[#3E83C4]/20 outline-none"
 />
 
-  <select className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-[140px]">
+  {/* <select className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-[140px]">
     <option>All Status</option>
-  </select>
+  </select> */}
 </div>
 
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+         <table className="min-w-[1100px] w-full text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
               {["Name","Email","Status","Last Active","Lifetime Spend","Orders","Actions"].map(h => (

@@ -29,7 +29,7 @@ const HelpSupport = () => {
   const navigate = useNavigate();
 
   const openWhatsApp = () => {
-    const phoneNumber = "2347084274918"; // replace with your real number
+    const phoneNumber = "2347084274918"; 
     const message = encodeURIComponent(
       "Hello Fixserv, I need help with a repair."
     );
@@ -174,7 +174,7 @@ const HelpSupport = () => {
         <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-4">
   {[
     { icon: "📧", text: "fixserv8@gmail.com" },
-    { icon: "📞", text: "+234 808 289 5378" },
+    { icon: "📞", text: "+234 708 427 4918" },
     // { icon: "💬", text: "Live chat available" },
   ].map((item, i) => (
     <div

@@ -17,13 +17,13 @@ const Contact = () => {
 
   const openWhatsApp = () => {
     window.open(
-      "https://wa.me/2348082895378?text=Hello Fixserv, I need help",
+      "https://wa.me/2347084274918?text=Hello Fixserv, I need help",
       "_blank"
     );
   };
 
   const copyPhone = () => {
-  navigator.clipboard.writeText("+2348082895378");
+  navigator.clipboard.writeText("+2347084274918");
   alert("Phone number copied!");
 };
 
@@ -59,22 +59,22 @@ const handleImageChange = (e) => {
 };
 
 const socialLinks = [
-  {
-    icon: fb,
-    url: "https://facebook.com/yourpage",
-  },
+  // {
+  //   icon: fb,
+  //   url: "https://facebook.com/yourpage",
+  // },
   {
     icon: insta,
-    url: "https://instagram.com/yourpage",
+    url: "https://www.instagram.com/fix_serv?utm_source=qr",
   },
   {
     icon: linkedin,
-    url: "https://linkedin.com/company/yourpage",
+    url: "https://www.linkedin.com/company/fixserv/",
   },
-  {
-    icon: twitter,
-    url: "https://twitter.com/yourpage",
-  },
+  // {
+  //   icon: twitter,
+  //   url: "https://twitter.com/yourpage",
+  // },
 ];
 
 const openEmail = () => {
@@ -123,7 +123,7 @@ const openEmail = () => {
 >
   <p className="font-medium text-black">📞 Call Us</p>
   <p className="text-sm text-gray-500 mt-1">
-    +234 808 289 5378
+    +234 708 427 4918
   </p>
 </div>
 
@@ -263,7 +263,7 @@ const openEmail = () => {
                   <div>
                     <p className="text-xs text-[#656565]">Phone</p>
                     <p className="text-sm font-medium text-[#535353]">
-                      +234 808 289 5378
+                      +234 708 427 4918
                     </p>
                   </div>
                 </div>

@@ -164,7 +164,7 @@ const handleRefund = async (transaction) => {
     {showModal && selectedTransaction && (
   <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
 
-    <div className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden">
+    <div className="bg-white w-full max-w-3xl mx-4 rounded-2xl overflow-hidden">
 
       <div className="flex justify-between items-center px-6 py-4 border-b">
 
@@ -187,7 +187,7 @@ const handleRefund = async (transaction) => {
 
       </div>
 
-      <div className="p-6 grid grid-cols-2 gap-4">
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
 
         <div className="border rounded-xl p-4">
           <p className="text-xs text-gray-500 mb-1">
@@ -250,7 +250,7 @@ const handleRefund = async (transaction) => {
         <div className="max-w-7xl mx-auto px-6">
 
           {/* Header */}
-          <div className="flex justify-between items-start mb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-semibold text-black">
                 Monitor Transactions
@@ -276,7 +276,7 @@ const handleRefund = async (transaction) => {
       setStatus(e.target.value);
       setPage(1);
     }}
-    className="border border-gray-300 px-4 py-2 text-sm rounded-lg bg-white"
+    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white"
   >
     <option value="">
       All Statuses
@@ -360,8 +360,12 @@ const handleRefund = async (transaction) => {
           {/* Table */}
           <div className="border border-gray-200 rounded-xl overflow-hidden">
 
+<div className="overflow-x-auto">
+
+<div className="min-w-[1350px]">
+
             {/* Header Row */}
-            <div className="grid grid-cols-12 px-5 py-3 bg-gray-50 text-xs text-gray-500 font-medium border-b">
+            <div className="grid grid-cols-12 px-5 py-3 bg-gray-50 text-xs text-gray-500 font-medium border-b border-gray-200">
               <div className="col-span-2">Transaction ID</div>
               <div className="col-span-1">Client</div>
               <div className="col-span-1">Artisan</div>
@@ -387,7 +391,7 @@ const handleRefund = async (transaction) => {
   transactions.map((row, i) => (
              <div
   key={i}
-  className="grid grid-cols-12 px-5 py-4 border-b text-sm items-center"
+className="grid grid-cols-12 px-5 py-4 border-b text-sm items-center hover:bg-[#3E83C4]/5 transition-colors duration-200"
 >
 
 
@@ -441,40 +445,41 @@ const handleRefund = async (transaction) => {
     {new Date(row.date).toLocaleDateString()}
   </div>
 
-  <div className="col-span-1 flex justify-end gap-2">
+ <div className="col-span-1 flex items-center justify-center gap-2">
 
+  {/* Details */}
+  <button
+    onClick={() => {
+      setSelectedTransaction(row);
+      setShowModal(true);
+    }}
+    className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 bg-white hover:bg-[#3E83C4]/5 hover:border-[#3E83C4] transition-all duration-200"
+    title="View Details"
+  >
+    <img src={eye} className="w-4 h-4" />
+  </button>
+
+  {/* Refund */}
+  {row.status === "SUCCESS" && (
     <button
-      onClick={() => {
-        setSelectedTransaction(row);
-        setShowModal(true);
-      }}
-      className="flex items-center gap-1 text-xs border border-gray-300 px-2 py-1 rounded-md hover:bg-gray-50"
+      onClick={() => handleRefund(row)}
+      disabled={refundLoading}
+      className="px-4 py-2 rounded-lg border border-red-500 text-red-600 bg-white hover:bg-red-50 transition-all duration-200 text-sm font-medium whitespace-nowrap disabled:opacity-50"
     >
-      <img src={eye} className="w-3 h-3" />
-      Details
+      {refundLoading ? "Processing..." : "Refund"}
     </button>
+  )}
 
-    {row.status === "SUCCESS" && (
-      <button
-  onClick={() => handleRefund(row)}
-  disabled={refundLoading}
-  className="flex items-center gap-1 text-xs text-red-600 border border-red-200 px-2 py-1 rounded-md hover:bg-red-50 disabled:opacity-50"
->
-  <img src={recycle} className="w-3 h-3" />
-
-  {refundLoading
-    ? "Processing..."
-    : "Refund"}
-</button>
-    )}
-
-  </div>
+</div>
 
 </div>
             )))}
+          
+          </div>
+          </div>
           </div>
 
-          <div className="flex items-center justify-between mt-6">
+          <div className="flex items-center flex-col sm:flex-row mt-6">
 
   <p className="text-sm text-gray-500">
     Total Transactions: {pagination.total}

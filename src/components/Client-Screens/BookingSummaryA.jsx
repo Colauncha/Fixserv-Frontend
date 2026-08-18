@@ -597,10 +597,7 @@ useEffect(() => {
                           Are you sure you want to cancel this booking?booking?
                         </p>
 
-                        <button
-                          onClick={() => navigate(-1)}
-                          className="w-full bg-red-500 text-white py-2 rounded-md"
-                        >
+                        <button onClick={() => { setActiveModal(null); navigate("/client"); }} className="w-full bg-red-500 text-white py-2 rounded-md" >
                           Yes, Cancel Booking
                         </button>
 
